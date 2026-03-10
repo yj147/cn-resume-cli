@@ -1,0 +1,36 @@
+{
+  "name": "@jikns/cn-resume-cli",
+  "version": "1.0.0",
+  "description": "CLI for Chinese resume parsing, optimization, rendering and validation",
+  "type": "module",
+  "bin": {
+    "cn-resume": "bin/cn-resume.js"
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "smoke": "bash ./scripts/smoke.sh",
+    "test:smoke-ai": "bash ./scripts/smoke.sh",
+    "test:parser-regression": "bash ./scripts/parse-regression.sh",
+    "test:ai-mock": "npm run build && bash ./scripts/test-ai-mock.sh",
+    "test": "npm run build && npm run test:parser-regression",
+    "check": "npm run build && node bin/cn-resume.js --help",
+    "prepack": "npm run build"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@sparticuz/chromium-min": "^143.0.4",
+    "docx": "^8.5.0",
+    "mupdf": "^1.27.0",
+    "pdf-parse": "^1.1.1",
+    "puppeteer-core": "^24.8.1",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.14",
+    "typescript": "^5.8.2"
+  }
+}

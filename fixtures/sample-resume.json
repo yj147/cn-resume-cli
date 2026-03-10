@@ -1,0 +1,94 @@
+{
+  "basic": {
+    "name": "杨进",
+    "title": "高级后端工程师",
+    "email": "yj@example.com",
+    "phone": "13800000000",
+    "location": "深圳",
+    "website": "https://github.com/yj",
+    "summary": "专注平台工程与稳定性治理，持续交付高可用系统。"
+  },
+  "experience": [
+    {
+      "company": "某科技公司",
+      "role": "后端负责人",
+      "start_date": "2022-03",
+      "end_date": "至今",
+      "bullets": [
+        "主导核心服务重构，P99 延迟下降 42%",
+        "推动发布流水线标准化，部署失败率降低至 0.3%"
+      ],
+      "technologies": [
+        "Node.js",
+        "PostgreSQL",
+        "Redis"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "实时风控平台",
+      "role": "技术负责人",
+      "start_date": "2023-01",
+      "end_date": "2024-10",
+      "bullets": [
+        "构建规则引擎，支持千万级日请求",
+        "引入灰度机制，故障恢复时间缩短 60%"
+      ],
+      "technologies": [
+        "Kafka",
+        "Go"
+      ],
+      "url": "https://github.com/example/risk-platform"
+    }
+  ],
+  "education": [
+    {
+      "school": "华南理工大学",
+      "degree": "硕士",
+      "major": "计算机科学",
+      "start_date": "2016-09",
+      "end_date": "2019-06"
+    }
+  ],
+  "skills": [
+    {
+      "category": "后端",
+      "items": [
+        {
+          "name": "Node.js"
+        },
+        {
+          "name": "Go"
+        }
+      ]
+    }
+  ],
+  "custom_sections": [
+    {
+      "title": "个人优势",
+      "content": "结果导向，擅长跨团队协作推进复杂项目。"
+    }
+  ],
+  "render_config": {
+    "template": "elegant",
+    "modules": [
+      "summary",
+      "experience",
+      "projects",
+      "skills",
+      "education",
+      "custom"
+    ],
+    "module_order": [
+      "summary",
+      "experience",
+      "projects",
+      "skills",
+      "education",
+      "custom"
+    ],
+    "theme_color": "#1d4ed8",
+    "font_size": 14
+  }
+}

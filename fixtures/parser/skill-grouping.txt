@@ -1,0 +1,8 @@
+王五
+邮箱: wangwu@example.com
+电话: 13900001111
+
+技能
+后端: Go, Node.js, 微服务
+数据库: MySQL, PostgreSQL
+中间件: Redis, Kafka

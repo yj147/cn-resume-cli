@@ -1,0 +1,118 @@
+{
+  "basic": {
+    "fullName": "杨进",
+    "jobTitle": "全栈工程师",
+    "email": "yj@example.com",
+    "phone": "13800000000",
+    "location": "广州",
+    "linkedin": "linkedin.com/in/yj",
+    "github": "github.com/yj"
+  },
+  "experience": [
+    {
+      "company": "A 公司",
+      "position": "后端工程师",
+      "date": "2021-01 - 2022-12",
+      "details": [
+        "优化查询链路，接口延迟降低 35%",
+        "建设监控告警体系，核心告警漏报率下降 80%"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "SaaS 运营平台",
+      "role": "开发负责人",
+      "startDate": "2023-02",
+      "endDate": "2024-11",
+      "description": "负责核心数据服务与权限体系设计。",
+      "highlights": [
+        "推动多租户架构落地，支撑 100+ 客户",
+        "落地自动化回归，发布效率提升 30%"
+      ],
+      "url": "https://github.com/example/saas-platform"
+    }
+  ],
+  "education": [
+    {
+      "institution": "中山大学",
+      "degree": "本科",
+      "field": "软件工程",
+      "startDate": "2014-09",
+      "endDate": "2018-06"
+    }
+  ],
+  "skills": [
+    {
+      "category": "工程能力",
+      "items": [
+        "TypeScript",
+        "Node.js",
+        "PostgreSQL"
+      ]
+    }
+  ],
+  "certifications": [
+    {
+      "name": "AWS SAA",
+      "issuer": "AWS",
+      "date": "2024-05",
+      "url": "https://www.credly.com/"
+    }
+  ],
+  "languages": [
+    {
+      "language": "中文",
+      "proficiency": "母语"
+    },
+    {
+      "language": "英语",
+      "proficiency": "熟练"
+    }
+  ],
+  "github": [
+    {
+      "repoUrl": "https://github.com/example/core-sdk",
+      "name": "core-sdk",
+      "stars": 320,
+      "language": "TypeScript",
+      "description": "企业级 SDK。"
+    }
+  ],
+  "qr_codes": [
+    {
+      "label": "作品集",
+      "url": "https://portfolio.example.com"
+    }
+  ],
+  "custom_sections": [
+    {
+      "title": "个人优势",
+      "items": [
+        "具备跨团队协作与推进能力",
+        "善于把复杂需求拆解成可交付任务"
+      ]
+    },
+    {
+      "title": "自我评价",
+      "content": "重视工程质量。\n关注长期可维护性。"
+    }
+  ],
+  "menuSections": [
+    "summary",
+    "experience",
+    "projects",
+    "skills",
+    "education",
+    "certifications",
+    "languages",
+    "github",
+    "custom",
+    "qr_codes"
+  ],
+  "globalSettings": {
+    "themeColor": "#0ea5e9",
+    "baseFontSize": 13
+  },
+  "templateId": "elegant"
+}

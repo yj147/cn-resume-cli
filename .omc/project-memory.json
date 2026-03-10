@@ -1,0 +1,138 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1773047649075,
+  "projectRoot": "/home/jikns/.claude/skills/cn-resume/cli",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": ">=20.0.0",
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "npm",
+    "runtime": "Node.js 20.0.0"
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": "npm test",
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {
+      "clean": "rm -rf dist",
+      "build": "npm run clean && tsc -p tsconfig.json",
+      "typecheck": "tsc -p tsconfig.json --noEmit",
+      "smoke": "bash ./scripts/smoke.sh",
+      "test:smoke-ai": "bash ./scripts/smoke.sh",
+      "test:parser-regression": "bash ./scripts/parse-regression.sh",
+      "test:ai-mock": "npm run build && bash ./scripts/test-ai-mock.sh",
+      "test": "npm run build && npm run test:parser-regression",
+      "check": "npm run build && node bin/cn-resume.js --help",
+      "prepack": "npm run build"
+    }
+  },
+  "conventions": {
+    "namingStyle": "camelCase",
+    "importStyle": "ES modules",
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "bin",
+      "scripts",
+      "src"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "bin": {
+      "path": "bin",
+      "purpose": "Executable scripts",
+      "fileCount": 1,
+      "lastAccessed": 1773047649059,
+      "keyFiles": [
+        "cn-resume.js"
+      ]
+    },
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 6,
+      "lastAccessed": 1773047649060,
+      "keyFiles": [
+        "ai.js",
+        "commands.js",
+        "constants.js",
+        "env.js",
+        "index.js"
+      ]
+    },
+    "fixtures": {
+      "path": "fixtures",
+      "purpose": "Test fixtures",
+      "fileCount": 3,
+      "lastAccessed": 1773047649067,
+      "keyFiles": [
+        "sample-jd.txt",
+        "sample-resume-contract.json",
+        "sample-resume.json"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 4,
+      "lastAccessed": 1773047649069,
+      "keyFiles": [
+        "mock-openai-server.mjs",
+        "parse-regression.sh",
+        "smoke.sh",
+        "test-ai-mock.sh"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 6,
+      "lastAccessed": 1773047649070,
+      "keyFiles": [
+        "ai.ts",
+        "commands.ts",
+        "constants.ts",
+        "env.ts",
+        "index.ts"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "package.json",
+      "accessCount": 1,
+      "lastAccessed": 1773047714977,
+      "type": "file"
+    },
+    {
+      "path": "src/ai.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773047727663,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

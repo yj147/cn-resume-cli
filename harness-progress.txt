@@ -1,0 +1,3 @@
+[2026-03-10T17:17:28Z] [SESSION-0] INIT Harness initialized for project /home/jikns/Projects/cn-resume-cli
+[2026-03-10T17:17:51Z] [SESSION-1] INIT Migration target ready at /home/jikns/Projects/cn-resume-cli
+[2026-03-10T17:17:51Z] [SESSION-1] LOCK acquired (pid=38779)
