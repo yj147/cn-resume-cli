@@ -30,6 +30,8 @@ test("agent plan confirmation gates tool execution until /go", async () => {
   assert.equal(planned.state.status, "waiting_confirm");
   assert.equal(planned.pendingPlan.summary, "解析简历文件");
   assert.equal(planned.pendingApproval.title, "解析简历文件");
+  assert.equal(planned.tasks.length, 1);
+  assert.equal(planned.tasks[0].status, "waiting_approval");
   assert.equal(planned.transcript.at(-2).type, "plan_proposed");
   assert.equal(planned.transcript.at(-1).type, "approval_requested");
 
@@ -42,6 +44,12 @@ test("agent plan confirmation gates tool execution until /go", async () => {
             sourcePath: action.inputPath,
             model: { basics: { name: "张三" } }
           }
+        },
+        artifactPatch: {
+          latestModelPath: "/tmp/parsed.json"
+        },
+        taskPatch: {
+          status: "done"
         }
       };
     }
@@ -52,6 +60,9 @@ test("agent plan confirmation gates tool execution until /go", async () => {
   assert.equal(confirmed.currentResume.sourcePath, "/tmp/resume.txt");
   assert.equal(confirmed.pendingPlan, undefined);
   assert.equal(confirmed.pendingApproval, undefined);
+  assert.equal(confirmed.tasks.length, 1);
+  assert.equal(confirmed.tasks[0].status, "done");
+  assert.equal(confirmed.artifacts.latestModelPath, "/tmp/parsed.json");
   assert.equal(confirmed.transcript.some((item) => item.type === "task_started"), true);
   assert.equal(confirmed.transcript.some((item) => item.type === "task_finished" && item.status === "done"), true);
 });
@@ -83,6 +94,9 @@ test("agent phase b flow blocks on optimize until feedback confirmation", async 
 
   assert.equal(awaiting.state.status, "waiting_phase_b_feedback");
   assert.equal(awaiting.phaseB.status, "awaiting_feedback");
+  assert.equal(awaiting.tasks.length, 1);
+  assert.equal(awaiting.tasks[0].status, "waiting_phase_b_feedback");
+  assert.ok(awaiting.artifacts.latestModelPath);
   assert.equal(awaiting.transcript.some((item) => item.type === "task_started"), true);
   assert.equal(awaiting.transcript.some((item) => item.type === "task_finished" && item.status === "done"), true);
 
@@ -92,9 +106,39 @@ test("agent phase b flow blocks on optimize until feedback confirmation", async 
 
   assert.equal(finished.state.status, "idle");
   assert.equal(finished.phaseB.status, "confirmed");
+  assert.equal(finished.tasks[0].status, "done");
+  assert.ok(finished.artifacts.latestModelPath);
   assert.equal(finished.currentResume.model.meta.phase_b.confirmed, true);
   assert.equal(finished.transcript.some((item) => item.type === "task_started"), true);
   assert.equal(finished.transcript.some((item) => item.type === "task_finished" && item.status === "done"), true);
+});
+
+test("agent marks task as error when tool execution fails", async () => {
+  const session = sessionModule.createChatSession("2026-03-11T03:20:00.000Z");
+  const planned = agentModule.planToolAction(session, {
+    summary: "解析简历文件",
+    action: {
+      type: "parse-resume",
+      inputPath: "/tmp/resume.txt"
+    }
+  });
+
+  let capturedError;
+  await assert.rejects(
+    () =>
+      agentModule.confirmPendingPlan(planned, {
+        runTool: async () => {
+          throw new Error("mock parse failure");
+        }
+      }),
+    (error) => {
+      capturedError = error;
+      return true;
+    }
+  );
+
+  assert.equal(capturedError.session.tasks.length, 1);
+  assert.equal(capturedError.session.tasks[0].status, "error");
 });
 
 test("optimize tool fails explicitly when no resume is loaded", async () => {

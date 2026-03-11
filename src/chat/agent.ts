@@ -31,6 +31,52 @@ function appendEvent(session, event) {
   transcriptRef(session).push(event);
 }
 
+function tasksRef(session) {
+  if (!Array.isArray(session.tasks)) {
+    session.tasks = [];
+  }
+  return session.tasks;
+}
+
+function createTaskId() {
+  return `task-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function createTask(session, plan) {
+  const task = {
+    id: createTaskId(),
+    type: plan.action.type,
+    label: plan.summary,
+    status: "waiting_approval"
+  };
+  tasksRef(session).push(task);
+  return task;
+}
+
+function updateTaskStatus(session, taskId, status) {
+  const task = tasksRef(session).find((item) => item.id === taskId);
+  if (task) {
+    task.status = status;
+    return;
+  }
+  tasksRef(session).push({
+    id: taskId || createTaskId(),
+    type: "unknown",
+    label: "",
+    status
+  });
+}
+
+function mergeArtifactPatch(session, patch: Record<string, any> = {}) {
+  if (!patch || typeof patch !== "object") {
+    return;
+  }
+  session.artifacts = {
+    ...(session.artifacts || {}),
+    ...patch
+  };
+}
+
 function mergeSessionPatch(session, patch: Record<string, any> = {}) {
   if (patch.currentResume) {
     session.currentResume = patch.currentResume;
@@ -51,14 +97,17 @@ function mergeSessionPatch(session, patch: Record<string, any> = {}) {
 
 export function planToolAction(session, plan) {
   const next = cloneSession(session);
+  const task = createTask(next, plan);
   next.pendingPlan = {
     summary: plan.summary,
-    action: plan.action
+    action: plan.action,
+    taskId: task.id
   };
   next.pendingApproval = {
     title: plan.summary,
     summary: plan.summary,
-    action: plan.action
+    action: plan.action,
+    taskId: task.id
   };
   next.state = { status: "waiting_confirm" };
   appendEvent(
@@ -87,6 +136,7 @@ export async function confirmPendingPlan(session, handlers) {
   const next = cloneSession(session);
   const pendingPlan = next.pendingPlan;
   next.state = { status: "running" };
+  updateTaskStatus(next, pendingPlan.taskId, "running");
   appendEvent(
     next,
     createChatEvent("task_started", {
@@ -98,8 +148,10 @@ export async function confirmPendingPlan(session, handlers) {
   try {
     const result = await handlers.runTool(pendingPlan.action, next);
     mergeSessionPatch(next, result?.sessionPatch);
+    mergeArtifactPatch(next, result?.artifactPatch);
     next.pendingPlan = undefined;
     next.pendingApproval = undefined;
+    updateTaskStatus(next, pendingPlan.taskId, result?.taskPatch?.status || "done");
     appendEvent(
       next,
       createChatEvent("task_finished", {
@@ -111,9 +163,11 @@ export async function confirmPendingPlan(session, handlers) {
     if (result?.phaseB?.status === "awaiting_feedback") {
       next.phaseB = {
         ...result.phaseB,
-        action: pendingPlan.action
+        action: pendingPlan.action,
+        taskId: pendingPlan.taskId
       };
       next.state = { status: "waiting_phase_b_feedback" };
+      updateTaskStatus(next, pendingPlan.taskId, "waiting_phase_b_feedback");
       appendEvent(
         next,
         createChatEvent("assistant_completed", {
@@ -132,6 +186,7 @@ export async function confirmPendingPlan(session, handlers) {
   } catch (error) {
     const message = String(error?.message || error);
     next.state = { status: "error", message };
+    updateTaskStatus(next, pendingPlan.taskId, "error");
     appendEvent(
       next,
       createChatEvent("task_finished", {
@@ -158,6 +213,8 @@ export async function confirmPhaseB(session, feedbackText, handlers) {
 
   const next = cloneSession(session);
   next.state = { status: "running" };
+  const taskId = next.phaseB.taskId;
+  updateTaskStatus(next, taskId, "running");
 
   const action = {
     ...next.phaseB.action,
@@ -175,6 +232,7 @@ export async function confirmPhaseB(session, feedbackText, handlers) {
   try {
     const result = await handlers.runTool(action, next);
     mergeSessionPatch(next, result?.sessionPatch);
+    mergeArtifactPatch(next, result?.artifactPatch);
     next.phaseB = result?.phaseB || {
       ...next.phaseB,
       status: "confirmed"
@@ -195,10 +253,12 @@ export async function confirmPhaseB(session, feedbackText, handlers) {
       );
     }
     next.state = next.phaseB.status === "awaiting_feedback" ? { status: "waiting_phase_b_feedback" } : { status: "idle" };
+    updateTaskStatus(next, taskId, next.phaseB.status === "awaiting_feedback" ? "waiting_phase_b_feedback" : (result?.taskPatch?.status || "done"));
     return touchSession(next);
   } catch (error) {
     const message = String(error?.message || error);
     next.state = { status: "error", message };
+    updateTaskStatus(next, taskId, "error");
     appendEvent(
       next,
       createChatEvent("task_finished", {
