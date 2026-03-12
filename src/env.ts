@@ -2,8 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
+export function getCnResumeHome(homeDir = os.homedir()) {
+  return path.join(homeDir, ".cn-resume");
+}
+
 export function loadLocalEnvFile() {
-  const envPath = path.join(os.homedir(), ".cn-resume", "ai.env");
+  const envPath = path.join(getCnResumeHome(), "ai.env");
   if (!fs.existsSync(envPath)) {
     return;
   }
@@ -37,4 +41,3 @@ export function loadLocalEnvFile() {
     }
   }
 }
-

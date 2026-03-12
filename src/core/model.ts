@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { createFieldEnvelope } from "./provenance.js";
 
 export function nowIso() {
   return new Date().toISOString();
@@ -147,6 +148,10 @@ export function buildEmptyModel() {
       parse_evidence: createEmptyParseEvidence()
     }
   };
+}
+
+export function buildEmptyField(options = {}) {
+  return createFieldEnvelope(options);
 }
 
 export function normalizeReactiveJson(raw) {
