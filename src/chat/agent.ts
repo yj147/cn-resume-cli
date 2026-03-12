@@ -95,14 +95,102 @@ function mergeSessionPatch(session, patch: Record<string, any> = {}) {
   }
 }
 
+function pendingPatchesRef(session) {
+  if (!Array.isArray(session.pendingPatches)) {
+    session.pendingPatches = [];
+  }
+  return session.pendingPatches;
+}
+
+function patchDecisionsRef(session) {
+  if (!Array.isArray(session.patchDecisions)) {
+    session.patchDecisions = [];
+  }
+  return session.patchDecisions;
+}
+
+function createPatchId() {
+  return `patch-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
 function appendResumeDraft(session, draft) {
   if (!draft || typeof draft !== "object") {
     return;
   }
   session.resumeDraft = draft;
   const patches = Array.isArray(draft.patches) ? draft.patches : [];
-  session.pendingPatches = Array.isArray(session.pendingPatches) ? session.pendingPatches : [];
-  session.pendingPatches.push(...patches);
+  pendingPatchesRef(session).push(
+    ...patches.map((patch) => ({
+      ...patch,
+      patchId: patch.patchId || createPatchId(),
+      status: "pending"
+    }))
+  );
+}
+
+function findPendingPatchIndex(session, options) {
+  const pendingPatches = pendingPatchesRef(session);
+  const patchId = String(options?.patchId || "").trim();
+  if (patchId) {
+    return pendingPatches.findIndex((patch) => patch.patchId === patchId);
+  }
+  const moduleName = String(options?.module || "").trim();
+  if (moduleName) {
+    return pendingPatches.findIndex((patch) => patch.module === moduleName);
+  }
+  return -1;
+}
+
+function recordPatchDecision(session, patch, decision, reason = "") {
+  patchDecisionsRef(session).push({
+    patchId: patch.patchId,
+    module: patch.module,
+    decision,
+    reason,
+    decidedAt: new Date().toISOString()
+  });
+}
+
+function ensureCurrentResume(session) {
+  if (session.currentResume?.model) {
+    return session.currentResume;
+  }
+  session.currentResume = {
+    sourcePath: String(session.artifacts?.latestDraftSourcePath || session.currentResume?.sourcePath || ""),
+    model: {}
+  };
+  return session.currentResume;
+}
+
+function applyPatch(session, patch) {
+  const currentResume = ensureCurrentResume(session);
+  currentResume.model = {
+    ...(currentResume.model || {}),
+    [patch.module]: structuredClone(patch.nextValue)
+  };
+}
+
+export function acceptPendingPatch(session, options: Record<string, any> = {}) {
+  const next = cloneSession(session);
+  const patchIndex = findPendingPatchIndex(next, options);
+  if (patchIndex < 0) {
+    throw new Error("BLOCKED: pending patch not found");
+  }
+  const [patch] = pendingPatchesRef(next).splice(patchIndex, 1);
+  applyPatch(next, patch);
+  recordPatchDecision(next, patch, "accepted");
+  return touchSession(next);
+}
+
+export function rejectPendingPatch(session, options: Record<string, any> = {}) {
+  const next = cloneSession(session);
+  const patchIndex = findPendingPatchIndex(next, options);
+  if (patchIndex < 0) {
+    throw new Error("BLOCKED: pending patch not found");
+  }
+  const [patch] = pendingPatchesRef(next).splice(patchIndex, 1);
+  recordPatchDecision(next, patch, "rejected", String(options?.reason || ""));
+  return touchSession(next);
 }
 
 export function planToolAction(session, plan) {

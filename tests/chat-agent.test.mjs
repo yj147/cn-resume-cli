@@ -223,3 +223,68 @@ test("parse tool returns draft patch payload without direct current resume write
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
 });
+
+test("acceptPendingPatch upgrades formal resume content only after explicit acceptance", () => {
+  assert.equal(typeof agentModule.acceptPendingPatch, "function");
+
+  const session = sessionModule.createChatSession("2026-03-11T03:50:00.000Z");
+  session.artifacts = {
+    latestDraftSourcePath: "/tmp/resume.txt"
+  };
+  session.pendingPatches = [
+    {
+      patchId: "patch-basic-1",
+      module: "basic",
+      nextValue: {
+        name: { value: "杨进" }
+      },
+      source: "parsed_exact"
+    }
+  ];
+
+  const accepted = agentModule.acceptPendingPatch(session, {
+    patchId: "patch-basic-1"
+  });
+
+  assert.equal(accepted.currentResume.sourcePath, "/tmp/resume.txt");
+  assert.equal(accepted.currentResume.model.basic.name.value, "杨进");
+  assert.deepEqual(accepted.pendingPatches, []);
+  assert.equal(accepted.patchDecisions.length, 1);
+  assert.equal(accepted.patchDecisions[0].decision, "accepted");
+  assert.equal(accepted.patchDecisions[0].module, "basic");
+});
+
+test("rejectPendingPatch records audit trail without mutating confirmed resume", () => {
+  assert.equal(typeof agentModule.rejectPendingPatch, "function");
+
+  const session = sessionModule.createChatSession("2026-03-11T03:55:00.000Z");
+  session.currentResume = {
+    sourcePath: "/tmp/resume.json",
+    model: {
+      basic: {
+        name: { value: "旧名字" }
+      }
+    }
+  };
+  session.pendingPatches = [
+    {
+      patchId: "patch-basic-2",
+      module: "basic",
+      nextValue: {
+        name: { value: "新名字" }
+      },
+      source: "ai_rewritten"
+    }
+  ];
+
+  const rejected = agentModule.rejectPendingPatch(session, {
+    patchId: "patch-basic-2",
+    reason: "用户拒绝该改写"
+  });
+
+  assert.equal(rejected.currentResume.model.basic.name.value, "旧名字");
+  assert.deepEqual(rejected.pendingPatches, []);
+  assert.equal(rejected.patchDecisions.length, 1);
+  assert.equal(rejected.patchDecisions[0].decision, "rejected");
+  assert.equal(rejected.patchDecisions[0].reason, "用户拒绝该改写");
+});

@@ -65,6 +65,8 @@ function normalizeSession(session) {
     state: session?.state && typeof session.state === "object" ? session.state : { status: "idle" },
     artifacts: session?.artifacts && typeof session.artifacts === "object" ? session.artifacts : {},
     tasks: Array.isArray(session?.tasks) ? session.tasks : [],
+    pendingPatches: Array.isArray(session?.pendingPatches) ? session.pendingPatches : [],
+    patchDecisions: Array.isArray(session?.patchDecisions) ? session.patchDecisions : [],
     pendingApproval: session?.pendingApproval && typeof session.pendingApproval === "object" ? session.pendingApproval : undefined,
     contextRefs: Array.isArray(session?.contextRefs) ? session.contextRefs : [],
     selection,
