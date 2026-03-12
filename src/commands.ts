@@ -18,7 +18,7 @@ import {
   parseTextToModel,
   PHASE_B_PROMPT
 } from "./flows/parse-optimize.js";
-import { generateDocx, modelToPlainText } from "./flows/render.js";
+import { assertLayoutExportReady, generateDocx, modelToPlainText } from "./flows/render.js";
 import { parsePdfToText } from "./pdf.js";
 import { generatePdf as renderPdfBuffer } from "./jadeai/generate-pdf.js";
 import {
@@ -135,6 +135,11 @@ export async function runGenerate(flags) {
   }
   const model = normalizeReactiveJson(readJson(inputPath));
   assertPhaseBConfirmedOrThrow(model, "generate");
+  const layoutGateSource =
+    (model as any)?.meta?.layoutResult ||
+    (model as any)?.meta?.layout_result ||
+    (model as any)?.render_config?.layoutResult;
+  assertLayoutExportReady(layoutGateSource, "generate");
   const templateInput = flags.template || model?.render_config?.template || model?.meta?.template || "elegant";
   const resolvedTemplate = resolveTemplate(templateInput);
   const template = resolvedTemplate.resolved;

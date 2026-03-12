@@ -4,6 +4,7 @@ import { streamChatAnswer } from "./answer.js";
 import { CHAT_STATES, CONTROLLER_EVENTS, transitionWorkflowState } from "./controller.js";
 import { loadChatConfig } from "./config.js";
 import { createChatEvent } from "./events.js";
+import { assertLayoutExportReady, normalizeLayoutResult } from "../flows/render.js";
 import { planChatTurn } from "./planner.js";
 import { loadActiveSession, loadNamedSession, saveActiveSession } from "./session.js";
 import { executeSlashCommand } from "./slash.js";
@@ -63,6 +64,41 @@ function dispatchWorkflowEvent(session, event) {
   return session;
 }
 
+function blockedWithSession(session, message) {
+  const error = new Error(message);
+  (error as any).session = session;
+  return error;
+}
+
+export function advanceExportWorkflow(session) {
+  const next = structuredClone(session);
+  const currentState = workflowStateRef(next);
+  const layoutResult = normalizeLayoutResult(next.layoutResult);
+
+  if (layoutResult?.status === "overflow") {
+    next.layoutResult = layoutResult;
+    if (currentState === CHAT_STATES.CONFIRMED_CONTENT) {
+      dispatchWorkflowEvent(next, CONTROLLER_EVENTS.LAYOUT_OVERFLOW);
+    }
+    try {
+      assertLayoutExportReady(next.layoutResult, "export");
+    } catch (error) {
+      throw blockedWithSession(next, String(error?.message || error));
+    }
+    if (workflowStateRef(next) === CHAT_STATES.LAYOUT_SOLVING) {
+      dispatchWorkflowEvent(next, CONTROLLER_EVENTS.USER_APPROVED_MULTIPAGE);
+    }
+    return next;
+  }
+
+  if (currentState === CHAT_STATES.CONFIRMED_CONTENT || currentState === CHAT_STATES.READY_TO_EXPORT) {
+    dispatchWorkflowEvent(next, CONTROLLER_EVENTS.EXPORT_REQUESTED);
+    return next;
+  }
+
+  throw blockedWithSession(next, `BLOCKED: export gate unavailable from state ${currentState}`);
+}
+
 function emitEvent(session, io, event, options: Record<string, unknown> = {}) {
   if (options.persist !== false) {
     transcriptRef(session).push(event);
@@ -116,6 +152,11 @@ async function handleSlashInput(runtime, input, handlers, io) {
     const pendingPatchCount = Array.isArray(next.session?.pendingPatches) ? next.session.pendingPatches.length : 0;
     const fromIndex = Array.isArray(next.session?.transcript) ? next.session.transcript.length : 0;
     next.session = await confirmPendingPlan(next.session, { runTool: handlers.runTool });
+    const layoutResult = normalizeLayoutResult(next.session?.layoutResult);
+    if (layoutResult?.status === "overflow" && workflowStateRef(next.session) === CHAT_STATES.CONFIRMED_CONTENT) {
+      next.session.layoutResult = layoutResult;
+      dispatchWorkflowEvent(next.session, CONTROLLER_EVENTS.LAYOUT_OVERFLOW);
+    }
     if ((Array.isArray(next.session?.pendingPatches) ? next.session.pendingPatches.length : 0) > pendingPatchCount) {
       dispatchWorkflowEvent(next.session, CONTROLLER_EVENTS.PATCH_GENERATED);
     }

@@ -2,6 +2,105 @@ import fs from "node:fs";
 import { collectCustomSectionLines, normalizeBulletList } from "../core/model.js";
 import { getFieldValue } from "../core/provenance.js";
 
+export const LAYOUT_DECISION_OPTIONS = Object.freeze([
+  {
+    id: "accept_multipage",
+    label: "保留多页"
+  },
+  {
+    id: "switch_compact_template",
+    label: "切紧凑模板"
+  },
+  {
+    id: "generate_compaction_patch",
+    label: "生成压缩 patch"
+  }
+]);
+
+const LAYOUT_DECISION_OPTION_IDS = new Set(LAYOUT_DECISION_OPTIONS.map((option) => option.id));
+
+function positiveNumber(value, fallback = 0) {
+  const normalized = Number(value);
+  if (!Number.isFinite(normalized) || normalized <= 0) {
+    return fallback;
+  }
+  return normalized;
+}
+
+function normalizeLayoutStatus(input) {
+  const status = String(input || "").trim().toLowerCase();
+  if (status === "overflow" || status === "multipage") {
+    return "overflow";
+  }
+  if (status === "needs_attention") {
+    return "needs_attention";
+  }
+  return status || "ready";
+}
+
+export function normalizeLayoutResult(layoutResult) {
+  if (!layoutResult || typeof layoutResult !== "object") {
+    return null;
+  }
+
+  const status = normalizeLayoutStatus(layoutResult.status);
+  const selectedOption = String(layoutResult.selectedOption || "").trim();
+  const isKnownOption = LAYOUT_DECISION_OPTION_IDS.has(selectedOption);
+  const requiresDecision = status === "overflow";
+  const confirmed = requiresDecision
+    ? isKnownOption && selectedOption === "accept_multipage" && layoutResult.confirmed !== false
+    : Boolean(layoutResult.confirmed ?? true);
+  const requiresFollowUp = requiresDecision && isKnownOption && selectedOption !== "accept_multipage";
+
+  return {
+    ...layoutResult,
+    status,
+    pageCount: positiveNumber(layoutResult.pageCount, requiresDecision ? 2 : 1) || (requiresDecision ? 2 : 1),
+    options: requiresDecision ? LAYOUT_DECISION_OPTIONS : [],
+    selectedOption: isKnownOption ? selectedOption : "",
+    confirmed,
+    requiresDecision: requiresDecision && !isKnownOption,
+    requiresFollowUp,
+    finding: layoutResult.finding && typeof layoutResult.finding === "object" ? layoutResult.finding : null
+  };
+}
+
+export function recordLayoutDecision(layoutResult, selectedOption) {
+  const normalized = normalizeLayoutResult(layoutResult);
+  const choice = String(selectedOption || "").trim();
+  if (!normalized || normalized.status !== "overflow") {
+    throw new Error("BLOCKED: no overflow layout decision pending");
+  }
+  if (!LAYOUT_DECISION_OPTION_IDS.has(choice)) {
+    throw new Error(`BLOCKED: unsupported layout decision '${choice}'`);
+  }
+  return normalizeLayoutResult({
+    ...normalized,
+    selectedOption: choice,
+    confirmed: choice === "accept_multipage",
+    decidedAt: new Date().toISOString()
+  });
+}
+
+export function assertLayoutExportReady(layoutResult, commandName = "export") {
+  const normalized = normalizeLayoutResult(layoutResult);
+  if (!normalized || normalized.status !== "overflow") {
+    return normalized;
+  }
+  if (!normalized.selectedOption) {
+    throw new Error(
+      `BLOCKED: layout_decision_required. Choose accept_multipage, switch_compact_template, or generate_compaction_patch before ${commandName}.`
+    );
+  }
+  if (normalized.selectedOption !== "accept_multipage") {
+    throw new Error(`BLOCKED: layout_action_pending (${normalized.selectedOption}). Resolve layout before ${commandName}.`);
+  }
+  if (!normalized.confirmed) {
+    throw new Error(`BLOCKED: layout_decision_required. Re-confirm multipage before ${commandName}.`);
+  }
+  return normalized;
+}
+
 export function modelToPlainText(model) {
   const formatDateRange = (item) => {
     const start = String(getFieldValue(item.start_date) || getFieldValue(item.start) || "").trim();

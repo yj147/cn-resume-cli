@@ -6,6 +6,7 @@ import { resolveEvalOptions } from "../eval/evaluation.js";
 import { runReviewService } from "../eval/review-service.js";
 import { createModulePatch, createResumeDraft, RESUME_MODULES } from "../core/patches.js";
 import { readJson, writeJson } from "../core/io.js";
+import { normalizeLayoutResult } from "../flows/render.js";
 
 function createToolWorkspace() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "cn-resume-chat-tool-"));
@@ -92,10 +93,18 @@ function buildLayoutResult(reviewResult) {
   if (!finding) {
     return null;
   }
-  return {
+  if (finding.severity === "warning" || finding.severity === "blocker" || /超页|一页|版面/.test(String(finding.message || ""))) {
+    return normalizeLayoutResult({
+      status: "overflow",
+      pageCount: 2,
+      finding
+    });
+  }
+  return normalizeLayoutResult({
     status: reviewResult.summary?.blocked ? "needs_attention" : "ready",
+    pageCount: 1,
     finding
-  };
+  });
 }
 
 function resolveReviewTemplate(session, action) {

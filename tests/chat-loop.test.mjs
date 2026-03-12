@@ -189,3 +189,97 @@ test("runChatLoop persists controller workflow state after patch generation", as
     assert.equal(result.session.pendingPatches.length, 1);
   });
 });
+
+test("runChatLoop emits explicit overflow events and pending layout choices", async () => {
+  await withTempHome(async (tempHome) => {
+    const runtime = {
+      homeDir: tempHome,
+      config: { apiKey: "", baseUrl: "", model: "" },
+      session: sessionModule.createChatSession("2026-03-11T07:00:00.000Z")
+    };
+    runtime.session.workflowState = controllerModule.CHAT_STATES.CONFIRMED_CONTENT;
+    runtime.session.pendingPlan = {
+      summary: "审核当前简历",
+      action: { type: "review-resume", engine: "rule" },
+      taskId: "task-review-overflow"
+    };
+    runtime.session.pendingApproval = {
+      title: "审核当前简历",
+      summary: "审核当前简历",
+      action: { type: "review-resume", engine: "rule" },
+      taskId: "task-review-overflow"
+    };
+    runtime.session.tasks = [
+      {
+        id: "task-review-overflow",
+        type: "review-resume",
+        label: "审核当前简历",
+        status: "waiting_approval"
+      }
+    ];
+
+    const events = [];
+    const lines = ["/go", "/quit"];
+    const result = await chatCommandModule.runChatLoop(
+      runtime,
+      {
+        readLine: async () => lines.shift() ?? null,
+        write: () => {},
+        emit: (event) => events.push(event)
+      },
+      {
+        runTool: async () => ({
+          sessionPatch: {
+            layoutResult: {
+              status: "overflow",
+              pageCount: 2,
+              finding: {
+                message: "当前内容密度较高，排版存在超页风险。"
+              }
+            }
+          }
+        })
+      }
+    );
+
+    assert.equal(result.session.workflowState, controllerModule.CHAT_STATES.LAYOUT_SOLVING);
+    assert.equal(events.some((event) => event.type === "layout_overflow"), true);
+    assert.equal(events.some((event) => event.type === "layout_decision_requested"), true);
+    assert.equal(result.session.layoutResult.status, "overflow");
+    assert.equal(result.session.layoutResult.confirmed, false);
+    assert.deepEqual(
+      result.session.layoutResult.options.map((option) => option.id),
+      ["accept_multipage", "switch_compact_template", "generate_compaction_patch"]
+    );
+  });
+});
+
+test("export gate blocks unresolved overflow and only explicit multipage approval can reach ready_to_export", () => {
+  const session = sessionModule.createChatSession("2026-03-11T08:00:00.000Z");
+  session.workflowState = controllerModule.CHAT_STATES.CONFIRMED_CONTENT;
+  session.layoutResult = {
+    status: "overflow",
+    pageCount: 2,
+    finding: {
+      message: "当前内容密度较高，排版存在超页风险。"
+    }
+  };
+
+  assert.throws(
+    () => chatCommandModule.advanceExportWorkflow(session),
+    /layout_decision_required/
+  );
+
+  const compactChoice = chatCommandModule.confirmLayoutDecision(session, "switch_compact_template");
+  assert.throws(
+    () => chatCommandModule.advanceExportWorkflow(compactChoice),
+    /layout_action_pending/
+  );
+
+  const multipageApproved = chatCommandModule.confirmLayoutDecision(session, "accept_multipage");
+  const ready = chatCommandModule.advanceExportWorkflow(multipageApproved);
+
+  assert.equal(ready.workflowState, controllerModule.CHAT_STATES.READY_TO_EXPORT);
+  assert.equal(ready.layoutResult.selectedOption, "accept_multipage");
+  assert.equal(ready.layoutResult.confirmed, true);
+});

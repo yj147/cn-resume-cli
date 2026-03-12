@@ -1,5 +1,6 @@
 import { createChatEvent } from "./events.js";
 import { CHAT_STATES } from "./controller.js";
+import { normalizeLayoutResult, recordLayoutDecision } from "../flows/render.js";
 
 function cloneSession(session) {
   return structuredClone(session);
@@ -92,7 +93,7 @@ function mergeSessionPatch(session, patch: Record<string, any> = {}) {
     session.reviewResult = patch.reviewResult;
   }
   if (patch.layoutResult) {
-    session.layoutResult = patch.layoutResult;
+    session.layoutResult = normalizeLayoutResult(patch.layoutResult);
   }
   if (patch.artifacts) {
     session.artifacts = {
@@ -177,6 +178,32 @@ function applyPatch(session, patch) {
   };
 }
 
+function appendLayoutDecisionPrompt(session) {
+  const layoutResult = normalizeLayoutResult(session?.layoutResult);
+  if (!layoutResult || layoutResult.status !== "overflow" || layoutResult.selectedOption) {
+    return;
+  }
+  session.layoutResult = layoutResult;
+  appendEvent(
+    session,
+    createChatEvent("layout_overflow", {
+      layoutResult
+    })
+  );
+  appendEvent(
+    session,
+    createChatEvent("layout_decision_requested", {
+      pageCount: layoutResult.pageCount,
+      options: layoutResult.options
+    })
+  );
+  appendMessage(
+    session,
+    "assistant",
+    "检测到超页风险。请选择 accept_multipage、switch_compact_template 或 generate_compaction_patch。"
+  );
+}
+
 export function acceptPendingPatch(session, options: Record<string, any> = {}) {
   const next = cloneSession(session);
   const patchIndex = findPendingPatchIndex(next, options);
@@ -197,6 +224,20 @@ export function rejectPendingPatch(session, options: Record<string, any> = {}) {
   }
   const [patch] = pendingPatchesRef(next).splice(patchIndex, 1);
   recordPatchDecision(next, patch, "rejected", String(options?.reason || ""));
+  return touchSession(next);
+}
+
+export function confirmLayoutDecision(session, selectedOption: string) {
+  const next = cloneSession(session);
+  next.layoutResult = recordLayoutDecision(next.layoutResult, selectedOption);
+  appendEvent(
+    next,
+    createChatEvent("layout_decision_recorded", {
+      selectedOption: next.layoutResult.selectedOption,
+      confirmed: next.layoutResult.confirmed
+    })
+  );
+  appendMessage(next, "assistant", `已记录排版决策：${next.layoutResult.selectedOption}`);
   return touchSession(next);
 }
 
@@ -287,6 +328,7 @@ export async function confirmPendingPlan(session, handlers) {
     if (result?.phaseB) {
       next.phaseB = result.phaseB;
     }
+    appendLayoutDecisionPrompt(next);
     next.state = { status: CHAT_STATES.IDLE };
     return touchSession(next);
   } catch (error) {
