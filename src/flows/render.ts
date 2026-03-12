@@ -4,8 +4,8 @@ import { getFieldValue } from "../core/provenance.js";
 
 export function modelToPlainText(model) {
   const formatDateRange = (item) => {
-    const start = String(item.start_date || item.start || "").trim();
-    const end = String(item.end_date || item.end || "").trim();
+    const start = String(getFieldValue(item.start_date) || getFieldValue(item.start) || "").trim();
+    const end = String(getFieldValue(item.end_date) || getFieldValue(item.end) || "").trim();
     if (start && end) {
       return `${start} - ${end}`;
     }
@@ -42,7 +42,7 @@ export function modelToPlainText(model) {
     "工作经历",
     (model.experience || [])
       .flatMap((exp) => [
-        `- ${exp.role || ""} @ ${exp.company || ""}`.trim(),
+        `- ${getFieldValue(exp.role) || ""} @ ${getFieldValue(exp.company) || ""}`.trim(),
         formatDateRange(exp) ? `  ${formatDateRange(exp)}` : "",
         ...normalizeBulletList(exp.bullets || []).map((b) => `  * ${b}`)
       ])
@@ -52,7 +52,7 @@ export function modelToPlainText(model) {
     "项目经历",
     (model.projects || [])
       .flatMap((proj) => [
-        `- ${proj.name || ""}`.trim(),
+        `- ${getFieldValue(proj.name) || ""}`.trim(),
         formatDateRange(proj) ? `  ${formatDateRange(proj)}` : "",
         ...normalizeBulletList(proj.bullets || []).map((b) => `  * ${b}`)
       ])
@@ -65,7 +65,10 @@ export function modelToPlainText(model) {
   dump(
     "教育经历",
     (model.education || []).map((edu) =>
-      [`- ${edu.school} ${edu.degree || ""} ${edu.major || ""}`.trim(), formatDateRange(edu) ? `  ${formatDateRange(edu)}` : ""]
+      [
+        `- ${getFieldValue(edu.school)} ${getFieldValue(edu.degree) || ""} ${getFieldValue(edu.major) || ""}`.trim(),
+        formatDateRange(edu) ? `  ${formatDateRange(edu)}` : ""
+      ]
         .filter(Boolean)
         .join("\n")
     )
@@ -130,8 +133,8 @@ export async function generateDocx(model, outputPath) {
   }
 
   const formatDateRange = (item) => {
-    const start = String(item.start_date || item.start || "").trim();
-    const end = String(item.end_date || item.end || "").trim();
+    const start = String(getFieldValue(item.start_date) || getFieldValue(item.start) || "").trim();
+    const end = String(getFieldValue(item.end_date) || getFieldValue(item.end) || "").trim();
     if (start && end) return `${start} - ${end}`;
     return start || end || "";
   };
@@ -147,7 +150,7 @@ export async function generateDocx(model, outputPath) {
   addSection(
     "工作经历",
     (model.experience || []).flatMap((exp) => {
-      const header = `${exp.role || ""} @ ${exp.company || ""}`.trim();
+      const header = `${getFieldValue(exp.role) || ""} @ ${getFieldValue(exp.company) || ""}`.trim();
       const dateLine = formatDateRange(exp);
       return [header, dateLine, ...normalizeBulletList(exp.bullets || []).map((x) => `• ${x}`)].filter(Boolean);
     })
@@ -155,9 +158,9 @@ export async function generateDocx(model, outputPath) {
   addSection(
     "项目经历",
     (model.projects || []).flatMap((proj) => {
-      const header = (proj.name || "").trim();
+      const header = getFieldValue(proj.name).trim();
       const dateLine = formatDateRange(proj);
-      const description = String(proj.description || "").trim();
+      const description = getFieldValue(proj.description).trim();
       return [header, dateLine, description, ...normalizeBulletList(proj.bullets || []).map((x) => `• ${x}`)].filter(Boolean);
     })
   );
@@ -168,9 +171,9 @@ export async function generateDocx(model, outputPath) {
   addSection(
     "教育经历",
     (model.education || []).flatMap((edu) => {
-      const header = `${edu.school || ""} ${edu.degree || ""} ${edu.major || ""}`.trim();
+      const header = `${getFieldValue(edu.school) || ""} ${getFieldValue(edu.degree) || ""} ${getFieldValue(edu.major) || ""}`.trim();
       const dateLine = formatDateRange(edu);
-      const description = String(edu.description || "").trim();
+      const description = getFieldValue(edu.description).trim();
       return [header, dateLine, description].filter(Boolean);
     })
   );

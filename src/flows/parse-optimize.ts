@@ -9,7 +9,7 @@ import {
   nowIso,
   splitDateRange
 } from "../core/model.js";
-import { FIELD_SOURCES } from "../core/provenance.js";
+import { FIELD_SOURCES, getFieldValue } from "../core/provenance.js";
 import { loadPdfForAiParsing, parsePdfToText } from "../pdf.js";
 import { modelToJadeResume } from "../jadeai/adapter.js";
 
@@ -282,8 +282,8 @@ export function buildSectionFirstParseEvidence(model) {
 }
 
 export function assertRequiredContactOrThrow(model) {
-  const name = String(model?.basic?.name || "").trim();
-  const hasContact = [model?.basic?.email, model?.basic?.phone].some((value) => String(value || "").trim().length > 0);
+  const name = String(getFieldValue(model?.basic?.name) || "").trim();
+  const hasContact = [model?.basic?.email, model?.basic?.phone].some((value) => String(getFieldValue(value) || "").trim().length > 0);
   if (name && hasContact) {
     return;
   }
@@ -293,7 +293,7 @@ export function assertRequiredContactOrThrow(model) {
 function buildSectionSnapshot(model, fieldName, keyField) {
   const items = Array.isArray(model?.[fieldName]) ? model[fieldName] : [];
   return items.map((item) => ({
-    key: String(item?.[keyField] || "").trim(),
+    key: String(getFieldValue(item?.[keyField]) || "").trim(),
     bullets: normalizeBulletList(item?.bullets || []).slice(0, 3)
   }));
 }
@@ -374,6 +374,13 @@ function dedupeStringList(items) {
     result.push(value);
   }
   return result;
+}
+
+function readMaybeFieldValue(value) {
+  if (value && typeof value === "object" && !Array.isArray(value) && "value" in value) {
+    return getFieldValue(value);
+  }
+  return String(value || "");
 }
 
 function isAnySectionHeadingLine(line) {
@@ -552,7 +559,7 @@ function splitSkillItems(rawValue) {
 function dedupeExperienceAgainstProjects(experience, projects) {
   const projectNameKeys = new Set(
     (projects || [])
-      .map((item) => normalizeCompareKey(item?.name || ""))
+      .map((item) => normalizeCompareKey(readMaybeFieldValue(item?.name)))
       .filter((key) => key.length >= 4)
   );
   const projectBulletKeys = new Set(
@@ -562,7 +569,7 @@ function dedupeExperienceAgainstProjects(experience, projects) {
       .filter((key) => key.length >= 12)
   );
   return (experience || []).filter((item) => {
-    const headerKey = normalizeCompareKey(`${item?.company || ""}${item?.role || ""}`);
+    const headerKey = normalizeCompareKey(`${readMaybeFieldValue(item?.company)}${readMaybeFieldValue(item?.role)}`);
     if (headerKey && projectNameKeys.has(headerKey)) {
       return false;
     }
@@ -645,7 +652,7 @@ export function parseTextToModel(text) {
     pages: 1
   };
 
-  return model;
+  return normalizeReactiveJson(model);
 }
 
 function extractExperienceFromText(text) {
@@ -1093,7 +1100,7 @@ export function optimizeModel(model, jdText = "", feedbackText = "") {
   output.projects = (output.projects || []).map((proj) => ({
     ...proj,
     bullets: dedupeStringList(
-      normalizeBulletList([...(normalizeBulletList(proj.bullets || [])), proj.description || ""])
+      normalizeBulletList([...(normalizeBulletList(proj.bullets || [])), getFieldValue(proj.description)])
         .map(cleanBulletText)
         .filter(isMeaningfulBullet)
         .map((line) => rewriteBullet(line))
@@ -1166,7 +1173,7 @@ export async function optimizeModelByAI(model, jdText, feedbackText, options) {
   merged.projects = (merged.projects || []).map((proj) => ({
     ...proj,
     bullets: dedupeStringList(
-      normalizeBulletList([...(normalizeBulletList(proj.bullets || [])), proj.description || ""])
+      normalizeBulletList([...(normalizeBulletList(proj.bullets || [])), getFieldValue(proj.description)])
         .map(cleanBulletText)
         .filter(isMeaningfulBullet)
     ).slice(0, 6)

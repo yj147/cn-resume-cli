@@ -4,7 +4,7 @@ import path from "node:path";
 import { TEMPLATE_ALIASES, TEMPLATE_GROUPS, TEMPLATE_LIST } from "../constants.js";
 import { readJson, writeJson } from "../core/io.js";
 import { buildEmptyField, buildEmptyModel, collectCustomSectionLines, normalizeBulletList } from "../core/model.js";
-import { getFieldValue } from "../core/provenance.js";
+import { FIELD_SOURCES, FIELD_STATUSES, getFieldValue } from "../core/provenance.js";
 import { modelToJadeResume } from "../jadeai/adapter.js";
 import { generateHtml as buildTemplateHtml } from "../jadeai/builders.js";
 import { modelToPlainText } from "../flows/render.js";
@@ -132,12 +132,12 @@ function buildTemplateListItems(lines) {
 
 function buildTemplateSections(model) {
   const experience = (model.experience || []).flatMap((item) => {
-    const header = `${item.role || ""} @ ${item.company || ""}`.trim();
+    const header = `${getFieldValue(item.role) || ""} @ ${getFieldValue(item.company) || ""}`.trim();
     const bullets = normalizeBulletList(item.bullets || []).map((line) => `• ${line}`);
     return [header, ...bullets].filter(Boolean);
   });
   const projects = (model.projects || []).flatMap((item) => {
-    const header = `${item.name || ""}`.trim();
+    const header = `${getFieldValue(item.name) || ""}`.trim();
     const bullets = normalizeBulletList(item.bullets || []).map((line) => `• ${line}`);
     return [header, ...bullets].filter(Boolean);
   });
@@ -148,7 +148,9 @@ function buildTemplateSections(model) {
         .filter(Boolean)
         .join("、")}`
   );
-  const education = (model.education || []).map((item) => `${item.school || ""} ${item.degree || ""} ${item.major || ""}`.trim());
+  const education = (model.education || []).map(
+    (item) => `${getFieldValue(item.school) || ""} ${getFieldValue(item.degree) || ""} ${getFieldValue(item.major) || ""}`.trim()
+  );
   const certifications = (model.certifications || []).map((item) => `${item.name || ""} ${item.issuer ? `(${item.issuer})` : ""}`.trim());
   const languages = (model.languages || []).map((item) => `${item.language || ""} ${item.proficiency ? `(${item.proficiency})` : ""}`.trim());
   const github = (model.github || []).map((item) => `${item.name || ""} ${item.repo_url || item.repoUrl || ""}`.trim());
@@ -248,6 +250,7 @@ export function templateListPayload() {
 
 export function createTemplatePreviewSample() {
   const sampleModel = buildEmptyModel();
+  const sampleUpdatedAt = new Date().toISOString();
   sampleModel.basic = {
     name: buildEmptyField({ value: "张三" }),
     title: buildEmptyField({ value: "高级后端工程师" }),
@@ -264,10 +267,17 @@ export function createTemplatePreviewSample() {
   };
   sampleModel.experience = [
     {
-      company: "某互联网公司",
-      role: "技术负责人",
-      start: "2021-06",
-      end: "至今",
+      company: buildEmptyField({ value: "某互联网公司" }),
+      role: buildEmptyField({ value: "技术负责人" }),
+      start: buildEmptyField({ value: "2021-06" }),
+      end: buildEmptyField({ value: "至今" }),
+      provenance: {
+        source: FIELD_SOURCES.USER_EXPLICIT,
+        confidence: 1,
+        status: FIELD_STATUSES.CONFIRMED,
+        updatedBy: FIELD_SOURCES.USER_EXPLICIT,
+        updatedAt: sampleUpdatedAt
+      },
       bullets: [
         "主导核心服务重构，稳定支撑千万级请求。",
         "推动工程效能治理，发布效率提升40%。"
@@ -276,7 +286,14 @@ export function createTemplatePreviewSample() {
   ];
   sampleModel.projects = [
     {
-      name: "实时风控平台",
+      name: buildEmptyField({ value: "实时风控平台" }),
+      provenance: {
+        source: FIELD_SOURCES.USER_EXPLICIT,
+        confidence: 1,
+        status: FIELD_STATUSES.CONFIRMED,
+        updatedBy: FIELD_SOURCES.USER_EXPLICIT,
+        updatedAt: sampleUpdatedAt
+      },
       bullets: ["设计事件流处理链路，延迟降低至50ms内。", "建设告警闭环，故障恢复时间降低60%。"]
     }
   ];
@@ -286,7 +303,20 @@ export function createTemplatePreviewSample() {
       items: [{ name: "Node.js" }, { name: "Go" }, { name: "PostgreSQL" }, { name: "Redis" }]
     }
   ];
-  sampleModel.education = [{ school: "某大学", degree: "硕士", major: "计算机科学" }];
+  sampleModel.education = [
+    {
+      school: buildEmptyField({ value: "某大学" }),
+      degree: buildEmptyField({ value: "硕士" }),
+      major: buildEmptyField({ value: "计算机科学" }),
+      provenance: {
+        source: FIELD_SOURCES.USER_EXPLICIT,
+        confidence: 1,
+        status: FIELD_STATUSES.CONFIRMED,
+        updatedBy: FIELD_SOURCES.USER_EXPLICIT,
+        updatedAt: sampleUpdatedAt
+      }
+    }
+  ];
   sampleModel.custom_sections = [{ title: "个人优势", content: "强执行与跨团队协作能力", items: ["强执行与跨团队协作能力"] }];
   return sampleModel;
 }

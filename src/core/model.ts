@@ -154,6 +154,21 @@ export function buildEmptyField(options = {}) {
   return createFieldEnvelope(options);
 }
 
+function pickPrimaryField(fields) {
+  return fields.find((field) => String(field?.value || "").trim()) || fields[0] || buildEmptyField();
+}
+
+function buildItemProvenance(fields) {
+  const primary = pickPrimaryField(fields);
+  return {
+    source: primary.source,
+    confidence: primary.confidence,
+    status: primary.status,
+    updatedBy: primary.updatedBy,
+    updatedAt: primary.updatedAt
+  };
+}
+
 export function normalizeReactiveJson(raw) {
   const model = buildEmptyModel();
   const basicSource = raw?.basic || raw?.personalInfo || raw?.personal_info || raw?.basicInfo || raw?.basic_info || {};
@@ -194,43 +209,117 @@ export function normalizeReactiveJson(raw) {
   }
 
   const work = raw.experience || raw.work || raw.work_experience || raw.workExperience || [];
-  model.experience = work.map((item) => ({
-    company: item.company || "",
-    role: item.role || item.position || "",
-    start_date: item.start_date || item.startDate || item.start || splitDateRange(item.date).start,
-    end_date: item.end_date || item.endDate || item.end || splitDateRange(item.date).end,
-    start: item.start || item.startDate || item.start_date || splitDateRange(item.date).start,
-    end: item.end || item.endDate || item.end_date || splitDateRange(item.date).end || item.date || "",
-    bullets: normalizeStructuredLines(item.bullets || item.highlights || item.description || item.details || []),
-    technologies: Array.isArray(item.technologies) ? item.technologies : []
-  }));
+  model.experience = work.map((item) => {
+    const dateRange = splitDateRange(item?.date);
+    const entrySource = item.position || item.date || item.startDate || item.endDate ? FIELD_SOURCES.PARSED_EXACT : FIELD_SOURCES.USER_EXPLICIT;
+    const company = normalizeFieldEnvelope(item.company || "", { source: entrySource });
+    const role = normalizeFieldEnvelope(item.role || item.position || "", {
+      source: item.role ? FIELD_SOURCES.USER_EXPLICIT : entrySource
+    });
+    const startDate = normalizeFieldEnvelope(item.start_date || item.startDate || item.start || dateRange.start, {
+      source: item.start_date || item.start ? FIELD_SOURCES.USER_EXPLICIT : item.startDate ? FIELD_SOURCES.PARSED_EXACT : FIELD_SOURCES.PARSED_INFERRED
+    });
+    const endDate = normalizeFieldEnvelope(item.end_date || item.endDate || item.end || dateRange.end, {
+      source: item.end_date || item.end ? FIELD_SOURCES.USER_EXPLICIT : item.endDate ? FIELD_SOURCES.PARSED_EXACT : FIELD_SOURCES.PARSED_INFERRED
+    });
+    const start = normalizeFieldEnvelope(item.start || item.startDate || item.start_date || dateRange.start, {
+      source: item.start || item.start_date ? FIELD_SOURCES.USER_EXPLICIT : item.startDate ? FIELD_SOURCES.PARSED_EXACT : FIELD_SOURCES.PARSED_INFERRED
+    });
+    const end = normalizeFieldEnvelope(item.end || item.endDate || item.end_date || dateRange.end || item.date || "", {
+      source: item.end || item.end_date ? FIELD_SOURCES.USER_EXPLICIT : item.endDate ? FIELD_SOURCES.PARSED_EXACT : FIELD_SOURCES.PARSED_INFERRED
+    });
+    return {
+      company,
+      role,
+      start_date: startDate,
+      end_date: endDate,
+      start,
+      end,
+      provenance: buildItemProvenance([company, role, startDate, endDate]),
+      bullets: normalizeStructuredLines(item.bullets || item.highlights || item.description || item.details || []),
+      technologies: Array.isArray(item.technologies) ? item.technologies : []
+    };
+  });
 
   const projects = raw.projects || [];
-  model.projects = projects.map((item) => ({
-    name: item.name || "",
-    role: item.role || "",
-    start_date: item.start_date || item.startDate || item.start || splitDateRange(item.date).start,
-    end_date: item.end_date || item.endDate || item.end || splitDateRange(item.date).end,
-    start: item.start || item.startDate || item.start_date || splitDateRange(item.date).start,
-    end: item.end || item.endDate || item.end_date || splitDateRange(item.date).end,
-    description: typeof item.description === "string" ? item.description : "",
-    bullets: normalizeStructuredLines(item.bullets || item.highlights || item.description || item.details || []),
-    technologies: Array.isArray(item.technologies) ? item.technologies : [],
-    url: item.url || item.link || ""
-  }));
+  model.projects = projects.map((item) => {
+    const dateRange = splitDateRange(item?.date);
+    const entrySource = item.startDate || item.endDate || item.link ? FIELD_SOURCES.PARSED_EXACT : FIELD_SOURCES.USER_EXPLICIT;
+    const name = normalizeFieldEnvelope(item.name || "", { source: entrySource });
+    const role = normalizeFieldEnvelope(item.role || "", { source: entrySource });
+    const startDate = normalizeFieldEnvelope(item.start_date || item.startDate || item.start || dateRange.start, {
+      source: item.start_date || item.start ? FIELD_SOURCES.USER_EXPLICIT : item.startDate ? FIELD_SOURCES.PARSED_EXACT : FIELD_SOURCES.PARSED_INFERRED
+    });
+    const endDate = normalizeFieldEnvelope(item.end_date || item.endDate || item.end || dateRange.end, {
+      source: item.end_date || item.end ? FIELD_SOURCES.USER_EXPLICIT : item.endDate ? FIELD_SOURCES.PARSED_EXACT : FIELD_SOURCES.PARSED_INFERRED
+    });
+    const start = normalizeFieldEnvelope(item.start || item.startDate || item.start_date || dateRange.start, {
+      source: item.start || item.start_date ? FIELD_SOURCES.USER_EXPLICIT : item.startDate ? FIELD_SOURCES.PARSED_EXACT : FIELD_SOURCES.PARSED_INFERRED
+    });
+    const end = normalizeFieldEnvelope(item.end || item.endDate || item.end_date || dateRange.end, {
+      source: item.end || item.end_date ? FIELD_SOURCES.USER_EXPLICIT : item.endDate ? FIELD_SOURCES.PARSED_EXACT : FIELD_SOURCES.PARSED_INFERRED
+    });
+    const description = normalizeFieldEnvelope(typeof item.description === "string" ? item.description : item.description?.value || "", {
+      source: entrySource
+    });
+    const url = normalizeFieldEnvelope(item.url || item.link || "", {
+      source: item.url ? entrySource : item.link ? FIELD_SOURCES.PARSED_EXACT : entrySource
+    });
+    return {
+      name,
+      role,
+      start_date: startDate,
+      end_date: endDate,
+      start,
+      end,
+      description,
+      provenance: buildItemProvenance([name, role, startDate, endDate, description]),
+      bullets: normalizeStructuredLines(item.bullets || item.highlights || item.description || item.details || []),
+      technologies: Array.isArray(item.technologies) ? item.technologies : [],
+      url
+    };
+  });
 
   const edu = raw.education || raw.edu || [];
-  model.education = edu.map((item) => ({
-    school: item.school || item.institution || "",
-    degree: item.degree || "",
-    major: item.major || item.field || "",
-    start_date: item.start_date || item.startDate || item.start || splitDateRange(item.date).start,
-    end_date: item.end_date || item.endDate || item.end || splitDateRange(item.date).end,
-    start: item.start || item.startDate || item.start_date || splitDateRange(item.date).start,
-    end: item.end || item.endDate || item.end_date || splitDateRange(item.date).end,
-    gpa: item.gpa || "",
-    description: typeof item.description === "string" ? item.description : ""
-  }));
+  model.education = edu.map((item) => {
+    const dateRange = splitDateRange(item?.date);
+    const entrySource = item.institution || item.field || item.startDate || item.endDate ? FIELD_SOURCES.PARSED_EXACT : FIELD_SOURCES.USER_EXPLICIT;
+    const school = normalizeFieldEnvelope(item.school || item.institution || "", {
+      source: item.school ? FIELD_SOURCES.USER_EXPLICIT : entrySource
+    });
+    const degree = normalizeFieldEnvelope(item.degree || "", { source: entrySource });
+    const major = normalizeFieldEnvelope(item.major || item.field || "", {
+      source: item.major ? FIELD_SOURCES.USER_EXPLICIT : item.field ? FIELD_SOURCES.PARSED_EXACT : entrySource
+    });
+    const startDate = normalizeFieldEnvelope(item.start_date || item.startDate || item.start || dateRange.start, {
+      source: item.start_date || item.start ? FIELD_SOURCES.USER_EXPLICIT : item.startDate ? FIELD_SOURCES.PARSED_EXACT : FIELD_SOURCES.PARSED_INFERRED
+    });
+    const endDate = normalizeFieldEnvelope(item.end_date || item.endDate || item.end || dateRange.end, {
+      source: item.end_date || item.end ? FIELD_SOURCES.USER_EXPLICIT : item.endDate ? FIELD_SOURCES.PARSED_EXACT : FIELD_SOURCES.PARSED_INFERRED
+    });
+    const start = normalizeFieldEnvelope(item.start || item.startDate || item.start_date || dateRange.start, {
+      source: item.start || item.start_date ? FIELD_SOURCES.USER_EXPLICIT : item.startDate ? FIELD_SOURCES.PARSED_EXACT : FIELD_SOURCES.PARSED_INFERRED
+    });
+    const end = normalizeFieldEnvelope(item.end || item.endDate || item.end_date || dateRange.end, {
+      source: item.end || item.end_date ? FIELD_SOURCES.USER_EXPLICIT : item.endDate ? FIELD_SOURCES.PARSED_EXACT : FIELD_SOURCES.PARSED_INFERRED
+    });
+    const gpa = normalizeFieldEnvelope(item.gpa || "", { source: entrySource });
+    const description = normalizeFieldEnvelope(typeof item.description === "string" ? item.description : item.description?.value || "", {
+      source: entrySource
+    });
+    return {
+      school,
+      degree,
+      major,
+      start_date: startDate,
+      end_date: endDate,
+      start,
+      end,
+      gpa,
+      description,
+      provenance: buildItemProvenance([school, degree, major, startDate, endDate])
+    };
+  });
 
   const skills = raw.skills || [];
   model.skills = skills.map((item) => {
@@ -300,4 +389,3 @@ export function normalizeReactiveJson(raw) {
 
   return model;
 }
-

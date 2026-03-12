@@ -21,37 +21,37 @@ type ResumeModel = {
     summary?: BasicField;
   };
   experience?: Array<{
-    company?: string;
-    role?: string;
-    start_date?: string;
-    end_date?: string;
-    start?: string;
-    end?: string;
+    company?: BasicField;
+    role?: BasicField;
+    start_date?: BasicField;
+    end_date?: BasicField;
+    start?: BasicField;
+    end?: BasicField;
     bullets?: Array<{ text?: string; description?: string } | string>;
     technologies?: string[];
   }>;
   projects?: Array<{
-    name?: string;
-    role?: string;
-    start_date?: string;
-    end_date?: string;
-    start?: string;
-    end?: string;
-    description?: string;
+    name?: BasicField;
+    role?: BasicField;
+    start_date?: BasicField;
+    end_date?: BasicField;
+    start?: BasicField;
+    end?: BasicField;
+    description?: BasicField;
     bullets?: Array<{ text?: string; description?: string } | string>;
     technologies?: string[];
-    url?: string;
+    url?: BasicField;
   }>;
   education?: Array<{
-    school?: string;
-    degree?: string;
-    major?: string;
-    description?: string;
-    start_date?: string;
-    end_date?: string;
-    start?: string;
-    end?: string;
-    gpa?: string;
+    school?: BasicField;
+    degree?: BasicField;
+    major?: BasicField;
+    description?: BasicField;
+    start_date?: BasicField;
+    end_date?: BasicField;
+    start?: BasicField;
+    end?: BasicField;
+    gpa?: BasicField;
   }>;
   certifications?: Array<{
     name?: string;
@@ -165,12 +165,12 @@ function normalizeList(input: Array<{ text?: string; description?: string } | st
     .filter(Boolean);
 }
 
-function resolveStartDate(item: { start?: string; start_date?: string }): string {
-  return String(item.start_date || item.start || "").trim();
+function resolveStartDate(item: { start?: BasicField; start_date?: BasicField }): string {
+  return String(getFieldValue(item.start_date) || getFieldValue(item.start) || "").trim();
 }
 
-function resolveEndDate(item: { end?: string; end_date?: string }): string {
-  return String(item.end_date || item.end || "").trim();
+function resolveEndDate(item: { end?: BasicField; end_date?: BasicField }): string {
+  return String(getFieldValue(item.end_date) || getFieldValue(item.end) || "").trim();
 }
 
 export function normalizeSectionType(raw: string): string {
@@ -279,8 +279,8 @@ export function modelToJadeResume(model: ResumeModel, templateName: string): Res
     const end = resolveEndDate(item);
     return {
       id: `work-${idx + 1}`,
-      company: item.company || "",
-      position: item.role || "",
+      company: getFieldValue(item.company),
+      position: getFieldValue(item.role),
       location: "",
       startDate: resolveStartDate(item),
       endDate: isCurrent(end) ? null : end,
@@ -297,11 +297,11 @@ export function modelToJadeResume(model: ResumeModel, templateName: string): Res
   const projects = (model.projects || []).map((item, idx) => {
     const end = resolveEndDate(item);
     const highlights = normalizeList(item.bullets || []);
-    const normalizedDescription = String(item.description || "").trim();
+    const normalizedDescription = getFieldValue(item.description).trim();
     return {
       id: `project-${idx + 1}`,
-      name: item.name || "",
-      url: item.url || "",
+      name: getFieldValue(item.name),
+      url: getFieldValue(item.url),
       startDate: resolveStartDate(item),
       endDate: isCurrent(end) ? "" : end,
       description: normalizedDescription,
@@ -315,14 +315,14 @@ export function modelToJadeResume(model: ResumeModel, templateName: string): Res
 
   const education = (model.education || []).map((item, idx) => ({
     id: `edu-${idx + 1}`,
-    institution: item.school || "",
-    degree: item.degree || "",
-    field: item.major || "",
+    institution: getFieldValue(item.school),
+    degree: getFieldValue(item.degree),
+    field: getFieldValue(item.major),
     location: "",
     startDate: resolveStartDate(item),
     endDate: resolveEndDate(item),
-    gpa: item.gpa || "",
-    highlights: item.description ? [item.description] : []
+    gpa: getFieldValue(item.gpa),
+    highlights: getFieldValue(item.description) ? [getFieldValue(item.description)] : []
   }));
   if (education.length) {
     sections.push(makeSection(resumeId, "education", 5, { items: education }));

@@ -51,6 +51,13 @@ function assert(condition, message) {
   }
 }
 
+function fieldValue(value) {
+  if (value && typeof value === "object" && !Array.isArray(value) && "value" in value) {
+    return String(value.value || "");
+  }
+  return String(value || "");
+}
+
 function assertParseEvidence(model, name) {
   const evidence = model?.meta?.parse_evidence;
   assert(evidence && typeof evidence === "object", `${name} should include meta.parse_evidence`);
@@ -66,12 +73,12 @@ assert(Array.isArray(education.education), "education-split.education should be 
 assert(education.education.length === 2, `education-split should have 2 education records, got ${education.education.length}`);
 for (const [idx, record] of education.education.entries()) {
   assert(
-    /^(19|20)\d{2}[./-]\d{1,2}(?:[./-]\d{1,2})?$/.test(String(record.start_date || "")),
-    `education-split record ${idx + 1} start_date invalid: ${record.start_date || ""}`
+    /^(19|20)\d{2}[./-]\d{1,2}(?:[./-]\d{1,2})?$/.test(fieldValue(record.start_date)),
+    `education-split record ${idx + 1} start_date invalid: ${fieldValue(record.start_date)}`
   );
   assert(
-    /^(19|20)\d{2}[./-]\d{1,2}(?:[./-]\d{1,2})?$/.test(String(record.end_date || "")),
-    `education-split record ${idx + 1} end_date invalid: ${record.end_date || ""}`
+    /^(19|20)\d{2}[./-]\d{1,2}(?:[./-]\d{1,2})?$/.test(fieldValue(record.end_date)),
+    `education-split record ${idx + 1} end_date invalid: ${fieldValue(record.end_date)}`
   );
 }
 
@@ -109,7 +116,7 @@ for (const proj of contamination.projects || []) {
   collected.push(...((proj.bullets || []).map((item) => String(item?.text || item?.description || item || ""))));
 }
 for (const edu of contamination.education || []) {
-  collected.push(String(edu.major || ""));
+  collected.push(fieldValue(edu.major));
 }
 for (const skillGroup of contamination.skills || []) {
   collected.push(...((skillGroup.items || []).map((item) => String(item?.name || item || ""))));
