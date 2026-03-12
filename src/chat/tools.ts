@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { runOptimize, runParse } from "../commands.js";
+import { createModulePatch, createResumeDraft, RESUME_MODULES } from "../core/patches.js";
 import { readJson, writeJson } from "../core/io.js";
 
 function createToolWorkspace() {
@@ -36,6 +37,22 @@ export async function runChatTool(action, session) {
     );
     const model = readJson(outputPath);
     return {
+      resumeDraft: createResumeDraft({
+        source: "parse-resume",
+        summary: "解析结果待确认",
+        patches: [
+          createModulePatch({
+            module: RESUME_MODULES.BASIC,
+            previousValue: session?.currentResume?.model?.basic || null,
+            nextValue: model.basic || null,
+            source: "parsed_exact",
+            rollback: {
+              strategy: "replace",
+              target: "currentResume.model.basic"
+            }
+          })
+        ]
+      }),
       sessionPatch: {
         currentResume: {
           sourcePath: action.inputPath,
@@ -79,6 +96,23 @@ export async function runChatTool(action, session) {
     const phaseB = model?.meta?.phase_b;
     const phaseBStatus = phaseB ? (phaseB.confirmed ? "confirmed" : "awaiting_feedback") : undefined;
     return {
+      resumeDraft: createResumeDraft({
+        source: "optimize-resume",
+        summary: "优化结果待确认",
+        patches: [
+          createModulePatch({
+            module: RESUME_MODULES.EXPERIENCE,
+            previousValue: session.currentResume.model?.experience || null,
+            nextValue: model.experience || null,
+            source: "ai_rewritten",
+            severity: phaseBStatus === "awaiting_feedback" ? "warning" : "info",
+            rollback: {
+              strategy: "replace",
+              target: "currentResume.model.experience"
+            }
+          })
+        ]
+      }),
       sessionPatch: {
         currentResume: {
           sourcePath: session.currentResume.sourcePath,
