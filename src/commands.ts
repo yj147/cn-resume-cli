@@ -3,17 +3,8 @@ import path from "node:path";
 import { TEMPLATE_ALIASES, TEMPLATE_LIST } from "./constants.js";
 import { ensureDir, readJson, readText, writeJson } from "./core/io.js";
 import { createEmptyParseEvidence, normalizeReactiveJson, nowIso, sha256Text } from "./core/model.js";
-import {
-  analyzeByRule,
-  analyzeJdByAI,
-  grammarByRule,
-  grammarCheckByAI,
-  normalizeFlowEngine,
-  resolveAiRuntimeOptions,
-  resolveEvalOptions,
-  validateByAI,
-  validateByRule
-} from "./eval/evaluation.js";
+import { normalizeFlowEngine, resolveAiRuntimeOptions, resolveEvalOptions } from "./eval/evaluation.js";
+import { REVIEW_TASKS, runReviewService } from "./eval/review-service.js";
 import {
   attachParseDiagnostics,
   assertPhaseBConfirmedOrThrow,
@@ -212,10 +203,13 @@ export async function runValidate(flags) {
   const jdText = flags.jd ? readText(flags.jd) : "";
   const templateInput = flags.template || model?.render_config?.template || model?.meta?.template || "elegant";
   const template = resolveTemplate(templateInput).resolved;
-  const report =
-    evalOptions.engine === "rule"
-      ? validateByRule(model, jdText, template, evalOptions)
-      : await validateByAI(model, jdText, template, evalOptions);
+  const report = (await runReviewService({
+    model,
+    jdText,
+    template,
+    options: evalOptions,
+    checks: [REVIEW_TASKS.VALIDATE]
+  })).reports[REVIEW_TASKS.VALIDATE];
   writeOutputMaybe(flags.output, report, true);
 }
 
@@ -230,7 +224,12 @@ export async function runAnalyzeJd(flags) {
   const model = normalizeReactiveJson(readJson(flags.input));
   assertPhaseBConfirmedOrThrow(model, "analyze-jd");
   const jd = readText(flags.jd);
-  const report = evalOptions.engine === "rule" ? analyzeByRule(model, jd, evalOptions) : await analyzeJdByAI(model, jd, evalOptions);
+  const report = (await runReviewService({
+    model,
+    jdText: jd,
+    options: evalOptions,
+    checks: [REVIEW_TASKS.ANALYZE_JD]
+  })).reports[REVIEW_TASKS.ANALYZE_JD];
   writeOutputMaybe(flags.output, report, true);
 }
 
@@ -241,7 +240,11 @@ export async function runGrammarCheck(flags) {
   const evalOptions = resolveEvalOptions(flags);
   const model = normalizeReactiveJson(readJson(flags.input));
   assertPhaseBConfirmedOrThrow(model, "grammar-check");
-  const report = evalOptions.engine === "rule" ? grammarByRule(model, evalOptions) : await grammarCheckByAI(model, evalOptions);
+  const report = (await runReviewService({
+    model,
+    options: evalOptions,
+    checks: [REVIEW_TASKS.GRAMMAR_CHECK]
+  })).reports[REVIEW_TASKS.GRAMMAR_CHECK];
   writeOutputMaybe(flags.output, report, true);
 }
 
