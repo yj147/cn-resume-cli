@@ -230,3 +230,131 @@ test("normalizeReactiveJson preserves confirmed authoring envelopes for collecti
   assert.equal(model.projects[0].description.status, provenanceModule.FIELD_STATUSES.CONFIRMED);
   assert.equal(model.education[0].school.updatedAt, confirmedAt);
 });
+
+test("normalizeReactiveJson adds provenance to skills plus supporting sections for parse-first input", () => {
+  const model = modelModule.normalizeReactiveJson({
+    skills: [
+      {
+        name: "工程能力",
+        skills: ["TypeScript", "Node.js"]
+      }
+    ],
+    certifications: [
+      {
+        name: "AWS SAA",
+        issuer: "AWS",
+        date: "2024-05",
+        url: "https://www.credly.com/"
+      }
+    ],
+    languages: [
+      {
+        name: "英语",
+        level: "熟练",
+        description: "可直接参加英文技术会议"
+      }
+    ],
+    github: [
+      {
+        repoUrl: "https://github.com/example/core-sdk",
+        name: "core-sdk",
+        stars: 320,
+        language: "TypeScript",
+        description: "企业级 SDK"
+      }
+    ],
+    qr_codes: [
+      {
+        title: "作品集",
+        url: "https://portfolio.example.com"
+      }
+    ],
+    custom_sections: [
+      {
+        title: "个人优势",
+        content: "推进复杂项目落地",
+        items: ["推进复杂项目落地"]
+      }
+    ],
+    templateId: "elegant",
+    menuSections: ["summary", "skills", "custom"],
+    globalSettings: {
+      themeColor: "#0ea5e9",
+      baseFontSize: 13
+    }
+  });
+
+  assert.equal(model.skills[0].provenance.source, provenanceModule.FIELD_SOURCES.PARSED_EXACT);
+  assert.equal(model.skills[0].items[0].provenance.source, provenanceModule.FIELD_SOURCES.PARSED_EXACT);
+  assert.equal(model.certifications[0].provenance.status, provenanceModule.FIELD_STATUSES.SUGGESTED);
+  assert.equal(model.languages[0].provenance.source, provenanceModule.FIELD_SOURCES.PARSED_EXACT);
+  assert.equal(model.github[0].provenance.source, provenanceModule.FIELD_SOURCES.PARSED_EXACT);
+  assert.equal(model.qr_codes[0].provenance.source, provenanceModule.FIELD_SOURCES.PARSED_EXACT);
+  assert.equal(model.custom_sections[0].provenance.source, provenanceModule.FIELD_SOURCES.PARSED_EXACT);
+  assert.equal(model.render_config.provenance.source, provenanceModule.FIELD_SOURCES.PARSED_EXACT);
+  assert.deepEqual(model.render_config.modules, ["summary", "skills", "custom"]);
+});
+
+test("normalizeReactiveJson keeps user-authored supporting sections confirmed", () => {
+  const confirmedAt = "2026-03-12T09:00:00.000Z";
+  const model = modelModule.normalizeReactiveJson({
+    skills: [
+      {
+        category: "后端",
+        items: [
+          {
+            name: "Go",
+            provenance: {
+              source: provenanceModule.FIELD_SOURCES.USER_CONFIRMED,
+              confidence: 1,
+              status: provenanceModule.FIELD_STATUSES.CONFIRMED,
+              updatedBy: provenanceModule.FIELD_SOURCES.USER_CONFIRMED,
+              updatedAt: confirmedAt
+            }
+          }
+        ],
+        provenance: {
+          source: provenanceModule.FIELD_SOURCES.USER_CONFIRMED,
+          confidence: 1,
+          status: provenanceModule.FIELD_STATUSES.CONFIRMED,
+          updatedBy: provenanceModule.FIELD_SOURCES.USER_CONFIRMED,
+          updatedAt: confirmedAt
+        }
+      }
+    ],
+    custom_sections: [
+      {
+        title: "个人优势",
+        items: ["跨团队协作"],
+        provenance: {
+          source: provenanceModule.FIELD_SOURCES.USER_CONFIRMED,
+          confidence: 1,
+          status: provenanceModule.FIELD_STATUSES.CONFIRMED,
+          updatedBy: provenanceModule.FIELD_SOURCES.USER_CONFIRMED,
+          updatedAt: confirmedAt
+        }
+      }
+    ],
+    render_config: {
+      template: "elegant",
+      modules: ["skills"],
+      module_order: ["skills"],
+      theme_color: "#2563eb",
+      font_size: 14,
+      output_formats: ["pdf"],
+      provenance: {
+        source: provenanceModule.FIELD_SOURCES.USER_CONFIRMED,
+        confidence: 1,
+        status: provenanceModule.FIELD_STATUSES.CONFIRMED,
+        updatedBy: provenanceModule.FIELD_SOURCES.USER_CONFIRMED,
+        updatedAt: confirmedAt
+      }
+    }
+  });
+
+  assert.equal(model.skills[0].provenance.status, provenanceModule.FIELD_STATUSES.CONFIRMED);
+  assert.equal(model.skills[0].items[0].provenance.updatedAt, confirmedAt);
+  assert.equal(model.custom_sections[0].provenance.source, provenanceModule.FIELD_SOURCES.USER_CONFIRMED);
+  assert.equal(model.render_config.provenance.status, provenanceModule.FIELD_STATUSES.CONFIRMED);
+  assert.equal(model.render_config.theme_color, "#2563eb");
+});

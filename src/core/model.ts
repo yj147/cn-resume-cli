@@ -51,6 +51,13 @@ export function normalizeBulletList(value) {
   return [];
 }
 
+export function collectCustomSectionLines(section) {
+  const itemLines = normalizeBulletList(section?.items || []);
+  const contentLines = typeof section?.content === "string" ? normalizeBulletList(section.content) : [];
+  const merged = [...itemLines, ...contentLines].filter(Boolean);
+  return merged.filter((line, index) => merged.indexOf(line) === index);
+}
+
 function normalizeStructuredLines(value) {
   if (Array.isArray(value)) {
     return value
@@ -73,13 +80,12 @@ function normalizeCustomSections(rawSections) {
   return rawSections
     .map((section) => {
       const title = String(section?.title || "附加信息").trim();
-      const itemLines = normalizeBulletList(section?.items || []);
-      const contentLines = typeof section?.content === "string" ? normalizeBulletList(section.content) : [];
-      const mergedLines = [...itemLines, ...contentLines].filter(Boolean);
+      const mergedLines = collectCustomSectionLines(section);
       return {
         title,
         content: mergedLines.join("\n"),
-        items: mergedLines
+        items: mergedLines,
+        provenance: section?.provenance
       };
     })
     .filter((section) => section.items.length);
@@ -139,7 +145,8 @@ export function buildEmptyModel() {
       module_order: [],
       theme_color: "",
       font_size: "",
-      output_formats: []
+      output_formats: [],
+      provenance: normalizeEntryProvenance(undefined, FIELD_SOURCES.USER_EXPLICIT)
     },
     meta: {
       created_at: nowIso(),
@@ -169,10 +176,25 @@ function buildItemProvenance(fields) {
   };
 }
 
+function normalizeEntryProvenance(rawProvenance, fallbackSource) {
+  return createFieldEnvelope({
+    value: "present",
+    source: rawProvenance?.source || fallbackSource,
+    confidence: rawProvenance?.confidence ?? 1,
+    status: rawProvenance?.status || "",
+    updatedBy: rawProvenance?.updatedBy || rawProvenance?.source || fallbackSource,
+    updatedAt: rawProvenance?.updatedAt
+  });
+}
+
 export function normalizeReactiveJson(raw) {
   const model = buildEmptyModel();
   const basicSource = raw?.basic || raw?.personalInfo || raw?.personal_info || raw?.basicInfo || raw?.basic_info || {};
   const basicFieldSource = raw?.basic ? FIELD_SOURCES.USER_EXPLICIT : FIELD_SOURCES.PARSED_EXACT;
+  const supportSectionSource =
+    raw?.basicInfo || raw?.personalInfo || raw?.templateId || raw?.menuSections || raw?.globalSettings
+      ? FIELD_SOURCES.PARSED_EXACT
+      : FIELD_SOURCES.USER_EXPLICIT;
   if (basicSource && typeof basicSource === "object" && !Array.isArray(basicSource)) {
     model.basic.name = normalizeFieldEnvelope(
       basicSource.name || basicSource.fullName || basicSource.full_name || basicSource.姓名 || "",
@@ -324,24 +346,46 @@ export function normalizeReactiveJson(raw) {
   const skills = raw.skills || [];
   model.skills = skills.map((item) => {
     if (Array.isArray(item)) {
-      return { category: "技能", items: item.map((name) => ({ name })) };
+      return {
+        category: "技能",
+        items: item.map((name) => ({
+          name,
+          provenance: normalizeEntryProvenance(undefined, supportSectionSource)
+        })),
+        provenance: normalizeEntryProvenance(undefined, supportSectionSource)
+      };
     }
+    const entrySource = item?.skills ? FIELD_SOURCES.PARSED_EXACT : item?.provenance?.source || supportSectionSource;
     return {
       category: item.category || item.name || "技能",
       items: (item.items || item.skills || []).map((entry) =>
-        typeof entry === "string" ? { name: entry } : { name: entry.name || entry.skill || "", detail: entry.detail || "" }
-      )
+        typeof entry === "string"
+          ? {
+              name: entry,
+              provenance: normalizeEntryProvenance(undefined, entrySource)
+            }
+          : {
+              name: entry.name || entry.skill || "",
+              detail: entry.detail || "",
+              provenance: normalizeEntryProvenance(entry.provenance, entry.skill ? FIELD_SOURCES.PARSED_EXACT : entrySource)
+            }
+      ),
+      provenance: normalizeEntryProvenance(item.provenance, entrySource)
     };
   });
 
-  model.custom_sections = normalizeCustomSections(raw.custom_sections);
+  model.custom_sections = normalizeCustomSections(raw.custom_sections).map((section) => ({
+    ...section,
+    provenance: normalizeEntryProvenance(section.provenance, supportSectionSource)
+  }));
 
   model.certifications = Array.isArray(raw.certifications)
     ? raw.certifications.map((item) => ({
         name: item.name || "",
         issuer: item.issuer || "",
         date: item.date || "",
-        url: item.url || ""
+        url: item.url || "",
+        provenance: normalizeEntryProvenance(item.provenance, supportSectionSource)
       }))
     : [];
 
@@ -349,7 +393,8 @@ export function normalizeReactiveJson(raw) {
     ? raw.languages.map((item) => ({
         language: item.language || item.name || "",
         proficiency: item.proficiency || item.level || "",
-        description: item.description || ""
+        description: item.description || "",
+        provenance: normalizeEntryProvenance(item.provenance, item.level ? FIELD_SOURCES.PARSED_EXACT : supportSectionSource)
       }))
     : [];
 
@@ -359,14 +404,16 @@ export function normalizeReactiveJson(raw) {
         name: item.name || "",
         stars: Number(item.stars || 0),
         language: item.language || "",
-        description: item.description || ""
+        description: item.description || "",
+        provenance: normalizeEntryProvenance(item.provenance, item.repoUrl ? FIELD_SOURCES.PARSED_EXACT : supportSectionSource)
       }))
     : [];
 
   model.qr_codes = Array.isArray(raw.qr_codes)
     ? raw.qr_codes.map((item) => ({
         label: item.label || item.name || item.title || "",
-        url: item.url || ""
+        url: item.url || "",
+        provenance: normalizeEntryProvenance(item.provenance, item.title ? FIELD_SOURCES.PARSED_EXACT : supportSectionSource)
       }))
     : [];
 
@@ -377,13 +424,20 @@ export function normalizeReactiveJson(raw) {
     };
   }
 
-  model.render_config = normalizeRenderConfig(raw);
+  model.render_config = {
+    ...normalizeRenderConfig(raw),
+    provenance: normalizeEntryProvenance(
+      raw?.render_config?.provenance || raw?.renderConfig?.provenance,
+      raw?.render_config || raw?.renderConfig ? FIELD_SOURCES.USER_EXPLICIT : supportSectionSource
+    )
+  };
 
   if (!model.custom_sections.length) {
     model.custom_sections.push({
       title: "个人优势",
       content: "学习能力强，具备跨团队协作与持续交付能力。",
-      items: ["学习能力强，具备跨团队协作与持续交付能力。"]
+      items: ["学习能力强，具备跨团队协作与持续交付能力。"],
+      provenance: normalizeEntryProvenance(undefined, supportSectionSource)
     });
   }
 

@@ -203,10 +203,10 @@ function applyRenderConfig(sections: ResumeSection[], renderConfig?: ResumeModel
   if (!renderConfig) {
     return sections;
   }
-  const visibleModules = Array.isArray(renderConfig.modules)
+  const visibleModules = Array.isArray(renderConfig.modules) && renderConfig.modules.length > 0
     ? new Set(renderConfig.modules.map((item) => normalizeSectionType(item)))
     : null;
-  const orderedTypes = Array.isArray(renderConfig.module_order)
+  const orderedTypes = Array.isArray(renderConfig.module_order) && renderConfig.module_order.length > 0
     ? renderConfig.module_order.map((item) => normalizeSectionType(item))
     : [];
 

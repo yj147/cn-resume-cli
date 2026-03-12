@@ -162,7 +162,8 @@ export async function runGenerate(flags) {
     module_order: Array.isArray(model.render_config?.module_order) ? model.render_config.module_order : [],
     theme_color: model.render_config?.theme_color || "",
     font_size: model.render_config?.font_size || "",
-    output_formats: Array.isArray(model.render_config?.output_formats) ? model.render_config.output_formats : []
+    output_formats: Array.isArray(model.render_config?.output_formats) ? model.render_config.output_formats : [],
+    provenance: model.render_config?.provenance
   };
 
   if (format === "json") {
