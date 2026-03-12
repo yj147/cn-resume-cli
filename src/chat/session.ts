@@ -47,6 +47,13 @@ function normalizeSession(session) {
         entityId: "",
         detailsTab: "plan"
       };
+  const checkpoints = Array.isArray(session?.checkpoints) ? session.checkpoints : [];
+  const stableCheckpoint = [...checkpoints].reverse().find(
+    (item) => item && typeof item === "object" && item.stable === true && typeof item.workflowState === "string" && item.workflowState
+  );
+  const workflowState = typeof session?.workflowState === "string" && session.workflowState
+    ? session.workflowState
+    : stableCheckpoint?.workflowState || CHAT_STATES.INTAKE;
 
   return {
     ...session,
@@ -69,6 +76,11 @@ function normalizeSession(session) {
     pendingPatches: Array.isArray(session?.pendingPatches) ? session.pendingPatches : [],
     patchDecisions: Array.isArray(session?.patchDecisions) ? session.patchDecisions : [],
     pendingApproval: session?.pendingApproval && typeof session.pendingApproval === "object" ? session.pendingApproval : undefined,
+    workflowState,
+    reviewResult: session?.reviewResult && typeof session.reviewResult === "object" ? session.reviewResult : null,
+    layoutResult: session?.layoutResult && typeof session.layoutResult === "object" ? session.layoutResult : null,
+    currentTemplate: session?.currentTemplate && typeof session.currentTemplate === "object" ? session.currentTemplate : null,
+    checkpoints,
     contextRefs: Array.isArray(session?.contextRefs) ? session.contextRefs : [],
     selection,
     composerDraft: String(session?.composerDraft || "")
@@ -90,7 +102,12 @@ export function createChatSession(now = new Date().toISOString()) {
     updatedAt: now,
     messages: [],
     state: { status: CHAT_STATES.IDLE },
-    artifacts: {}
+    artifacts: {},
+    workflowState: CHAT_STATES.INTAKE,
+    reviewResult: null,
+    layoutResult: null,
+    currentTemplate: null,
+    checkpoints: []
   });
 }
 

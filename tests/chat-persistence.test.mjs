@@ -6,6 +6,7 @@ import path from "node:path";
 
 const configModule = await import("../dist/chat/config.js");
 const sessionModule = await import("../dist/chat/session.js");
+const controllerModule = await import("../dist/chat/controller.js");
 const envModule = await import("../dist/env.js");
 
 function withTempHome(run) {
@@ -86,6 +87,11 @@ test("loadActiveSession creates an empty session when active.json is missing", (
       detailsTab: "plan"
     });
     assert.equal(session.composerDraft, "");
+    assert.equal(session.workflowState, controllerModule.CHAT_STATES.INTAKE);
+    assert.equal(session.reviewResult, null);
+    assert.equal(session.layoutResult, null);
+    assert.equal(session.currentTemplate, null);
+    assert.deepEqual(session.checkpoints, []);
 
     assert.match(session.id, /^session-/);
     assert.equal(session.messages.length, 0);
@@ -117,10 +123,37 @@ test("saveActiveSession and saveNamedSession persist session state", () => {
       sourcePath: "/tmp/resume.pdf",
       model: { basics: { name: "张三" } }
     };
+    session.workflowState = controllerModule.CHAT_STATES.READY_TO_EXPORT;
+    session.reviewResult = {
+      status: "warning",
+      blockers: [],
+      warnings: ["量化结果不足"]
+    };
+    session.layoutResult = {
+      status: "overflow",
+      pageCount: 2
+    };
+    session.currentTemplate = {
+      templateId: "elegant",
+      source: "user_selected"
+    };
+    session.checkpoints = [
+      {
+        key: "patch_accepted",
+        workflowState: controllerModule.CHAT_STATES.CONFIRMED_CONTENT,
+        stable: true
+      },
+      {
+        key: "layout_resolved",
+        workflowState: controllerModule.CHAT_STATES.READY_TO_EXPORT,
+        stable: true
+      }
+    ];
 
     const savedActive = sessionModule.saveActiveSession(session);
     const namedSession = sessionModule.saveNamedSession("demo", savedActive);
     const reloaded = sessionModule.loadNamedSession("demo");
+    const rawActive = JSON.parse(fs.readFileSync(path.join(tempHome, ".cn-resume", "chat", "active.json"), "utf8"));
 
     assert.equal(fs.existsSync(path.join(tempHome, ".cn-resume", "chat", "active.json")), true);
     assert.equal(fs.existsSync(path.join(tempHome, ".cn-resume", "chat", "sessions", "demo.json")), true);
@@ -137,6 +170,37 @@ test("saveActiveSession and saveNamedSession persist session state", () => {
     });
     assert.equal(reloaded.composerDraft, "继续优化量化结果");
     assert.equal(reloaded.currentResume.sourcePath, "/tmp/resume.pdf");
+    assert.equal(reloaded.workflowState, controllerModule.CHAT_STATES.READY_TO_EXPORT);
+    assert.deepEqual(reloaded.reviewResult, {
+      status: "warning",
+      blockers: [],
+      warnings: ["量化结果不足"]
+    });
+    assert.deepEqual(reloaded.layoutResult, {
+      status: "overflow",
+      pageCount: 2
+    });
+    assert.deepEqual(reloaded.currentTemplate, {
+      templateId: "elegant",
+      source: "user_selected"
+    });
+    assert.deepEqual(reloaded.checkpoints, [
+      {
+        key: "patch_accepted",
+        workflowState: controllerModule.CHAT_STATES.CONFIRMED_CONTENT,
+        stable: true
+      },
+      {
+        key: "layout_resolved",
+        workflowState: controllerModule.CHAT_STATES.READY_TO_EXPORT,
+        stable: true
+      }
+    ]);
+    assert.equal(Object.hasOwn(rawActive, "workflowState"), true);
+    assert.equal(Object.hasOwn(rawActive, "reviewResult"), true);
+    assert.equal(Object.hasOwn(rawActive, "layoutResult"), true);
+    assert.equal(Object.hasOwn(rawActive, "currentTemplate"), true);
+    assert.equal(Object.hasOwn(rawActive, "checkpoints"), true);
     assert.equal(namedSession.meta.updatedAt, savedActive.meta.updatedAt);
   });
 });
@@ -171,11 +235,63 @@ test("loadActiveSession normalizes legacy session shape into workbench defaults"
     assert.deepEqual(session.tasks, []);
     assert.equal(session.pendingApproval, undefined);
     assert.deepEqual(session.contextRefs, []);
+    assert.equal(session.workflowState, controllerModule.CHAT_STATES.INTAKE);
+    assert.equal(session.reviewResult, null);
+    assert.equal(session.layoutResult, null);
+    assert.equal(session.currentTemplate, null);
+    assert.deepEqual(session.checkpoints, []);
     assert.deepEqual(session.selection, {
       pane: "transcript",
       entityId: "",
       detailsTab: "plan"
     });
     assert.equal(session.composerDraft, "");
+  });
+});
+
+test("loadActiveSession restores workflow state from latest stable checkpoint when explicit workflowState is missing", () => {
+  return withTempHome((tempHome) => {
+    const chatDir = path.join(tempHome, ".cn-resume", "chat");
+    fs.mkdirSync(chatDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(chatDir, "active.json"),
+      JSON.stringify(
+        {
+          id: "legacy-002",
+          createdAt: "2026-03-11T00:00:00.000Z",
+          updatedAt: "2026-03-11T00:01:00.000Z",
+          checkpoints: [
+            {
+              key: "patch_generated",
+              workflowState: controllerModule.CHAT_STATES.PENDING_CONFIRMATION,
+              stable: true
+            },
+            {
+              key: "review_done",
+              workflowState: controllerModule.CHAT_STATES.READY_TO_EXPORT,
+              stable: true
+            }
+          ]
+        },
+        null,
+        2
+      ),
+      "utf8"
+    );
+
+    const session = sessionModule.loadActiveSession();
+    assert.equal(session.workflowState, controllerModule.CHAT_STATES.READY_TO_EXPORT);
+    assert.deepEqual(session.checkpoints, [
+      {
+        key: "patch_generated",
+        workflowState: controllerModule.CHAT_STATES.PENDING_CONFIRMATION,
+        stable: true
+      },
+      {
+        key: "review_done",
+        workflowState: controllerModule.CHAT_STATES.READY_TO_EXPORT,
+        stable: true
+      }
+    ]);
   });
 });
