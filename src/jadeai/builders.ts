@@ -1,6 +1,7 @@
 import { esc, buildExportThemeCSS, DEFAULT_THEME, type ResumeWithSections } from './utils.js';
 import { BACKGROUND_TEMPLATES } from './constants.js';
 import { generateQrSvg } from './qrcode.js';
+import { buildRenderTree } from '../layout-core/render-tree.js';
 import { buildClassicHtml } from './templates/classic.js';
 import { buildModernHtml } from './templates/modern.js';
 import { buildMinimalHtml } from './templates/minimal.js';
@@ -160,7 +161,42 @@ async function preGenerateQrSvgs(resume: ResumeWithSections): Promise<void> {
   (qrSection.content as any)._qrSvgs = svgs;
 }
 
-export async function generateHtml(resume: ResumeWithSections, forPdf = false): Promise<string> {
+function renderTreeToResume(renderTree, input): ResumeWithSections {
+  const now = new Date();
+  const sections = [
+    ...(renderTree?.regions?.sidebar?.sections || []),
+    ...(renderTree?.regions?.main?.sections || [])
+  ]
+    .slice()
+    .sort((left, right) => Number(left?.sortOrder || 0) - Number(right?.sortOrder || 0))
+    .map((section) => ({
+      id: section.id,
+      resumeId: String(input?.document?.id || "resume"),
+      type: section.sectionType,
+      title: section.title?.text || section.sectionType,
+      sortOrder: Number(section.sortOrder || 0),
+      visible: true,
+      content: section.body?.children?.[0]?.content || {},
+      createdAt: now,
+      updatedAt: now
+    }));
+  return {
+    id: String(input?.document?.id || "resume"),
+    userId: "cli",
+    title: String(input?.title || "resume"),
+    template: String(input?.templateSpec?.name || "classic"),
+    themeConfig: input?.themeConfig || DEFAULT_THEME,
+    isDefault: false,
+    language: String(input?.language || "zh"),
+    sections,
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
+export async function generateHtml(input, forPdf = false): Promise<string> {
+  const renderTree = buildRenderTree(input);
+  const resume = renderTreeToResume(renderTree, input);
   // Pre-generate QR SVGs so sync template builders can use them
   await preGenerateQrSvgs(resume);
   const builder = TEMPLATE_BUILDERS[resume.template] || buildClassicHtml;

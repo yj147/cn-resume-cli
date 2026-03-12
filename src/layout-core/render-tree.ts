@@ -44,6 +44,7 @@ function sectionToRenderSection(section, sidebarTypes: Set<string>) {
   return {
     id: String(section?.id || ""),
     sectionType: String(section?.content?.sectionType || ""),
+    sortOrder: Number(section?.content?.sortOrder || 0),
     title: {
       type: RENDER_NODE_TYPES.TEXT,
       text: String(section?.content?.title || "")

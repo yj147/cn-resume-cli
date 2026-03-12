@@ -5,7 +5,7 @@ import { TEMPLATE_ALIASES, TEMPLATE_GROUPS, TEMPLATE_LIST } from "../constants.j
 import { readJson, writeJson } from "../core/io.js";
 import { buildEmptyField, buildEmptyModel, collectCustomSectionLines, normalizeBulletList } from "../core/model.js";
 import { FIELD_SOURCES, FIELD_STATUSES, getFieldValue } from "../core/provenance.js";
-import { modelToJadeResume } from "../jadeai/adapter.js";
+import { modelToDocumentIR, modelToThemeConfig } from "../jadeai/adapter.js";
 import { generateHtml as buildTemplateHtml } from "../jadeai/builders.js";
 import { modelToPlainText } from "../flows/render.js";
 import { resolveTemplateSpec } from "./spec.js";
@@ -237,9 +237,18 @@ export async function renderTemplate(model, templateName, forPdf = false) {
       custom: true
     };
   }
-  const resume = modelToJadeResume(model, resolvedTemplate.resolved);
+  const basicName = getFieldValue(model?.basic?.name);
   return {
-    html: await buildTemplateHtml(resume, forPdf),
+    html: await buildTemplateHtml(
+      {
+        document: modelToDocumentIR(model, resolvedTemplate.resolved),
+        templateSpec: resolvedTemplate.spec,
+        themeConfig: modelToThemeConfig(model, resolvedTemplate.resolved),
+        title: basicName ? `${basicName}-resume` : "resume",
+        language: "zh"
+      },
+      forPdf
+    ),
     template: resolvedTemplate.resolved,
     custom: false
   };

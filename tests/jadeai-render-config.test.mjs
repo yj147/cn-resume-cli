@@ -7,10 +7,21 @@ const adapterModule = await import("../dist/jadeai/adapter.js");
 const builderModule = await import("../dist/jadeai/builders.js");
 const modelModule = await import("../dist/core/model.js");
 const utilsModule = await import("../dist/jadeai/utils.js");
+const specModule = await import("../dist/template/spec.js");
 
 function loadFixture(name) {
   const file = path.join(process.cwd(), "fixtures", name);
   return modelModule.normalizeReactiveJson(JSON.parse(fs.readFileSync(file, "utf8")));
+}
+
+function createBuilderInput(model, templateName) {
+  return {
+    document: adapterModule.modelToDocumentIR(model, templateName),
+    templateSpec: specModule.resolveTemplateSpec(templateName),
+    themeConfig: adapterModule.modelToThemeConfig(model, templateName),
+    title: "render-check",
+    language: "zh"
+  };
 }
 
 test("empty render_config module arrays keep JadeAI body sections visible", async () => {
@@ -20,7 +31,7 @@ test("empty render_config module arrays keep JadeAI body sections visible", asyn
 
   const resume = adapterModule.modelToJadeResume(model, "elegant");
   const sectionTypes = utilsModule.visibleSections(resume).map((section) => section.type);
-  const html = await builderModule.generateHtml(resume, false);
+  const html = await builderModule.generateHtml(createBuilderInput(model, "elegant"), false);
 
   assert.deepEqual(sectionTypes.slice(0, 6), [
     "summary",
@@ -77,11 +88,19 @@ test("custom sections dedupe overlapping items and content lines", async () => {
 
   const resume = adapterModule.modelToJadeResume(model, "elegant");
   const customSection = resume.sections.find((section) => section.type === "custom");
-  const html = await builderModule.generateHtml(resume, false);
+  const html = await builderModule.generateHtml(createBuilderInput(model, "elegant"), false);
 
   assert.deepEqual(
     customSection.content.items.map((item) => item.description),
     ["执行力强", "执行力强。"]
   );
   assert.equal((html.match(/个人优势/g) || []).length, 2);
+});
+
+test("builders consume document IR and template spec while preserving dark sidebar pdf styling", async () => {
+  const model = loadFixture("sample-resume.json");
+  const html = await builderModule.generateHtml(createBuilderInput(model, "sidebar"), true);
+
+  assert.match(html, /linear-gradient\(90deg, #1e40af 35%, white 35%\)/);
+  assert.match(html, /@page \{ margin: 0; \}/);
 });

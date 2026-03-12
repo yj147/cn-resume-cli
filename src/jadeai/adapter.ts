@@ -131,6 +131,10 @@ function normalizeTheme(templateName: string, model?: ResumeModel): ThemeConfig 
   };
 }
 
+export function modelToThemeConfig(model: ResumeModel, templateName: string): ThemeConfig {
+  return normalizeTheme(templateName, model);
+}
+
 function makeSection(
   resumeId: string,
   type: string,
@@ -458,7 +462,7 @@ export function modelToJadeResume(model: ResumeModel, templateName: string): Res
     userId: "cli",
     title: basicName ? `${basicName}-resume` : "resume",
     template: model.render_config?.template || templateName,
-    themeConfig: normalizeTheme(templateName, model),
+    themeConfig: modelToThemeConfig(model, templateName),
     isDefault: false,
     language: "zh",
     sections: documentIr.sections.map((section) => irSectionToResumeSection(section, resumeId, now)),
