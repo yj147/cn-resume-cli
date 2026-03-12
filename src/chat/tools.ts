@@ -44,6 +44,26 @@ function buildParseDraft(session, inputPath, model) {
   });
 }
 
+function buildOptimizeDraft(session, model, phaseBStatus) {
+  return createResumeDraft({
+    source: "optimize-resume",
+    summary: "优化结果待确认",
+    patches: [
+      createModulePatch({
+        module: RESUME_MODULES.EXPERIENCE,
+        previousValue: session.currentResume.model?.experience || null,
+        nextValue: model.experience || null,
+        source: "ai_rewritten",
+        severity: phaseBStatus === "awaiting_feedback" ? "warning" : "info",
+        rollback: {
+          strategy: "replace",
+          target: "currentResume.model.experience"
+        }
+      })
+    ]
+  });
+}
+
 export async function runChatTool(action, session) {
   if (action.type === "parse-resume") {
     const workspace = createToolWorkspace();
@@ -95,28 +115,8 @@ export async function runChatTool(action, session) {
     const phaseB = model?.meta?.phase_b;
     const phaseBStatus = phaseB ? (phaseB.confirmed ? "confirmed" : "awaiting_feedback") : undefined;
     return {
-      resumeDraft: createResumeDraft({
-        source: "optimize-resume",
-        summary: "优化结果待确认",
-        patches: [
-          createModulePatch({
-            module: RESUME_MODULES.EXPERIENCE,
-            previousValue: session.currentResume.model?.experience || null,
-            nextValue: model.experience || null,
-            source: "ai_rewritten",
-            severity: phaseBStatus === "awaiting_feedback" ? "warning" : "info",
-            rollback: {
-              strategy: "replace",
-              target: "currentResume.model.experience"
-            }
-          })
-        ]
-      }),
+      resumeDraft: action.confirm ? undefined : buildOptimizeDraft(session, model, phaseBStatus),
       sessionPatch: {
-        currentResume: {
-          sourcePath: session.currentResume.sourcePath,
-          model
-        },
         currentJd: action.jdText
           ? {
               path: "",

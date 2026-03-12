@@ -107,6 +107,9 @@ test("agent phase b flow blocks on optimize until feedback confirmation", async 
 
   assert.equal(awaiting.state.status, "waiting_phase_b_feedback");
   assert.equal(awaiting.phaseB.status, "awaiting_feedback");
+  assert.equal(awaiting.currentResume.sourcePath, "/tmp/resume.json");
+  assert.equal(Array.isArray(awaiting.pendingPatches), true);
+  assert.equal(awaiting.pendingPatches[0].module, "experience");
   assert.equal(awaiting.tasks.length, 1);
   assert.equal(awaiting.tasks[0].status, "waiting_phase_b_feedback");
   assert.ok(awaiting.artifacts.latestModelPath);
@@ -121,9 +124,35 @@ test("agent phase b flow blocks on optimize until feedback confirmation", async 
   assert.equal(finished.phaseB.status, "confirmed");
   assert.equal(finished.tasks[0].status, "done");
   assert.ok(finished.artifacts.latestModelPath);
-  assert.equal(finished.currentResume.model.meta.phase_b.confirmed, true);
+  assert.equal(finished.currentResume.sourcePath, "/tmp/resume.json");
+  assert.equal(finished.currentResume.model.meta?.phase_b, undefined);
+  assert.equal(finished.pendingPatches.length, 1);
   assert.equal(finished.transcript.some((item) => item.type === "task_started"), true);
   assert.equal(finished.transcript.some((item) => item.type === "task_finished" && item.status === "done"), true);
+});
+
+test("optimize tool returns draft patch and phase state without direct confirmed resume write", async () => {
+  const session = sessionModule.createChatSession("2026-03-11T03:35:00.000Z");
+  session.currentResume = {
+    sourcePath: "/tmp/resume.json",
+    model: loadFixture("sample-resume-contract.json")
+  };
+
+  const result = await toolsModule.runChatTool(
+    {
+      type: "optimize-resume",
+      feedbackText: "",
+      confirm: false,
+      jdText: "Go Redis"
+    },
+    session
+  );
+
+  assert.equal(result.sessionPatch?.currentResume, undefined);
+  assert.equal(result.resumeDraft.source, "optimize-resume");
+  assert.equal(result.resumeDraft.patches[0].module, "experience");
+  assert.equal(result.taskPatch.status, "waiting_phase_b_feedback");
+  assert.equal(result.phaseB.status, "awaiting_feedback");
 });
 
 test("agent marks task as error when tool execution fails", async () => {
