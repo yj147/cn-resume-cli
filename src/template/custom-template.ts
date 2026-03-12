@@ -8,6 +8,7 @@ import { FIELD_SOURCES, FIELD_STATUSES, getFieldValue } from "../core/provenance
 import { modelToJadeResume } from "../jadeai/adapter.js";
 import { generateHtml as buildTemplateHtml } from "../jadeai/builders.js";
 import { modelToPlainText } from "../flows/render.js";
+import { resolveTemplateSpec } from "./spec.js";
 
 type CustomTemplateConfig = {
   aliases: Record<string, string>;
@@ -19,6 +20,7 @@ export type ResolvedTemplate = {
   resolved: string;
   kind: "builtin" | "imported";
   sourcePath?: string;
+  spec: ReturnType<typeof resolveTemplateSpec> | null;
 };
 
 function normalizeTemplateKey(inputName) {
@@ -90,7 +92,7 @@ export function resolveTemplate(templateName, customConfig = loadCustomTemplateC
   if (customConfig.imports[requested]) {
     const sourcePath = path.resolve(customConfig.imports[requested]);
     ensureReadableFile(sourcePath);
-    return { requested, resolved: requested, kind: "imported", sourcePath };
+    return { requested, resolved: requested, kind: "imported", sourcePath, spec: null };
   }
 
   const seen = new Set();
@@ -106,12 +108,17 @@ export function resolveTemplate(templateName, customConfig = loadCustomTemplateC
   if (customConfig.imports[cursor]) {
     const sourcePath = path.resolve(customConfig.imports[cursor]);
     ensureReadableFile(sourcePath);
-    return { requested, resolved: cursor, kind: "imported", sourcePath };
+    return { requested, resolved: cursor, kind: "imported", sourcePath, spec: null };
   }
 
   const builtin = TEMPLATE_ALIASES[cursor] || cursor;
-  if (TEMPLATE_LIST.includes(builtin)) {
-    return { requested, resolved: builtin, kind: "builtin" };
+  try {
+    const spec = resolveTemplateSpec(builtin);
+    return { requested, resolved: builtin, kind: "builtin", spec };
+  } catch (error) {
+    if (!String(error?.message || error).startsWith("Unsupported template")) {
+      throw error;
+    }
   }
 
   throw new Error(`Unsupported template '${templateName}'. Use 'cn-resume template list'.`);
