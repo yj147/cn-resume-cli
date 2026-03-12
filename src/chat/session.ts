@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { CHAT_STATES } from "./controller.js";
 import { readJson, writeJson } from "../core/io.js";
 import { getCnResumeHome } from "../env.js";
 
@@ -62,7 +63,7 @@ function normalizeSession(session) {
     updatedAt,
     messages,
     transcript,
-    state: session?.state && typeof session.state === "object" ? session.state : { status: "idle" },
+    state: session?.state && typeof session.state === "object" ? session.state : { status: CHAT_STATES.IDLE },
     artifacts: session?.artifacts && typeof session.artifacts === "object" ? session.artifacts : {},
     tasks: Array.isArray(session?.tasks) ? session.tasks : [],
     pendingPatches: Array.isArray(session?.pendingPatches) ? session.pendingPatches : [],
@@ -88,7 +89,7 @@ export function createChatSession(now = new Date().toISOString()) {
     createdAt: now,
     updatedAt: now,
     messages: [],
-    state: { status: "idle" },
+    state: { status: CHAT_STATES.IDLE },
     artifacts: {}
   });
 }

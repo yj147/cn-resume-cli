@@ -1,4 +1,5 @@
 import { createChatEvent } from "./events.js";
+import { CHAT_STATES } from "./controller.js";
 
 function cloneSession(session) {
   return structuredClone(session);
@@ -207,7 +208,7 @@ export function planToolAction(session, plan) {
     action: plan.action,
     taskId: task.id
   };
-  next.state = { status: "waiting_confirm" };
+  next.state = { status: CHAT_STATES.WAITING_CONFIRM };
   appendEvent(
     next,
     createChatEvent("plan_proposed", {
@@ -233,7 +234,7 @@ export async function confirmPendingPlan(session, handlers) {
 
   const next = cloneSession(session);
   const pendingPlan = next.pendingPlan;
-  next.state = { status: "running" };
+  next.state = { status: CHAT_STATES.RUNNING };
   updateTaskStatus(next, pendingPlan.taskId, "running");
   appendEvent(
     next,
@@ -265,7 +266,7 @@ export async function confirmPendingPlan(session, handlers) {
         action: pendingPlan.action,
         taskId: pendingPlan.taskId
       };
-      next.state = { status: "waiting_phase_b_feedback" };
+      next.state = { status: CHAT_STATES.WAITING_PHASE_B_FEEDBACK };
       updateTaskStatus(next, pendingPlan.taskId, "waiting_phase_b_feedback");
       appendEvent(
         next,
@@ -280,11 +281,11 @@ export async function confirmPendingPlan(session, handlers) {
     if (result?.phaseB) {
       next.phaseB = result.phaseB;
     }
-    next.state = { status: "idle" };
+    next.state = { status: CHAT_STATES.IDLE };
     return touchSession(next);
   } catch (error) {
     const message = String(error?.message || error);
-    next.state = { status: "error", message };
+    next.state = { status: CHAT_STATES.ERROR, message };
     updateTaskStatus(next, pendingPlan.taskId, "error");
     appendEvent(
       next,
@@ -311,7 +312,7 @@ export async function confirmPhaseB(session, feedbackText, handlers) {
   }
 
   const next = cloneSession(session);
-  next.state = { status: "running" };
+  next.state = { status: CHAT_STATES.RUNNING };
   const taskId = next.phaseB.taskId;
   updateTaskStatus(next, taskId, "running");
 
@@ -352,12 +353,12 @@ export async function confirmPhaseB(session, feedbackText, handlers) {
         })
       );
     }
-    next.state = next.phaseB.status === "awaiting_feedback" ? { status: "waiting_phase_b_feedback" } : { status: "idle" };
+    next.state = next.phaseB.status === "awaiting_feedback" ? { status: CHAT_STATES.WAITING_PHASE_B_FEEDBACK } : { status: CHAT_STATES.IDLE };
     updateTaskStatus(next, taskId, next.phaseB.status === "awaiting_feedback" ? "waiting_phase_b_feedback" : (result?.taskPatch?.status || "done"));
     return touchSession(next);
   } catch (error) {
     const message = String(error?.message || error);
-    next.state = { status: "error", message };
+    next.state = { status: CHAT_STATES.ERROR, message };
     updateTaskStatus(next, taskId, "error");
     appendEvent(
       next,

@@ -1,6 +1,7 @@
 import os from "node:os";
 import { planToolAction, confirmPendingPlan, confirmPhaseB } from "./agent.js";
 import { streamChatAnswer } from "./answer.js";
+import { CHAT_STATES } from "./controller.js";
 import { loadChatConfig } from "./config.js";
 import { createChatEvent } from "./events.js";
 import { planChatTurn } from "./planner.js";
@@ -27,7 +28,7 @@ function cloneRuntime(runtime) {
 function idleSession(session) {
   session.pendingPlan = undefined;
   session.pendingApproval = undefined;
-  session.state = { status: "idle" };
+  session.state = { status: CHAT_STATES.IDLE };
   return session;
 }
 
@@ -118,7 +119,7 @@ async function handleSlashInput(runtime, input, handlers, io) {
           stdoutText: "Phase B 待确认，不能取消。请输入反馈文本完成确认。"
         }
       );
-    } else if (next.session.state.status === "waiting_confirm") {
+    } else if (next.session.state.status === CHAT_STATES.WAITING_CONFIRM) {
       next.session = idleSession(next.session);
     }
   }
