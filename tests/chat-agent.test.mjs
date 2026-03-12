@@ -5,6 +5,8 @@ import os from "node:os";
 import path from "node:path";
 
 const agentModule = await import("../dist/chat/agent.js");
+const evaluationModule = await import("../dist/eval/evaluation.js");
+const reviewServiceModule = await import("../dist/eval/review-service.js");
 const sessionModule = await import("../dist/chat/session.js");
 const toolsModule = await import("../dist/chat/tools.js");
 
@@ -287,4 +289,45 @@ test("rejectPendingPatch records audit trail without mutating confirmed resume",
   assert.equal(rejected.patchDecisions.length, 1);
   assert.equal(rejected.patchDecisions[0].decision, "rejected");
   assert.equal(rejected.patchDecisions[0].reason, "用户拒绝该改写");
+});
+
+test("review tool reuses unified review service severity and stores adoptable patches in session", async () => {
+  const session = sessionModule.createChatSession("2026-03-11T04:00:00.000Z");
+  session.currentResume = {
+    sourcePath: "/tmp/resume.json",
+    model: loadFixture("sample-resume-contract.json")
+  };
+  session.currentJd = {
+    text: "Kubernetes Go 微服务 架构 性能 数据库"
+  };
+  session.currentTemplate = {
+    templateId: "elegant"
+  };
+
+  const expected = await reviewServiceModule.runReviewService({
+    model: session.currentResume.model,
+    jdText: session.currentJd.text,
+    template: "elegant",
+    checks: ["validate", "analyze-jd", "grammar-check"],
+    options: evaluationModule.resolveEvalOptions({ engine: "rule" })
+  });
+  const planned = agentModule.planToolAction(session, {
+    summary: "审核当前简历",
+    action: {
+      type: "review-resume",
+      engine: "rule"
+    }
+  });
+  const reviewed = await agentModule.confirmPendingPlan(planned, {
+    runTool: toolsModule.runChatTool
+  });
+
+  assert.deepEqual(reviewed.reviewResult.summary.counts, expected.summary.counts);
+  assert.equal(reviewed.reviewResult.blockers.length, expected.blockers.length);
+  assert.equal(reviewed.reviewResult.warnings.length, expected.warnings.length);
+  assert.equal(reviewed.reviewResult.suggestions.length, expected.suggestions.length);
+  assert.equal(Array.isArray(reviewed.reviewResult.adoptablePatches), true);
+  assert.equal(reviewed.reviewResult.adoptablePatches.length > 0, true);
+  assert.equal(reviewed.tasks[0].status, reviewed.reviewResult.summary.blocked ? "blocked" : "done");
+  assert.equal(typeof reviewed.layoutResult, "object");
 });

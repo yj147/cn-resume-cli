@@ -2,6 +2,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { runOptimize, runParse } from "../commands.js";
+import { resolveEvalOptions } from "../eval/evaluation.js";
+import { runReviewService } from "../eval/review-service.js";
 import { createModulePatch, createResumeDraft, RESUME_MODULES } from "../core/patches.js";
 import { readJson, writeJson } from "../core/io.js";
 
@@ -62,6 +64,48 @@ function buildOptimizeDraft(session, model, phaseBStatus) {
       })
     ]
   });
+}
+
+function reviewModuleFor(finding) {
+  if (finding.category === "layout_quality") {
+    return RESUME_MODULES.RENDER_CONFIG;
+  }
+  if (finding.category === "fact_consistency") {
+    return RESUME_MODULES.BASIC;
+  }
+  return RESUME_MODULES.EXPERIENCE;
+}
+
+function buildAdoptablePatches(reviewResult) {
+  return (reviewResult.suggestions || []).slice(0, 5).map((finding, index) => ({
+    patchId: `review-patch-${index + 1}`,
+    module: reviewModuleFor(finding),
+    source: finding.source,
+    severity: finding.severity,
+    summary: finding.message,
+    recommendedFeedback: finding.message
+  }));
+}
+
+function buildLayoutResult(reviewResult) {
+  const finding = (reviewResult.findings || []).find((item) => item.category === "layout_quality");
+  if (!finding) {
+    return null;
+  }
+  return {
+    status: reviewResult.summary?.blocked ? "needs_attention" : "ready",
+    finding
+  };
+}
+
+function resolveReviewTemplate(session, action) {
+  return String(
+    action.template ||
+    session?.currentTemplate?.templateId ||
+    session?.currentResume?.model?.render_config?.template ||
+    session?.currentResume?.model?.meta?.template ||
+    "elegant"
+  );
 }
 
 export async function runChatTool(action, session) {
@@ -138,6 +182,32 @@ export async function runChatTool(action, session) {
             diff: phaseB.diff
           }
         : undefined
+    };
+  }
+
+  if (action.type === "review-resume") {
+    if (!session?.currentResume?.model) {
+      throw new Error("BLOCKED: no current resume loaded");
+    }
+    const reviewResult = await runReviewService({
+      model: session.currentResume.model,
+      jdText: String(action.jdText || session.currentJd?.text || ""),
+      template: resolveReviewTemplate(session, action),
+      options: resolveEvalOptions(buildToolFlags(action)),
+      checks: action.checks
+    });
+    const adoptablePatches = buildAdoptablePatches(reviewResult);
+    return {
+      sessionPatch: {
+        reviewResult: {
+          ...reviewResult,
+          adoptablePatches
+        },
+        layoutResult: buildLayoutResult(reviewResult)
+      },
+      taskPatch: {
+        status: reviewResult.summary?.blocked ? "blocked" : "done"
+      }
     };
   }
 

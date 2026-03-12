@@ -88,6 +88,12 @@ function mergeSessionPatch(session, patch: Record<string, any> = {}) {
   if (patch.currentTemplate) {
     session.currentTemplate = patch.currentTemplate;
   }
+  if (patch.reviewResult) {
+    session.reviewResult = patch.reviewResult;
+  }
+  if (patch.layoutResult) {
+    session.layoutResult = patch.layoutResult;
+  }
   if (patch.artifacts) {
     session.artifacts = {
       ...(session.artifacts || {}),
