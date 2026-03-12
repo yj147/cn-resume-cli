@@ -3,11 +3,13 @@ import { AI_MAX_ATTEMPTS, callAiJson, runAiWithSchemaRecovery } from "../ai.js";
 import { readJson, readText } from "../core/io.js";
 import {
   buildEmptyModel,
+  buildEmptyField,
   normalizeBulletList,
   normalizeReactiveJson,
   nowIso,
   splitDateRange
 } from "../core/model.js";
+import { FIELD_SOURCES } from "../core/provenance.js";
 import { loadPdfForAiParsing, parsePdfToText } from "../pdf.js";
 import { modelToJadeResume } from "../jadeai/adapter.js";
 
@@ -583,26 +585,46 @@ export function parseTextToModel(text) {
     return /^[\u4e00-\u9fa5A-Za-z·\s]{2,30}$/.test(value);
   });
   if (nameLine) {
-    model.basic.name = nameLine.replace(/^姓名[:：]?\s*/i, "").trim();
+    model.basic.name = buildEmptyField({
+      value: nameLine.replace(/^姓名[:：]?\s*/i, "").trim(),
+      source: FIELD_SOURCES.PARSED_EXACT,
+      confidence: 1
+    });
   }
 
   const email = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi);
   if (email?.length) {
-    model.basic.email = email[0];
+    model.basic.email = buildEmptyField({
+      value: email[0],
+      source: FIELD_SOURCES.PARSED_EXACT,
+      confidence: 1
+    });
   }
   const phone = text.match(/(?:\+?86[-\s]?)?1[3-9]\d{9}/);
   if (phone) {
-    model.basic.phone = phone[0];
+    model.basic.phone = buildEmptyField({
+      value: phone[0],
+      source: FIELD_SOURCES.PARSED_EXACT,
+      confidence: 1
+    });
   }
 
   const titleMatch = text.match(/(?:职位|求职方向|目标岗位)[:：]\s*(.+)/);
-  model.basic.title = titleMatch?.[1]?.trim() || "";
+  model.basic.title = buildEmptyField({
+    value: titleMatch?.[1]?.trim() || "",
+    source: FIELD_SOURCES.PARSED_EXACT,
+    confidence: 1
+  });
 
   const summaryLines = lines
     .filter((line) => !isAnySectionHeadingLine(line))
     .filter((line) => !isContactOrProfileLine(line))
     .slice(1, 5);
-  model.basic.summary = summaryLines.join("，").slice(0, 240);
+  model.basic.summary = buildEmptyField({
+    value: summaryLines.join("，").slice(0, 240),
+    source: FIELD_SOURCES.PARSED_EXACT,
+    confidence: 1
+  });
 
   const projects = extractProjectsFromText(text);
   const experience = extractExperienceFromText(text);

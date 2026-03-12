@@ -3,7 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { TEMPLATE_ALIASES, TEMPLATE_GROUPS, TEMPLATE_LIST } from "../constants.js";
 import { readJson, writeJson } from "../core/io.js";
-import { buildEmptyModel, normalizeBulletList } from "../core/model.js";
+import { buildEmptyField, buildEmptyModel, collectCustomSectionLines, normalizeBulletList } from "../core/model.js";
+import { getFieldValue } from "../core/provenance.js";
 import { modelToJadeResume } from "../jadeai/adapter.js";
 import { generateHtml as buildTemplateHtml } from "../jadeai/builders.js";
 import { modelToPlainText } from "../flows/render.js";
@@ -152,7 +153,7 @@ function buildTemplateSections(model) {
   const languages = (model.languages || []).map((item) => `${item.language || ""} ${item.proficiency ? `(${item.proficiency})` : ""}`.trim());
   const github = (model.github || []).map((item) => `${item.name || ""} ${item.repo_url || item.repoUrl || ""}`.trim());
   const custom = (model.custom_sections || []).flatMap((section) => {
-    const lines = normalizeBulletList(section.items || []).concat(normalizeBulletList(section.content || ""));
+    const lines = collectCustomSectionLines(section);
     return lines.map((line) => `${section.title || "附加信息"}: ${line}`);
   });
   return { experience, projects, skills, education, certifications, languages, github, custom };
@@ -170,17 +171,24 @@ function renderImportedTemplate(model, resolvedTemplate: ResolvedTemplate) {
   }
 
   const basic = model.basic || {};
+  const basicName = getFieldValue(basic.name);
+  const basicTitle = getFieldValue(basic.title);
+  const basicEmail = getFieldValue(basic.email);
+  const basicPhone = getFieldValue(basic.phone);
+  const basicLocation = getFieldValue(basic.location);
+  const basicWebsite = getFieldValue(basic.website);
+  const basicSummary = getFieldValue(basic.summary);
   const sections = buildTemplateSections(model);
   const mapping = {
     template_name: resolvedTemplate.resolved,
-    name: basic.name || "",
-    title: basic.title || "",
-    email: basic.email || "",
-    phone: basic.phone || "",
-    location: basic.location || "",
-    website: basic.website || "",
-    summary: basic.summary || "",
-    contact_line: [basic.phone, basic.email, basic.location, basic.website].filter(Boolean).join(" | "),
+    name: basicName || "",
+    title: basicTitle || "",
+    email: basicEmail || "",
+    phone: basicPhone || "",
+    location: basicLocation || "",
+    website: basicWebsite || "",
+    summary: basicSummary || "",
+    contact_line: [basicPhone, basicEmail, basicLocation, basicWebsite].filter(Boolean).join(" | "),
     plain_text: modelToPlainText(model),
     resume_json: JSON.stringify(model, null, 2),
     experience_html: `<ul>${buildTemplateListItems(sections.experience)}</ul>`,
@@ -205,7 +213,7 @@ function renderImportedTemplate(model, resolvedTemplate: ResolvedTemplate) {
   });
 
   if (!/<html[\s>]/i.test(rendered)) {
-    return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(basic.name || "resume")}</title></head><body>${rendered}</body></html>`;
+    return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(basicName || "resume")}</title></head><body>${rendered}</body></html>`;
   }
   return rendered;
 }
@@ -241,18 +249,18 @@ export function templateListPayload() {
 export function createTemplatePreviewSample() {
   const sampleModel = buildEmptyModel();
   sampleModel.basic = {
-    name: "张三",
-    title: "高级后端工程师",
-    photo: "",
-    birth_date: "",
-    email: "zhangsan@example.com",
-    phone: "13800000000",
-    location: "上海",
-    website: "github.com/zhangsan",
-    linkedin: "",
-    github: "github.com/zhangsan",
-    employment_status: "",
-    summary: "10年后端与平台工程经验，关注稳定性、性能与团队交付效率。"
+    name: buildEmptyField({ value: "张三" }),
+    title: buildEmptyField({ value: "高级后端工程师" }),
+    photo: buildEmptyField(),
+    birth_date: buildEmptyField(),
+    email: buildEmptyField({ value: "zhangsan@example.com" }),
+    phone: buildEmptyField({ value: "13800000000" }),
+    location: buildEmptyField({ value: "上海" }),
+    website: buildEmptyField({ value: "github.com/zhangsan" }),
+    linkedin: buildEmptyField(),
+    github: buildEmptyField({ value: "github.com/zhangsan" }),
+    employment_status: buildEmptyField(),
+    summary: buildEmptyField({ value: "10年后端与平台工程经验，关注稳定性、性能与团队交付效率。" })
   };
   sampleModel.experience = [
     {
@@ -282,4 +290,3 @@ export function createTemplatePreviewSample() {
   sampleModel.custom_sections = [{ title: "个人优势", content: "强执行与跨团队协作能力", items: ["强执行与跨团队协作能力"] }];
   return sampleModel;
 }
-

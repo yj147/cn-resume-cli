@@ -58,3 +58,43 @@ test("upgradeFieldStatus only moves forward to a stronger confirmed state", () =
     provenanceModule.FIELD_STATUSES.CONFIRMED
   );
 });
+
+test("buildEmptyModel wraps basic fields in empty envelopes", () => {
+  const model = modelModule.buildEmptyModel();
+
+  assert.deepEqual(model.basic.name, {
+    value: "",
+    source: provenanceModule.FIELD_SOURCES.USER_EXPLICIT,
+    confidence: 0,
+    status: provenanceModule.FIELD_STATUSES.EMPTY,
+    updatedBy: provenanceModule.FIELD_SOURCES.USER_EXPLICIT,
+    updatedAt: model.basic.name.updatedAt
+  });
+  assert.equal(typeof model.basic.email.updatedAt, "string");
+  assert.equal(model.basic.summary.status, provenanceModule.FIELD_STATUSES.EMPTY);
+});
+
+test("normalizeReactiveJson tags parse-first basic fields as suggested parsed values", () => {
+  const model = modelModule.normalizeReactiveJson({
+    basicInfo: {
+      fullName: "杨进",
+      jobTitle: "全栈工程师",
+      email: "yj@example.com",
+      phone: "13800000000",
+      city: "广州"
+    },
+    summary: "负责复杂系统交付。"
+  });
+
+  assert.deepEqual(model.basic.name, {
+    value: "杨进",
+    source: provenanceModule.FIELD_SOURCES.PARSED_EXACT,
+    confidence: 1,
+    status: provenanceModule.FIELD_STATUSES.SUGGESTED,
+    updatedBy: provenanceModule.FIELD_SOURCES.PARSED_EXACT,
+    updatedAt: model.basic.name.updatedAt
+  });
+  assert.equal(model.basic.title.value, "全栈工程师");
+  assert.equal(model.basic.email.source, provenanceModule.FIELD_SOURCES.PARSED_EXACT);
+  assert.equal(model.basic.summary.status, provenanceModule.FIELD_STATUSES.SUGGESTED);
+});

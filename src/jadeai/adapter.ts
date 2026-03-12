@@ -1,18 +1,24 @@
 import { TEMPLATE_STYLES } from "../constants.js";
+import { collectCustomSectionLines } from "../core/model.js";
+import { getFieldValue } from "../core/provenance.js";
 import { extractUrlsFromResume } from "./qrcode.js";
 import type { Resume, ResumeSection, ThemeConfig } from "./types.js";
 
+type BasicField = {
+  value?: string;
+};
+
 type ResumeModel = {
   basic?: {
-    name?: string;
-    title?: string;
-    email?: string;
-    phone?: string;
-    location?: string;
-    website?: string;
-    linkedin?: string;
-    github?: string;
-    summary?: string;
+    name?: BasicField;
+    title?: BasicField;
+    email?: BasicField;
+    phone?: BasicField;
+    location?: BasicField;
+    website?: BasicField;
+    linkedin?: BasicField;
+    github?: BasicField;
+    summary?: BasicField;
   };
   experience?: Array<{
     company?: string;
@@ -235,27 +241,36 @@ function applyRenderConfig(sections: ResumeSection[], renderConfig?: ResumeModel
 export function modelToJadeResume(model: ResumeModel, templateName: string): Resume {
   const resumeId = "cli-resume";
   const basic = model.basic || {};
+  const basicName = getFieldValue(basic.name);
+  const basicTitle = getFieldValue(basic.title);
+  const basicEmail = getFieldValue(basic.email);
+  const basicPhone = getFieldValue(basic.phone);
+  const basicLocation = getFieldValue(basic.location);
+  const basicWebsite = getFieldValue(basic.website);
+  const basicLinkedin = getFieldValue(basic.linkedin);
+  const basicGithub = getFieldValue(basic.github);
+  const basicSummary = getFieldValue(basic.summary);
   const sections: ResumeSection[] = [];
 
   sections.push(
     makeSection(resumeId, "personal_info", 1, {
-      fullName: basic.name || "候选人",
-      jobTitle: basic.title || "",
-      email: basic.email || "",
-      phone: basic.phone || "",
-      location: basic.location || "",
-      website: basic.website || "",
-      linkedin: basic.linkedin || "",
-      github: basic.github || "",
+      fullName: basicName || "候选人",
+      jobTitle: basicTitle || "",
+      email: basicEmail || "",
+      phone: basicPhone || "",
+      location: basicLocation || "",
+      website: basicWebsite || "",
+      linkedin: basicLinkedin || "",
+      github: basicGithub || "",
       customLinks: [],
       avatar: ""
     })
   );
 
-  if (basic.summary) {
+  if (basicSummary) {
     sections.push(
       makeSection(resumeId, "summary", 2, {
-        text: basic.summary
+        text: basicSummary
       })
     );
   }
@@ -356,14 +371,7 @@ export function modelToJadeResume(model: ResumeModel, templateName: string): Res
   }
 
   const customItems = (model.custom_sections || []).flatMap((section, secIdx) =>
-    normalizeList(section.items || []).concat(
-      section.content
-        ? section.content
-            .split(/\r?\n/)
-            .map((line) => line.trim())
-            .filter(Boolean)
-        : []
-    ).map((line, lineIdx) => ({
+    collectCustomSectionLines(section).map((line, lineIdx) => ({
       id: `custom-${secIdx + 1}-${lineIdx + 1}`,
       title: section.title || "附加信息",
       subtitle: "",
@@ -407,7 +415,7 @@ export function modelToJadeResume(model: ResumeModel, templateName: string): Res
   return {
     id: resumeId,
     userId: "cli",
-    title: basic.name ? `${basic.name}-resume` : "resume",
+    title: basicName ? `${basicName}-resume` : "resume",
     template: model.render_config?.template || templateName,
     themeConfig: normalizeTheme(templateName, model),
     isDefault: false,

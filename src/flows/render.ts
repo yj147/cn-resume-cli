@@ -1,5 +1,6 @@
 import fs from "node:fs";
-import { normalizeBulletList } from "../core/model.js";
+import { collectCustomSectionLines, normalizeBulletList } from "../core/model.js";
+import { getFieldValue } from "../core/provenance.js";
 
 export function modelToPlainText(model) {
   const formatDateRange = (item) => {
@@ -12,19 +13,23 @@ export function modelToPlainText(model) {
   };
 
   const listifyCustomSection = (section) => {
-    const contentLines = normalizeBulletList(section.content || "");
-    const itemLines = normalizeBulletList(section.items || []);
-    const merged = [...itemLines, ...contentLines].filter(Boolean);
-    return merged.map((line) => `${section.title || "附加信息"}: ${line}`);
+    return collectCustomSectionLines(section).map((line) => `${section.title || "附加信息"}: ${line}`);
   };
 
   const out = [];
   const basic = model.basic || {};
-  out.push(`${basic.name || ""}`.trim());
-  if (basic.title) out.push(basic.title);
-  const contact = [basic.phone, basic.email, basic.location, basic.website].filter(Boolean).join(" | ");
+  const basicName = getFieldValue(basic.name);
+  const basicTitle = getFieldValue(basic.title);
+  const basicPhone = getFieldValue(basic.phone);
+  const basicEmail = getFieldValue(basic.email);
+  const basicLocation = getFieldValue(basic.location);
+  const basicWebsite = getFieldValue(basic.website);
+  const basicSummary = getFieldValue(basic.summary);
+  out.push(`${basicName || ""}`.trim());
+  if (basicTitle) out.push(basicTitle);
+  const contact = [basicPhone, basicEmail, basicLocation, basicWebsite].filter(Boolean).join(" | ");
   if (contact) out.push(contact);
-  if (basic.summary) out.push(`\n${basic.summary}\n`);
+  if (basicSummary) out.push(`\n${basicSummary}\n`);
 
   const dump = (title, lines) => {
     if (!lines.length) return;
@@ -105,16 +110,23 @@ export async function generateDocx(model, outputPath) {
   const { Document, Packer, Paragraph, TextRun, HeadingLevel } = docx;
   const children = [];
   const basic = model.basic || {};
-  children.push(new Paragraph({ text: basic.name || "候选人", heading: HeadingLevel.TITLE }));
-  if (basic.title) {
-    children.push(new Paragraph({ text: basic.title }));
+  const basicName = getFieldValue(basic.name);
+  const basicTitle = getFieldValue(basic.title);
+  const basicPhone = getFieldValue(basic.phone);
+  const basicEmail = getFieldValue(basic.email);
+  const basicLocation = getFieldValue(basic.location);
+  const basicWebsite = getFieldValue(basic.website);
+  const basicSummary = getFieldValue(basic.summary);
+  children.push(new Paragraph({ text: basicName || "候选人", heading: HeadingLevel.TITLE }));
+  if (basicTitle) {
+    children.push(new Paragraph({ text: basicTitle }));
   }
-  const contactLine = [basic.phone, basic.email, basic.location, basic.website].filter(Boolean).join(" | ");
+  const contactLine = [basicPhone, basicEmail, basicLocation, basicWebsite].filter(Boolean).join(" | ");
   if (contactLine) {
     children.push(new Paragraph({ text: contactLine }));
   }
-  if (basic.summary) {
-    children.push(new Paragraph({ text: basic.summary }));
+  if (basicSummary) {
+    children.push(new Paragraph({ text: basicSummary }));
   }
 
   const formatDateRange = (item) => {
@@ -187,7 +199,7 @@ export async function generateDocx(model, outputPath) {
   addSection(
     "附加信息",
     (model.custom_sections || []).flatMap((section) => {
-      const rows = normalizeBulletList(section.items || []).concat(normalizeBulletList(section.content || ""));
+      const rows = collectCustomSectionLines(section);
       return rows.map((line) => `${section.title || "附加信息"}: ${line}`);
     })
   );
@@ -196,4 +208,3 @@ export async function generateDocx(model, outputPath) {
   const buffer = await Packer.toBuffer(doc);
   fs.writeFileSync(outputPath, buffer);
 }
-

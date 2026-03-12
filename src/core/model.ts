@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { createFieldEnvelope } from "./provenance.js";
+import { FIELD_SOURCES, createFieldEnvelope, normalizeFieldEnvelope } from "./provenance.js";
 
 export function nowIso() {
   return new Date().toISOString();
@@ -110,18 +110,18 @@ function normalizeRenderConfig(raw) {
 export function buildEmptyModel() {
   return {
     basic: {
-      name: "",
-      title: "",
-      photo: "",
-      birth_date: "",
-      email: "",
-      phone: "",
-      location: "",
-      website: "",
-      linkedin: "",
-      github: "",
-      employment_status: "",
-      summary: ""
+      name: buildEmptyField(),
+      title: buildEmptyField(),
+      photo: buildEmptyField(),
+      birth_date: buildEmptyField(),
+      email: buildEmptyField(),
+      phone: buildEmptyField(),
+      location: buildEmptyField(),
+      website: buildEmptyField(),
+      linkedin: buildEmptyField(),
+      github: buildEmptyField(),
+      employment_status: buildEmptyField(),
+      summary: buildEmptyField()
     },
     education: [],
     skills: [],
@@ -156,26 +156,41 @@ export function buildEmptyField(options = {}) {
 
 export function normalizeReactiveJson(raw) {
   const model = buildEmptyModel();
-  const basicSource =
-    raw?.basic ||
-    raw?.personalInfo ||
-    raw?.personal_info ||
-    raw?.basicInfo ||
-    raw?.basic_info ||
-    {};
+  const basicSource = raw?.basic || raw?.personalInfo || raw?.personal_info || raw?.basicInfo || raw?.basic_info || {};
+  const basicFieldSource = raw?.basic ? FIELD_SOURCES.USER_EXPLICIT : FIELD_SOURCES.PARSED_EXACT;
   if (basicSource && typeof basicSource === "object" && !Array.isArray(basicSource)) {
-    model.basic.name = basicSource.name || basicSource.fullName || basicSource.full_name || basicSource.姓名 || "";
-    model.basic.title = basicSource.title || basicSource.jobTitle || basicSource.position || basicSource.职位 || "";
-    model.basic.photo = basicSource.photo || "";
-    model.basic.birth_date = basicSource.birth_date || basicSource.birthDate || "";
-    model.basic.email = basicSource.email || basicSource.邮箱 || "";
-    model.basic.phone = basicSource.phone || basicSource.tel || basicSource.mobile || basicSource.电话 || basicSource.手机 || "";
-    model.basic.location = basicSource.location || basicSource.city || basicSource.address || basicSource.地址 || basicSource.城市 || "";
-    model.basic.website = basicSource.website || basicSource.url || basicSource.homepage || basicSource.linkedin || "";
-    model.basic.linkedin = basicSource.linkedin || "";
-    model.basic.github = basicSource.github || "";
-    model.basic.employment_status = basicSource.employment_status || basicSource.employementStatus || "";
-    model.basic.summary = basicSource.summary || basicSource.profile || raw?.summary || raw?.objective || "";
+    model.basic.name = normalizeFieldEnvelope(
+      basicSource.name || basicSource.fullName || basicSource.full_name || basicSource.姓名 || "",
+      { source: basicFieldSource }
+    );
+    model.basic.title = normalizeFieldEnvelope(
+      basicSource.title || basicSource.jobTitle || basicSource.position || basicSource.职位 || "",
+      { source: basicFieldSource }
+    );
+    model.basic.photo = normalizeFieldEnvelope(basicSource.photo || "", { source: basicFieldSource });
+    model.basic.birth_date = normalizeFieldEnvelope(basicSource.birth_date || basicSource.birthDate || "", { source: basicFieldSource });
+    model.basic.email = normalizeFieldEnvelope(basicSource.email || basicSource.邮箱 || "", { source: basicFieldSource });
+    model.basic.phone = normalizeFieldEnvelope(
+      basicSource.phone || basicSource.tel || basicSource.mobile || basicSource.电话 || basicSource.手机 || "",
+      { source: basicFieldSource }
+    );
+    model.basic.location = normalizeFieldEnvelope(
+      basicSource.location || basicSource.city || basicSource.address || basicSource.地址 || basicSource.城市 || "",
+      { source: basicFieldSource }
+    );
+    model.basic.website = normalizeFieldEnvelope(
+      basicSource.website || basicSource.url || basicSource.homepage || basicSource.linkedin || "",
+      { source: basicFieldSource }
+    );
+    model.basic.linkedin = normalizeFieldEnvelope(basicSource.linkedin || "", { source: basicFieldSource });
+    model.basic.github = normalizeFieldEnvelope(basicSource.github || "", { source: basicFieldSource });
+    model.basic.employment_status = normalizeFieldEnvelope(
+      basicSource.employment_status || basicSource.employementStatus || "",
+      { source: basicFieldSource }
+    );
+    const summaryValue = basicSource.summary || basicSource.profile || raw?.summary || raw?.objective || "";
+    const summarySource = basicSource.summary || basicSource.profile ? basicFieldSource : FIELD_SOURCES.PARSED_EXACT;
+    model.basic.summary = normalizeFieldEnvelope(summaryValue, { source: summarySource });
   }
 
   const work = raw.experience || raw.work || raw.work_experience || raw.workExperience || [];
