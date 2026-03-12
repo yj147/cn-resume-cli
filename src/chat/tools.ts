@@ -25,6 +25,25 @@ function buildToolFlags(action, extraFlags: Record<string, any> = {}) {
   return flags;
 }
 
+function buildParseDraft(session, inputPath, model) {
+  return createResumeDraft({
+    source: "parse-resume",
+    summary: "解析结果待确认",
+    patches: [
+      createModulePatch({
+        module: RESUME_MODULES.BASIC,
+        previousValue: session?.currentResume?.model?.basic || null,
+        nextValue: model.basic || null,
+        source: "parsed_exact",
+        rollback: {
+          strategy: "replace",
+          target: "currentResume.model.basic"
+        }
+      })
+    ]
+  });
+}
+
 export async function runChatTool(action, session) {
   if (action.type === "parse-resume") {
     const workspace = createToolWorkspace();
@@ -37,30 +56,10 @@ export async function runChatTool(action, session) {
     );
     const model = readJson(outputPath);
     return {
-      resumeDraft: createResumeDraft({
-        source: "parse-resume",
-        summary: "解析结果待确认",
-        patches: [
-          createModulePatch({
-            module: RESUME_MODULES.BASIC,
-            previousValue: session?.currentResume?.model?.basic || null,
-            nextValue: model.basic || null,
-            source: "parsed_exact",
-            rollback: {
-              strategy: "replace",
-              target: "currentResume.model.basic"
-            }
-          })
-        ]
-      }),
-      sessionPatch: {
-        currentResume: {
-          sourcePath: action.inputPath,
-          model
-        }
-      },
+      resumeDraft: buildParseDraft(session, action.inputPath, model),
       artifactPatch: {
-        latestModelPath: outputPath
+        latestModelPath: outputPath,
+        latestDraftSourcePath: action.inputPath
       },
       taskPatch: {
         status: "done"

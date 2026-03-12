@@ -95,6 +95,16 @@ function mergeSessionPatch(session, patch: Record<string, any> = {}) {
   }
 }
 
+function appendResumeDraft(session, draft) {
+  if (!draft || typeof draft !== "object") {
+    return;
+  }
+  session.resumeDraft = draft;
+  const patches = Array.isArray(draft.patches) ? draft.patches : [];
+  session.pendingPatches = Array.isArray(session.pendingPatches) ? session.pendingPatches : [];
+  session.pendingPatches.push(...patches);
+}
+
 export function planToolAction(session, plan) {
   const next = cloneSession(session);
   const task = createTask(next, plan);
@@ -147,6 +157,7 @@ export async function confirmPendingPlan(session, handlers) {
 
   try {
     const result = await handlers.runTool(pendingPlan.action, next);
+    appendResumeDraft(next, result?.resumeDraft);
     mergeSessionPatch(next, result?.sessionPatch);
     mergeArtifactPatch(next, result?.artifactPatch);
     next.pendingPlan = undefined;
@@ -230,9 +241,10 @@ export async function confirmPhaseB(session, feedbackText, handlers) {
   );
 
   try {
-    const result = await handlers.runTool(action, next);
-    mergeSessionPatch(next, result?.sessionPatch);
-    mergeArtifactPatch(next, result?.artifactPatch);
+  const result = await handlers.runTool(action, next);
+  appendResumeDraft(next, result?.resumeDraft);
+  mergeSessionPatch(next, result?.sessionPatch);
+  mergeArtifactPatch(next, result?.artifactPatch);
     next.phaseB = result?.phaseB || {
       ...next.phaseB,
       status: "confirmed"

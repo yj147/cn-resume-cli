@@ -39,11 +39,22 @@ test("agent plan confirmation gates tool execution until /go", async () => {
     runTool: async (action) => {
       executed = true;
       return {
-        sessionPatch: {
-          currentResume: {
-            sourcePath: action.inputPath,
-            model: { basics: { name: "张三" } }
-          }
+        resumeDraft: {
+          draftId: "draft-parse-1",
+          source: "parse-resume",
+          summary: "解析结果待确认",
+          patches: [
+            {
+              module: "basic",
+              nextValue: { name: "张三" },
+              source: "parsed_exact",
+              severity: "info",
+              rollback: {
+                strategy: "replace",
+                target: "currentResume.model.basic"
+              }
+            }
+          ]
         },
         artifactPatch: {
           latestModelPath: "/tmp/parsed.json"
@@ -57,7 +68,9 @@ test("agent plan confirmation gates tool execution until /go", async () => {
 
   assert.equal(executed, true);
   assert.equal(confirmed.state.status, "idle");
-  assert.equal(confirmed.currentResume.sourcePath, "/tmp/resume.txt");
+  assert.equal(confirmed.currentResume, undefined);
+  assert.equal(Array.isArray(confirmed.pendingPatches), true);
+  assert.equal(confirmed.pendingPatches[0].module, "basic");
   assert.equal(confirmed.pendingPlan, undefined);
   assert.equal(confirmed.pendingApproval, undefined);
   assert.equal(confirmed.tasks.length, 1);
@@ -157,4 +170,27 @@ test("optimize tool fails explicitly when no resume is loaded", async () => {
       ),
     /BLOCKED: no current resume loaded/
   );
+});
+
+test("parse tool returns draft patch payload without direct current resume write", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "cn-resume-parse-tool-"));
+  const inputPath = path.join(tempDir, "resume.txt");
+  fs.writeFileSync(inputPath, "杨进\nyj@example.com\n13800000000\n职位：全栈工程师\n", "utf8");
+
+  try {
+    const result = await toolsModule.runChatTool(
+      {
+        type: "parse-resume",
+        inputPath
+      },
+      sessionModule.createChatSession("2026-03-11T03:40:00.000Z")
+    );
+
+    assert.equal(result.sessionPatch?.currentResume, undefined);
+    assert.equal(result.resumeDraft.source, "parse-resume");
+    assert.equal(result.resumeDraft.patches[0].module, "basic");
+    assert.ok(result.artifactPatch.latestModelPath);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
 });
