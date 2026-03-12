@@ -1,7 +1,7 @@
 import os from "node:os";
 import { planToolAction, confirmPendingPlan, confirmPhaseB } from "./agent.js";
 import { streamChatAnswer } from "./answer.js";
-import { CHAT_STATES } from "./controller.js";
+import { CHAT_STATES, CONTROLLER_EVENTS, transitionWorkflowState } from "./controller.js";
 import { loadChatConfig } from "./config.js";
 import { createChatEvent } from "./events.js";
 import { planChatTurn } from "./planner.js";
@@ -48,6 +48,19 @@ function transcriptRef(session) {
     session.transcript = [...session.transcript];
   }
   return session.transcript;
+}
+
+function workflowStateRef(session) {
+  const workflowState = typeof session?.workflowState === "string" && session.workflowState
+    ? session.workflowState
+    : CHAT_STATES.INTAKE;
+  session.workflowState = workflowState;
+  return workflowState;
+}
+
+function dispatchWorkflowEvent(session, event) {
+  session.workflowState = transitionWorkflowState(workflowStateRef(session), event);
+  return session;
 }
 
 function emitEvent(session, io, event, options: Record<string, unknown> = {}) {
@@ -100,8 +113,12 @@ async function handleSlashInput(runtime, input, handlers, io) {
   let next = slash.runtime;
 
   if (input === "/go") {
+    const pendingPatchCount = Array.isArray(next.session?.pendingPatches) ? next.session.pendingPatches.length : 0;
     const fromIndex = Array.isArray(next.session?.transcript) ? next.session.transcript.length : 0;
     next.session = await confirmPendingPlan(next.session, { runTool: handlers.runTool });
+    if ((Array.isArray(next.session?.pendingPatches) ? next.session.pendingPatches.length : 0) > pendingPatchCount) {
+      dispatchWorkflowEvent(next.session, CONTROLLER_EVENTS.PATCH_GENERATED);
+    }
     emitTranscriptDelta(io, next.session, fromIndex);
   } else if (input === "/cancel") {
     if (next.session.phaseB?.status === "awaiting_feedback") {
@@ -191,6 +208,7 @@ async function handleChatInput(runtime, input, handlers, io) {
 
   const planned = await handlers.planInput(next, input);
   if (planned.type === "plan") {
+    dispatchWorkflowEvent(next.session, CONTROLLER_EVENTS.USER_PROVIDED_INFO);
     const fromIndex = Array.isArray(next.session?.transcript) ? next.session.transcript.length : 0;
     next.session = planToolAction(next.session, planned);
     emitTranscriptDelta(io, next.session, fromIndex);

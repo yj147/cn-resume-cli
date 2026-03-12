@@ -74,6 +74,14 @@ test("controller transition follows the primary happy path", () => {
 test("controller transition covers rejection and layout overflow branches", () => {
   assert.equal(
     controllerModule.transitionWorkflowState(
+      controllerModule.CHAT_STATES.DRAFTING,
+      controllerModule.CONTROLLER_EVENTS.USER_PROVIDED_INFO
+    ),
+    controllerModule.CHAT_STATES.DRAFTING
+  );
+
+  assert.equal(
+    controllerModule.transitionWorkflowState(
       controllerModule.CHAT_STATES.PENDING_CONFIRMATION,
       controllerModule.CONTROLLER_EVENTS.PATCH_REJECTED
     ),

@@ -7,6 +7,7 @@ import path from "node:path";
 const configModule = await import("../dist/chat/config.js");
 const sessionModule = await import("../dist/chat/session.js");
 const runtimeModule = await import("../dist/commands/chat.js");
+const controllerModule = await import("../dist/chat/controller.js");
 
 function withTempHome(run) {
   const originalHome = process.env.HOME;
@@ -95,5 +96,64 @@ test("submitChatInput emits user_message and assistant_completed events on answe
     assert.equal(events[0].type, "user_message");
     assert.equal(events.at(-1).type, "assistant_completed");
     assert.equal(result.runtime.session.transcript.some((item) => item.type === "assistant_completed"), true);
+  });
+});
+
+test("submitChatInput routes plan requests through controller workflow transitions", async () => {
+  return withTempHome(async (tempHome) => {
+    const runtime = {
+      homeDir: tempHome,
+      config: { apiKey: "", baseUrl: "", model: "" },
+      session: sessionModule.createChatSession("2026-03-11T07:00:00.000Z")
+    };
+
+    const result = await runtimeModule.submitChatInput(
+      runtime,
+      "优化当前简历",
+      {
+        emit: () => {},
+        write: () => {}
+      },
+      {
+        planInput: async () => ({
+          type: "plan",
+          summary: "优化当前简历",
+          action: { type: "optimize-resume" }
+        })
+      }
+    );
+
+    assert.equal(result.runtime.session.workflowState, controllerModule.CHAT_STATES.DRAFTING);
+    assert.equal(result.runtime.session.state.status, controllerModule.CHAT_STATES.WAITING_CONFIRM);
+  });
+});
+
+test("submitChatInput blocks illegal workflow transitions explicitly", async () => {
+  return withTempHome(async (tempHome) => {
+    const runtime = {
+      homeDir: tempHome,
+      config: { apiKey: "", baseUrl: "", model: "" },
+      session: sessionModule.createChatSession("2026-03-11T07:30:00.000Z")
+    };
+    runtime.session.workflowState = controllerModule.CHAT_STATES.BLOCKED;
+
+    await assert.rejects(
+      () => runtimeModule.submitChatInput(
+        runtime,
+        "继续优化",
+        {
+          emit: () => {},
+          write: () => {}
+        },
+        {
+          planInput: async () => ({
+            type: "plan",
+            summary: "继续优化",
+            action: { type: "optimize-resume" }
+          })
+        }
+      ),
+      /BLOCKED: invalid controller transition/
+    );
   });
 });

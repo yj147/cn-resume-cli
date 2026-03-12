@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 
 const chatCommandModule = await import("../dist/commands/chat.js");
+const controllerModule = await import("../dist/chat/controller.js");
 const sessionModule = await import("../dist/chat/session.js");
 
 function withTempHome(run) {
@@ -144,5 +145,47 @@ test("runChatLoop records error once when agent already attaches error session",
     assert.equal(errorMessages.length, 1);
     assert.match(errorMessages[0].content, /mock tool failed/);
     assert.equal(events.filter((item) => item.type === "error").length, 1);
+  });
+});
+
+test("runChatLoop persists controller workflow state after patch generation", async () => {
+  assert.equal(typeof chatCommandModule.runChatLoop, "function");
+
+  await withTempHome(async (tempHome) => {
+    const runtime = {
+      homeDir: tempHome,
+      config: { apiKey: "", baseUrl: "", model: "" },
+      session: sessionModule.createChatSession("2026-03-11T06:30:00.000Z")
+    };
+    const lines = ["优化当前简历", "/go", "/quit"];
+
+    const result = await chatCommandModule.runChatLoop(
+      runtime,
+      {
+        readLine: async () => lines.shift() ?? null,
+        write: () => {},
+        emit: () => {}
+      },
+      {
+        planInput: async () => ({
+          type: "plan",
+          summary: "优化当前简历",
+          action: { type: "optimize-resume" }
+        }),
+        runTool: async () => ({
+          resumeDraft: {
+            patches: [
+              {
+                module: "experience",
+                nextValue: [{ company: "Acme" }]
+              }
+            ]
+          }
+        })
+      }
+    );
+
+    assert.equal(result.session.workflowState, controllerModule.CHAT_STATES.PENDING_CONFIRMATION);
+    assert.equal(result.session.pendingPatches.length, 1);
   });
 });
