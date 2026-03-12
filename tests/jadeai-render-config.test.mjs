@@ -46,6 +46,25 @@ test("explicit JadeAI module selection still controls visibility and order", () 
   assert.deepEqual(sectionTypes, ["skills", "summary"]);
 });
 
+test("adapter emits document IR seed before building Jade resume sections", () => {
+  const model = loadFixture("sample-resume.json");
+  model.render_config.modules = ["skills", "summary"];
+  model.render_config.module_order = ["skills", "summary"];
+
+  const documentIr = adapterModule.modelToDocumentIR(model, "elegant");
+  const visibleSectionTypes = documentIr.sections
+    .filter((section) => section.content.visible)
+    .map((section) => section.content.sectionType)
+    .filter((type) => type !== "personal_info");
+  const resume = adapterModule.modelToJadeResume(model, "elegant");
+
+  assert.deepEqual(visibleSectionTypes, ["skills", "summary"]);
+  assert.deepEqual(
+    resume.sections.map((section) => section.type),
+    documentIr.sections.map((section) => section.content.sectionType)
+  );
+});
+
 test("custom sections dedupe overlapping items and content lines", async () => {
   const model = loadFixture("sample-resume.json");
   model.custom_sections = [

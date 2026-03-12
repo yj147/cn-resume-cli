@@ -44,7 +44,8 @@ export function createSectionBlock(input: Record<string, any>) {
     content: {
       sectionType: String(input.sectionType || ""),
       title: String(input.title || ""),
-      sortOrder: Number(input.sortOrder || 0)
+      sortOrder: Number(input.sortOrder || 0),
+      visible: input.visible !== false
     },
     children: Array.isArray(input.blocks) ? input.blocks : [],
     constraints: input.constraints

@@ -1,6 +1,7 @@
 import { TEMPLATE_STYLES } from "../constants.js";
 import { collectCustomSectionLines } from "../core/model.js";
 import { getFieldValue } from "../core/provenance.js";
+import { BLOCK_TYPES, createBlock, createDocumentIR, createSectionBlock } from "../layout-core/document-ir.js";
 import { extractUrlsFromResume } from "./qrcode.js";
 import type { Resume, ResumeSection, ThemeConfig } from "./types.js";
 
@@ -136,18 +137,14 @@ function makeSection(
   sortOrder: number,
   content: unknown,
   visible = true
-): ResumeSection {
-  const now = new Date();
+){
   return {
     id: `sec-${sortOrder}`,
-    resumeId,
     type,
     title: SECTION_TITLE_BY_TYPE[type] || type,
     sortOrder,
     visible,
-    content: content as any,
-    createdAt: now,
-    updatedAt: now
+    content: content as any
   };
 }
 
@@ -199,9 +196,10 @@ export function normalizeSectionType(raw: string): string {
   return aliases[key] || key;
 }
 
-function applyRenderConfig(sections: ResumeSection[], renderConfig?: ResumeModel["render_config"]): ResumeSection[] {
+function applyRenderConfig(documentIr, renderConfig?: ResumeModel["render_config"]) {
+  const sections = Array.isArray(documentIr?.sections) ? documentIr.sections : [];
   if (!renderConfig) {
-    return sections;
+    return documentIr;
   }
   const visibleModules = Array.isArray(renderConfig.modules) && renderConfig.modules.length > 0
     ? new Set(renderConfig.modules.map((item) => normalizeSectionType(item)))
@@ -212,11 +210,11 @@ function applyRenderConfig(sections: ResumeSection[], renderConfig?: ResumeModel
 
   if (visibleModules) {
     for (const section of sections) {
-      if (section.type === "personal_info") {
-        section.visible = true;
+      if (section.content.sectionType === "personal_info") {
+        section.content.visible = true;
         continue;
       }
-      section.visible = visibleModules.has(section.type);
+      section.content.visible = visibleModules.has(section.content.sectionType);
     }
   }
 
@@ -224,21 +222,52 @@ function applyRenderConfig(sections: ResumeSection[], renderConfig?: ResumeModel
     const explicitOrder = new Map<string, number>();
     orderedTypes.forEach((type, idx) => explicitOrder.set(type, idx));
     sections.sort((a, b) => {
-      const orderA = explicitOrder.has(a.type) ? explicitOrder.get(a.type)! : Number.MAX_SAFE_INTEGER;
-      const orderB = explicitOrder.has(b.type) ? explicitOrder.get(b.type)! : Number.MAX_SAFE_INTEGER;
+      const orderA = explicitOrder.has(a.content.sectionType) ? explicitOrder.get(a.content.sectionType)! : Number.MAX_SAFE_INTEGER;
+      const orderB = explicitOrder.has(b.content.sectionType) ? explicitOrder.get(b.content.sectionType)! : Number.MAX_SAFE_INTEGER;
       if (orderA !== orderB) {
         return orderA - orderB;
       }
-      return a.sortOrder - b.sortOrder;
+      return a.content.sortOrder - b.content.sortOrder;
     });
     sections.forEach((section, idx) => {
-      section.sortOrder = idx + 1;
+      section.content.sortOrder = idx + 1;
     });
   }
-  return sections;
+  return documentIr;
 }
 
-export function modelToJadeResume(model: ResumeModel, templateName: string): Resume {
+function sectionToIr(seed) {
+  return createSectionBlock({
+    id: seed.id,
+    sectionType: seed.type,
+    title: seed.title,
+    sortOrder: seed.sortOrder,
+    visible: seed.visible,
+    blocks: [
+      createBlock({
+        id: `${seed.id}-content`,
+        type: BLOCK_TYPES.GROUP,
+        content: seed.content
+      })
+    ]
+  });
+}
+
+function irSectionToResumeSection(section, resumeId: string, now: Date): ResumeSection {
+  return {
+    id: section.id,
+    resumeId,
+    type: section.content.sectionType,
+    title: section.content.title,
+    sortOrder: section.content.sortOrder,
+    visible: section.content.visible !== false,
+    content: section.children[0]?.content as any,
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
+export function modelToDocumentIR(model: ResumeModel, templateName: string) {
   const resumeId = "cli-resume";
   const basic = model.basic || {};
   const basicName = getFieldValue(basic.name);
@@ -250,7 +279,7 @@ export function modelToJadeResume(model: ResumeModel, templateName: string): Res
   const basicLinkedin = getFieldValue(basic.linkedin);
   const basicGithub = getFieldValue(basic.github);
   const basicSummary = getFieldValue(basic.summary);
-  const sections: ResumeSection[] = [];
+  const sections = [];
 
   sections.push(
     makeSection(resumeId, "personal_info", 1, {
@@ -394,7 +423,7 @@ export function modelToJadeResume(model: ResumeModel, templateName: string): Res
     sections.push(makeSection(resumeId, "qr_codes", 11, { items: manualQrCodes }));
   }
 
-  const autoQrItems = extractUrlsFromResume(sections);
+  const autoQrItems = extractUrlsFromResume(sections as any);
   if (autoQrItems.length) {
     const existing = sections.find((section) => section.type === "qr_codes");
     if (existing) {
@@ -409,8 +438,20 @@ export function modelToJadeResume(model: ResumeModel, templateName: string): Res
     }
   }
 
-  applyRenderConfig(sections, model.render_config);
+  const documentIr = createDocumentIR({
+    id: resumeId,
+    template: model.render_config?.template || templateName,
+    sections: sections.map((section) => sectionToIr(section))
+  });
+  applyRenderConfig(documentIr, model.render_config);
+  return documentIr;
+}
 
+export function modelToJadeResume(model: ResumeModel, templateName: string): Resume {
+  const resumeId = "cli-resume";
+  const basic = model.basic || {};
+  const basicName = getFieldValue(basic.name);
+  const documentIr = modelToDocumentIR(model, templateName);
   const now = new Date();
   return {
     id: resumeId,
@@ -420,7 +461,7 @@ export function modelToJadeResume(model: ResumeModel, templateName: string): Res
     themeConfig: normalizeTheme(templateName, model),
     isDefault: false,
     language: "zh",
-    sections,
+    sections: documentIr.sections.map((section) => irSectionToResumeSection(section, resumeId, now)),
     createdAt: now,
     updatedAt: now
   };
