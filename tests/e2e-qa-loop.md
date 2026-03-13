@@ -1,0 +1,106 @@
+# 功能性端到端测试记录
+
+## 范围
+- 需求来源：`issues.csv`
+- 用例文档：`tests/functional-e2e-test-cases.md`
+- 测试目标：覆盖 parse-first、0-1 authoring、review、模板推荐/预览/thumbnail、分页决策、模板确认与稳定性 gate，以及“精美质量高、内容全”的简历输出，并产出一份支持自定义内容的简历
+
+## 执行批次 A：基线验证
+- `npm run typecheck`
+- `npm run build`
+- `node --test tests/resume-agent-e2e.test.mjs tests/chat-loop.test.mjs tests/chat-runtime.test.mjs tests/template-recommend.test.mjs tests/pagination.test.mjs tests/review-service.test.mjs`
+- `node --test tests/*.mjs`
+- `npm test`
+- 手工链路：
+  - `cn-resume template list`
+  - `cn-resume template preview --name elegant`
+  - `cn-resume parse`
+  - `cn-resume optimize`
+  - `cn-resume validate`
+  - `cn-resume analyze-jd`
+  - `cn-resume grammar-check`
+  - `cn-resume generate --output txt/html/docx/pdf`
+
+## 发现的问题
+
+### ISSUE-QA-001：项目描述在最终简历中重复渲染
+- **现象**：
+  - `resume.txt` 的“项目经历”里，项目描述既出现在正文描述，又重复出现在 bullet 中。
+  - `resume.html` 同样重复。
+- **复现条件**：
+  - parse-first -> optimize(confirm) -> generate
+  - 输入：`fixtures/sample-resume-contract.json`
+  - 项目描述：`负责核心数据服务与权限体系设计。`
+- **根因**：
+  1. optimize 阶段把 `project.description` 重新并入 `project.bullets`。
+  2. 渲染阶段又同时输出 `description` 与 `bullets`。
+  3. HTML adapter 未过滤与 description 相同的 bullet。
+
+## 修复
+- `src/flows/parse-optimize.ts`
+  - 去掉 optimize 阶段把 `project.description` 追加回 `project.bullets` 的逻辑。
+- `src/flows/render.ts`
+  - 项目导出统一先输出 description，再输出去重后的 bullets。
+  - plain text 与 docx 走同一去重规则。
+- `src/jadeai/adapter.ts`
+  - HTML 渲染前过滤与 description 完全重复的 project highlight。
+- `tests/resume-agent-e2e.test.mjs`
+  - 新增回归断言：项目描述在 `resume.txt`、`resume.html` 中各只出现一次。
+
+## 复测
+
+### 批次 B：问题回归
+- `npm run build`
+- `node --test tests/resume-agent-e2e.test.mjs`
+- 结果：通过
+
+### 批次 C：全链路复测
+- `node --test tests/chat-loop.test.mjs tests/chat-runtime.test.mjs tests/template-recommend.test.mjs tests/pagination.test.mjs tests/review-service.test.mjs`
+- `npm test`
+- `npm run typecheck && npm run build && node --test tests/resume-agent-e2e.test.mjs tests/chat-loop.test.mjs tests/chat-runtime.test.mjs tests/template-recommend.test.mjs tests/pagination.test.mjs tests/review-service.test.mjs && npm test`
+- 手工导出复测：
+  - parse -> optimize(confirm) -> generate txt/html
+  - 计数结果：目标项目描述在 txt/html 中都只出现 1 次
+
+### 批次 D：测试用例文档补齐
+- 更新 `tests/functional-e2e-test-cases.md`
+- 新增覆盖：
+  - `thumbnail` 共用渲染真相
+  - 模板确认 / layout stability 导出 gate
+  - 自定义内容简历全链路产物
+  - 双栏 / 深色侧栏分页边界
+  - checkpoint / artifacts 恢复
+
+### 批次 E：自定义内容简历全链路回归
+- 新增自动化回归：`node --test tests/resume-custom-content-e2e.test.mjs`
+- 产物生成链：
+  - `custom-input.json`
+  - `custom-optimized.json`
+  - `validate.json`
+  - `analyze-jd.json`
+  - `grammar.json`
+  - `export-ready.json`
+  - `custom-resume.txt`
+  - `custom-resume.html`
+  - `custom-resume.docx`
+  - `custom-thumbnail.html`
+- 最终总回归：
+  - `npm run typecheck`
+  - `npm run build`
+  - `node --test tests/*.mjs`
+  - `npm test`
+- 结果：全部通过，未发现新增阻断缺陷
+
+## 最终结果
+- 自动化测试：通过
+- 手工导出检查：通过
+- 导出 gate：通过
+- 产物完整性：通过
+- 自定义内容简历产物：已生成，位于 `tasks/e2e-custom-output/`
+- 发现问题数：1
+- 已修复并复测通过：1
+- 本轮新增问题数：0
+
+## 备注
+- 生成的 HTML 预览仍会输出 Tailwind CDN 的浏览器告警；这不影响当前功能测试与导出结果，但它说明 HTML 预览不是完全离线自包含页面。
+- 当前“最短可工作导出链”仍需要像 `scripts/smoke.sh` 一样把 `reviewResult/layoutResult/templateConfirmed` 写回 export-ready model；这说明纯 CLI 导出闭环仍依赖中间模型补丁，属于已知限制，不影响本轮测试通过。
