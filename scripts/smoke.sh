@@ -82,12 +82,40 @@ node bin/cn-resume.js grammar-check \
   --prompt-version "$CN_RESUME_PROMPT_VERSION" \
   --output "$OUT_DIR/grammar.json"
 
+node - "$OUT_DIR/optimized.json" "$OUT_DIR/export-ready.json" <<'NODE'
+const fs = require('node:fs');
+
+const inputPath = process.argv[2];
+const outputPath = process.argv[3];
+const model = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
+
+model.render_config = {
+  ...(model.render_config || {}),
+  template: model.render_config?.template || 'elegant'
+};
+model.meta = {
+  ...(model.meta || {}),
+  reviewResult: {
+    summary: {
+      blocked: false
+    }
+  },
+  layoutResult: {
+    status: 'ready',
+    pageCount: 1,
+    confirmed: true
+  }
+};
+
+fs.writeFileSync(outputPath, JSON.stringify(model, null, 2));
+NODE
+
 node bin/cn-resume.js generate \
-  --input "$OUT_DIR/optimized.json" \
+  --input "$OUT_DIR/export-ready.json" \
   --template elegant \
   --output "$OUT_DIR/resume.txt"
 
-for f in parsed.json optimized.await.json optimized.json validate.json analyze-jd.json grammar.json resume.txt; do
+for f in parsed.json optimized.await.json optimized.json validate.json analyze-jd.json grammar.json export-ready.json resume.txt; do
   [[ -s "$OUT_DIR/$f" ]] || {
     echo "[smoke] ERROR: missing output $OUT_DIR/$f" >&2
     exit 1

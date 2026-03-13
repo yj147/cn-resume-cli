@@ -258,6 +258,10 @@ test("runChatLoop emits explicit overflow events and pending layout choices", as
 test("export gate blocks unresolved overflow and only explicit multipage approval can reach ready_to_export", () => {
   const session = sessionModule.createChatSession("2026-03-11T08:00:00.000Z");
   session.workflowState = controllerModule.CHAT_STATES.CONFIRMED_CONTENT;
+  session.currentTemplate = {
+    templateId: "elegant",
+    source: "user_selected"
+  };
   session.layoutResult = {
     status: "overflow",
     pageCount: 2,
@@ -283,6 +287,26 @@ test("export gate blocks unresolved overflow and only explicit multipage approva
   assert.equal(ready.workflowState, controllerModule.CHAT_STATES.READY_TO_EXPORT);
   assert.equal(ready.layoutResult.selectedOption, "accept_multipage");
   assert.equal(ready.layoutResult.confirmed, true);
+});
+
+test("export gate blocks when template has not been explicitly selected", () => {
+  const session = sessionModule.createChatSession("2026-03-11T08:15:00.000Z");
+  session.workflowState = controllerModule.CHAT_STATES.CONFIRMED_CONTENT;
+  session.reviewResult = {
+    summary: {
+      blocked: false
+    }
+  };
+  session.layoutResult = {
+    status: "ready",
+    pageCount: 1,
+    confirmed: true
+  };
+
+  assert.throws(
+    () => chatCommandModule.advanceExportWorkflow(session),
+    /template_selection_required/
+  );
 });
 
 test("runChatLoop builds A/B previews from current resume content and explicit template choice does not mutate confirmed content", async () => {

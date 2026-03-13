@@ -4,11 +4,12 @@ import { streamChatAnswer } from "./answer.js";
 import { CHAT_STATES, CONTROLLER_EVENTS, transitionWorkflowState } from "./controller.js";
 import { loadChatConfig } from "./config.js";
 import { createChatEvent } from "./events.js";
-import { assertLayoutExportReady, normalizeLayoutResult } from "../flows/render.js";
+import { normalizeLayoutResult } from "../flows/render.js";
 import { planChatTurn } from "./planner.js";
 import { loadActiveSession, loadNamedSession, saveActiveSession } from "./session.js";
 import { executeSlashCommand } from "./slash.js";
 import { runChatTool } from "./tools.js";
+import { assertSessionExportReady } from "../export-gate.js";
 
 function loadChatSession(flags, homeDir) {
   const resume = String(flags?.resume || "").trim();
@@ -81,17 +82,22 @@ function blockedWithSession(session, message) {
 export function advanceExportWorkflow(session) {
   const next = structuredClone(session);
   const currentState = workflowStateRef(next);
-  const layoutResult = normalizeLayoutResult(next.layoutResult);
-
-  if (layoutResult?.status === "overflow") {
-    next.layoutResult = layoutResult;
-    if (currentState === CHAT_STATES.CONFIRMED_CONTENT) {
+  let gate;
+  try {
+    gate = assertSessionExportReady(next, "export");
+  } catch (error) {
+    const layoutResult = normalizeLayoutResult(next.layoutResult);
+    if (layoutResult?.status === "overflow" && currentState === CHAT_STATES.CONFIRMED_CONTENT) {
+      next.layoutResult = layoutResult;
       dispatchWorkflowEvent(next, CONTROLLER_EVENTS.LAYOUT_OVERFLOW);
     }
-    try {
-      assertLayoutExportReady(next.layoutResult, "export");
-    } catch (error) {
-      throw blockedWithSession(next, String(error?.message || error));
+    throw blockedWithSession(next, String(error?.message || error));
+  }
+
+  if (gate.layoutResult?.status === "overflow") {
+    next.layoutResult = gate.layoutResult;
+    if (currentState === CHAT_STATES.CONFIRMED_CONTENT) {
+      dispatchWorkflowEvent(next, CONTROLLER_EVENTS.LAYOUT_OVERFLOW);
     }
     if (workflowStateRef(next) === CHAT_STATES.LAYOUT_SOLVING) {
       dispatchWorkflowEvent(next, CONTROLLER_EVENTS.USER_APPROVED_MULTIPAGE);
