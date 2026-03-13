@@ -6,6 +6,7 @@ import {
   runGenerate,
   runGrammarCheck,
   runOptimize,
+  runPrepareExport,
   runParse,
   runTemplateCommand,
   runValidate
@@ -32,6 +33,10 @@ export async function main(argv) {
   }
   if (command === "generate") {
     await runGenerate(flags);
+    return;
+  }
+  if (command === "prepare-export") {
+    await runPrepareExport(flags);
     return;
   }
   if (command === "validate") {
@@ -61,4 +66,3 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     process.exit(1);
   });
 }
-

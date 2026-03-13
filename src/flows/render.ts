@@ -97,6 +97,34 @@ export function invalidateLayoutResult(layoutResult, templateId, reason = "templ
   });
 }
 
+export function buildLayoutResultFromReview(reviewResult, templateId = "", stable = false) {
+  const finding = (reviewResult?.findings || []).find((item) => item.category === "layout_quality");
+  if (!finding) {
+    return normalizeLayoutResult({
+      status: reviewResult?.summary?.blocked ? "needs_attention" : "ready",
+      pageCount: 1,
+      templateId,
+      stable
+    });
+  }
+  if (finding.severity === "warning" || finding.severity === "blocker" || /超页|一页|版面/.test(String(finding.message || ""))) {
+    return normalizeLayoutResult({
+      status: "overflow",
+      pageCount: 2,
+      templateId,
+      stable,
+      finding
+    });
+  }
+  return normalizeLayoutResult({
+    status: reviewResult?.summary?.blocked ? "needs_attention" : "ready",
+    pageCount: 1,
+    templateId,
+    stable,
+    finding
+  });
+}
+
 export function recordLayoutDecision(layoutResult, selectedOption) {
   const normalized = normalizeLayoutResult(layoutResult);
   const choice = String(selectedOption || "").trim();

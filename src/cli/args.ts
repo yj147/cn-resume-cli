@@ -28,6 +28,7 @@ cn-resume CLI
 Usage:
   cn-resume parse --input <file> --output <model.json> [--engine <rule|ai>] [--model <id>] [--prompt-version <vX>]
   cn-resume optimize --input <model.json|txt> [--jd <jd.txt>] [--engine <rule|ai>] [--model <id>] [--prompt-version <vX>] [--feedback <text>] [--confirm] --output <model.json>
+  cn-resume prepare-export --input <model.json> [--jd <jd.txt>] [--template <name>] [--accept-multipage] [--engine <hybrid|ai|rule>] [--model <id>] [--prompt-version <vX>] --output <export-ready.json>
   cn-resume generate --input <model.json> --template <name> --output <file.{pdf|docx|html|txt|json}> [--fit-one-page]
   cn-resume validate --input <model.json|pdf> [--jd <jd.txt>] [--engine <hybrid|ai|rule>] [--model <id>] [--prompt-version <vX>] [--output <report.json>]
   cn-resume analyze-jd --input <model.json> --jd <jd.txt> [--engine <hybrid|ai|rule>] [--model <id>] [--prompt-version <vX>] [--output <report.json>]
@@ -41,6 +42,7 @@ Notes:
   - Supports 50 template names from JadeAI taxonomy.
   - Default evaluation engine is hybrid (AI output + rule hard gates).
   - Phase B is enforced for CLI-optimized models. Use optimize --feedback and finish with --confirm.
+  - Pure CLI export loop: parse -> optimize --confirm -> prepare-export -> generate.
   - PDF generation uses Puppeteer (CHROME_PATH optional).
   - Default runtime baseline: Node.js 20+.
 `.trim();
@@ -53,4 +55,3 @@ export function inferFormat(outputPath, explicitFormat) {
   const ext = path.extname(outputPath).toLowerCase().replace(".", "");
   return ext || "pdf";
 }
-

@@ -6,7 +6,7 @@ import { resolveEvalOptions } from "../eval/evaluation.js";
 import { runReviewService } from "../eval/review-service.js";
 import { createModulePatch, createResumeDraft, RESUME_MODULES } from "../core/patches.js";
 import { readJson, writeJson } from "../core/io.js";
-import { normalizeLayoutResult } from "../flows/render.js";
+import { buildLayoutResultFromReview } from "../flows/render.js";
 import { renderTemplate } from "../template/custom-template.js";
 import { recommendTemplates } from "../template/recommend.js";
 
@@ -88,29 +88,6 @@ function buildAdoptablePatches(reviewResult) {
     summary: finding.message,
     recommendedFeedback: finding.message
   }));
-}
-
-function buildLayoutResult(reviewResult, templateId = "", stable = false) {
-  const finding = (reviewResult.findings || []).find((item) => item.category === "layout_quality");
-  if (!finding) {
-    return null;
-  }
-  if (finding.severity === "warning" || finding.severity === "blocker" || /超页|一页|版面/.test(String(finding.message || ""))) {
-    return normalizeLayoutResult({
-      status: "overflow",
-      pageCount: 2,
-      templateId,
-      stable,
-      finding
-    });
-  }
-  return normalizeLayoutResult({
-    status: reviewResult.summary?.blocked ? "needs_attention" : "ready",
-    pageCount: 1,
-    templateId,
-    stable,
-    finding
-  });
 }
 
 function resolveReviewTemplate(session, action) {
@@ -219,7 +196,7 @@ export async function runChatTool(action, session) {
           ...reviewResult,
           adoptablePatches
         },
-        layoutResult: buildLayoutResult(
+        layoutResult: buildLayoutResultFromReview(
           reviewResult,
           reviewTemplate,
           session?.currentTemplate?.confirmed === true && session?.currentTemplate?.templateId === reviewTemplate

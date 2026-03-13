@@ -18,7 +18,7 @@ import {
   parseTextToModel,
   PHASE_B_PROMPT
 } from "./flows/parse-optimize.js";
-import { generateDocx, modelToPlainText } from "./flows/render.js";
+import { buildLayoutResultFromReview, generateDocx, modelToPlainText, recordLayoutDecision } from "./flows/render.js";
 import { assertModelExportReady } from "./export-gate.js";
 import { parsePdfToText } from "./pdf.js";
 import { generatePdf as renderPdfBuffer } from "./jadeai/generate-pdf.js";
@@ -126,6 +126,46 @@ export async function runOptimize(flags) {
     );
   }
   writeJson(outputPath, optimized);
+}
+
+export async function runPrepareExport(flags) {
+  const inputPath = flags.input;
+  const outputPath = flags.output;
+  if (!inputPath || !outputPath) {
+    throw new Error("prepare-export requires --input and --output");
+  }
+  const evalOptions = resolveEvalOptions(flags);
+  const model = normalizeReactiveJson(readJson(inputPath));
+  assertPhaseBConfirmedOrThrow(model, "prepare-export");
+  const jdText = flags.jd ? readText(flags.jd) : "";
+  const templateInput = flags.template || model?.render_config?.template || model?.meta?.template || "elegant";
+  const template = resolveTemplate(templateInput).resolved;
+  const reviewResult = await runReviewService({
+    model,
+    jdText,
+    template,
+    options: evalOptions
+  });
+  let layoutResult = buildLayoutResultFromReview(reviewResult, template, true);
+  if (layoutResult?.status === "overflow" && Boolean(flags["accept-multipage"])) {
+    layoutResult = recordLayoutDecision(layoutResult, "accept_multipage");
+  }
+  const prepared = {
+    ...model,
+    meta: {
+      ...(model.meta || {}),
+      template,
+      templateConfirmed: true,
+      reviewResult,
+      layoutResult
+    },
+    render_config: {
+      ...(model.render_config || {}),
+      template,
+      templateConfirmed: true
+    }
+  };
+  writeJson(outputPath, prepared);
 }
 
 export async function runGenerate(flags) {

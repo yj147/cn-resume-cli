@@ -82,33 +82,15 @@ node bin/cn-resume.js grammar-check \
   --prompt-version "$CN_RESUME_PROMPT_VERSION" \
   --output "$OUT_DIR/grammar.json"
 
-node - "$OUT_DIR/optimized.json" "$OUT_DIR/export-ready.json" <<'NODE'
-const fs = require('node:fs');
-
-const inputPath = process.argv[2];
-const outputPath = process.argv[3];
-const model = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
-
-model.render_config = {
-  ...(model.render_config || {}),
-  template: model.render_config?.template || 'elegant'
-};
-model.meta = {
-  ...(model.meta || {}),
-  reviewResult: {
-    summary: {
-      blocked: false
-    }
-  },
-  layoutResult: {
-    status: 'ready',
-    pageCount: 1,
-    confirmed: true
-  }
-};
-
-fs.writeFileSync(outputPath, JSON.stringify(model, null, 2));
-NODE
+node bin/cn-resume.js prepare-export \
+  --input "$OUT_DIR/optimized.json" \
+  --jd "$INPUT_JD" \
+  --template elegant \
+  --accept-multipage \
+  --engine "$CN_RESUME_EVAL_ENGINE" \
+  --model "$CN_RESUME_AI_MODEL" \
+  --prompt-version "$CN_RESUME_PROMPT_VERSION" \
+  --output "$OUT_DIR/export-ready.json"
 
 node bin/cn-resume.js generate \
   --input "$OUT_DIR/export-ready.json" \
