@@ -7,6 +7,7 @@ import path from "node:path";
 const agentModule = await import("../dist/chat/agent.js");
 const evaluationModule = await import("../dist/eval/evaluation.js");
 const reviewServiceModule = await import("../dist/eval/review-service.js");
+const controllerModule = await import("../dist/chat/controller.js");
 const sessionModule = await import("../dist/chat/session.js");
 const toolsModule = await import("../dist/chat/tools.js");
 const provenanceModule = await import("../dist/core/provenance.js");
@@ -258,6 +259,40 @@ test("acceptPendingPatch upgrades formal resume content only after explicit acce
   assert.equal(accepted.patchDecisions[0].module, "basic");
 });
 
+test("patch workflow only leaves pending_confirmation after the final patch decision", () => {
+  const session = sessionModule.createChatSession("2026-03-11T03:52:00.000Z");
+  session.workflowState = controllerModule.CHAT_STATES.PENDING_CONFIRMATION;
+  session.pendingPatches = [
+    {
+      patchId: "patch-basic-1",
+      module: "basic",
+      nextValue: {
+        name: { value: "林青" }
+      },
+      source: provenanceModule.FIELD_SOURCES.PARSED_EXACT
+    },
+    {
+      patchId: "patch-exp-1",
+      module: "experience",
+      nextValue: [{ company: { value: "星海科技" } }],
+      source: provenanceModule.FIELD_SOURCES.AI_REWRITTEN
+    }
+  ];
+
+  const afterFirstDecision = agentModule.acceptPendingPatch(session, {
+    patchId: "patch-basic-1"
+  });
+  assert.equal(afterFirstDecision.workflowState, controllerModule.CHAT_STATES.PENDING_CONFIRMATION);
+  assert.equal(afterFirstDecision.pendingPatches.length, 1);
+
+  const afterFinalDecision = agentModule.rejectPendingPatch(afterFirstDecision, {
+    patchId: "patch-exp-1",
+    reason: "保留原工作经历"
+  });
+  assert.equal(afterFinalDecision.workflowState, controllerModule.CHAT_STATES.DRAFTING);
+  assert.equal(afterFinalDecision.pendingPatches.length, 0);
+});
+
 test("rejectPendingPatch records audit trail without mutating confirmed resume", () => {
   assert.equal(typeof agentModule.rejectPendingPatch, "function");
 
@@ -337,4 +372,5 @@ test("review tool reuses unified review service severity and stores adoptable pa
   assert.equal(reviewed.layoutResult.source, "paginateDocument");
   assert.equal(Array.isArray(reviewed.layoutResult.decisions), true);
   assert.equal(Array.isArray(reviewed.layoutResult.pages), true);
+  assert.equal(Object.hasOwn(reviewed.layoutResult, "requiresFollowUp"), false);
 });

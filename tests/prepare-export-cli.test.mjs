@@ -62,6 +62,7 @@ test("prepare-export creates export-ready model for pure CLI generate flow witho
     assert.equal(prepared.meta.layoutResult.selectedOption, "accept_multipage");
     assert.equal(prepared.meta.layoutResult.confirmed, true);
     assert.equal(prepared.meta.layoutResult.stable, true);
+    assert.equal(Object.hasOwn(prepared.meta.layoutResult, "requiresFollowUp"), false);
 
     await commandsModule.runGenerate({
       input: preparedPath,

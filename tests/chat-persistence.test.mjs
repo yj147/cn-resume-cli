@@ -340,3 +340,18 @@ test("auto-generated checkpoints persist across save and reload", async () => {
     assert.equal(reloaded.workflowState, controllerModule.CHAT_STATES.CONFIRMED_CONTENT);
   });
 });
+
+test("syncSessionState keeps state.status as a derived ui view instead of persisted workflow truth", () => {
+  const session = sessionModule.createChatSession("2026-03-11T08:05:00.000Z");
+  session.workflowState = controllerModule.CHAT_STATES.CONFIRMED_CONTENT;
+  session.pendingApproval = {
+    title: "确认计划",
+    summary: "确认计划",
+    action: { type: "optimize-resume" },
+    taskId: "task-derive-1"
+  };
+
+  const synced = sessionModule.syncSessionState(session);
+  assert.equal(synced.workflowState, controllerModule.CHAT_STATES.CONFIRMED_CONTENT);
+  assert.equal(synced.state.status, controllerModule.CHAT_STATES.WAITING_CONFIRM);
+});

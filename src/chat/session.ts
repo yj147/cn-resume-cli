@@ -56,6 +56,7 @@ export function syncSessionState(session) {
     (item) => item && typeof item === "object" && item.stable === true && typeof item.workflowState === "string" && item.workflowState
   );
   session.workflowState = deriveWorkflowState(session, stableCheckpoint?.workflowState || CHAT_STATES.INTAKE);
+  // `state.status` is a transient chat-shell view derived from `workflowState` and pending UI affordances.
   session.state = { status: deriveSessionStatus(session) };
   return session;
 }

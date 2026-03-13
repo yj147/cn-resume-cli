@@ -70,7 +70,6 @@ export function normalizeLayoutResult(layoutResult) {
   const confirmed = requiresDecision
     ? isKnownOption && selectedOption === "accept_multipage" && layoutResult.confirmed !== false
     : Boolean(layoutResult.confirmed ?? true);
-  const requiresFollowUp = requiresDecision && isKnownOption && selectedOption !== "accept_multipage";
 
   return {
     ...layoutResult,
@@ -82,7 +81,6 @@ export function normalizeLayoutResult(layoutResult) {
     confirmed,
     stable: layoutResult.stable === true,
     requiresDecision: requiresDecision && !isKnownOption,
-    requiresFollowUp,
     finding: layoutResult.finding && typeof layoutResult.finding === "object" ? layoutResult.finding : null,
     invalidatedBy: String(layoutResult.invalidatedBy || "").trim(),
     invalidatedAt: String(layoutResult.invalidatedAt || "").trim()

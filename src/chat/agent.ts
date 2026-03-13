@@ -179,11 +179,11 @@ function applyPatch(session, patch) {
   };
 }
 
-function updateWorkflowAfterPatchDecision(session, event) {
+function updateWorkflowAfterPatchDecision(session, event, remainingPatchCount) {
   if (session?.workflowState !== CHAT_STATES.PENDING_CONFIRMATION) {
     return;
   }
-  if (Array.isArray(session?.pendingPatches) && session.pendingPatches.length > 0) {
+  if (remainingPatchCount !== 0) {
     return;
   }
   session.workflowState = transitionWorkflowState(session.workflowState, event);
@@ -224,7 +224,7 @@ export function acceptPendingPatch(session, options: Record<string, any> = {}) {
   const [patch] = pendingPatchesRef(next).splice(patchIndex, 1);
   applyPatch(next, patch);
   recordPatchDecision(next, patch, "accepted");
-  updateWorkflowAfterPatchDecision(next, CONTROLLER_EVENTS.PATCH_ACCEPTED);
+  updateWorkflowAfterPatchDecision(next, CONTROLLER_EVENTS.PATCH_ACCEPTED, pendingPatchesRef(next).length);
   recordCheckpoint(next, "patch_accepted");
   return touchSession(next);
 }
@@ -237,7 +237,7 @@ export function rejectPendingPatch(session, options: Record<string, any> = {}) {
   }
   const [patch] = pendingPatchesRef(next).splice(patchIndex, 1);
   recordPatchDecision(next, patch, "rejected", String(options?.reason || ""));
-  updateWorkflowAfterPatchDecision(next, CONTROLLER_EVENTS.PATCH_REJECTED);
+  updateWorkflowAfterPatchDecision(next, CONTROLLER_EVENTS.PATCH_REJECTED, pendingPatchesRef(next).length);
   recordCheckpoint(next, "patch_rejected");
   return touchSession(next);
 }
