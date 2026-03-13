@@ -6,6 +6,7 @@ import { resolveEvalOptions } from "../eval/evaluation.js";
 import { runReviewService } from "../eval/review-service.js";
 import { createModulePatch, createResumeDraft, RESUME_MODULES } from "../core/patches.js";
 import { readJson, writeJson } from "../core/io.js";
+import { FIELD_SOURCES } from "../core/provenance.js";
 import { buildLayoutResultFromReview } from "../flows/render.js";
 import { renderTemplate } from "../template/custom-template.js";
 import { recommendTemplates } from "../template/recommend.js";
@@ -39,7 +40,7 @@ function buildParseDraft(session, inputPath, model) {
         module: RESUME_MODULES.BASIC,
         previousValue: session?.currentResume?.model?.basic || null,
         nextValue: model.basic || null,
-        source: "parsed_exact",
+        source: FIELD_SOURCES.PARSED_EXACT,
         rollback: {
           strategy: "replace",
           target: "currentResume.model.basic"
@@ -58,7 +59,7 @@ function buildOptimizeDraft(session, model, phaseBStatus) {
         module: RESUME_MODULES.EXPERIENCE,
         previousValue: session.currentResume.model?.experience || null,
         nextValue: model.experience || null,
-        source: "ai_rewritten",
+        source: FIELD_SOURCES.AI_REWRITTEN,
         severity: phaseBStatus === "awaiting_feedback" ? "warning" : "info",
         rollback: {
           strategy: "replace",
@@ -218,7 +219,7 @@ export async function runChatTool(action, session) {
       reviewResult: session.reviewResult,
       preferences: action.preferences || {}
     });
-    const comparedTemplateIds = recommendation.candidates.slice(0, 2).map((candidate) => candidate.templateId);
+    const comparedTemplateIds = recommendation.candidates.slice(0, 3).map((candidate) => candidate.templateId);
     const previews = [];
 
     for (const templateId of comparedTemplateIds) {

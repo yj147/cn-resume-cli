@@ -363,7 +363,7 @@ test("template change invalidates stale layout results until the chosen template
   assert.equal(ready.workflowState, controllerModule.CHAT_STATES.READY_TO_EXPORT);
 });
 
-test("runChatLoop builds A/B previews from current resume content and explicit template choice does not mutate confirmed content", async () => {
+test("runChatLoop builds 3-template previews from current resume content and explicit template choice does not mutate confirmed content", async () => {
   await withTempHome(async (tempHome) => {
     const runtime = {
       homeDir: tempHome,
@@ -393,8 +393,8 @@ test("runChatLoop builds A/B previews from current resume content and explicit t
     );
 
     assert.equal(result.session.artifacts.templateComparison.source, "current_resume");
-    assert.deepEqual(result.session.artifacts.templateComparison.comparedTemplateIds, ["designer", "creative"]);
-    assert.equal(result.session.artifacts.templateComparison.previews.length, 2);
+    assert.deepEqual(result.session.artifacts.templateComparison.comparedTemplateIds, ["designer", "creative", "minimal"]);
+    assert.equal(result.session.artifacts.templateComparison.previews.length, 3);
     assert.equal(
       result.session.artifacts.templateComparison.previews.every((preview) => preview.html.includes("这是当前用户真实内容的专属摘要")),
       true

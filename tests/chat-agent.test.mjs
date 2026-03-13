@@ -9,6 +9,7 @@ const evaluationModule = await import("../dist/eval/evaluation.js");
 const reviewServiceModule = await import("../dist/eval/review-service.js");
 const sessionModule = await import("../dist/chat/session.js");
 const toolsModule = await import("../dist/chat/tools.js");
+const provenanceModule = await import("../dist/core/provenance.js");
 
 function loadFixture(name) {
   const file = path.join(process.cwd(), "fixtures", name);
@@ -49,7 +50,7 @@ test("agent plan confirmation gates tool execution until /go", async () => {
             {
               module: "basic",
               nextValue: { name: "张三" },
-              source: "parsed_exact",
+              source: provenanceModule.FIELD_SOURCES.PARSED_EXACT,
               severity: "info",
               rollback: {
                 strategy: "replace",
@@ -240,7 +241,7 @@ test("acceptPendingPatch upgrades formal resume content only after explicit acce
       nextValue: {
         name: { value: "杨进" }
       },
-      source: "parsed_exact"
+      source: provenanceModule.FIELD_SOURCES.PARSED_EXACT
     }
   ];
 
@@ -275,7 +276,7 @@ test("rejectPendingPatch records audit trail without mutating confirmed resume",
       nextValue: {
         name: { value: "新名字" }
       },
-      source: "ai_rewritten"
+      source: provenanceModule.FIELD_SOURCES.AI_REWRITTEN
     }
   ];
 

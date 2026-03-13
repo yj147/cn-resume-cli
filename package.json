@@ -14,7 +14,7 @@
     "test:smoke-ai": "bash ./scripts/smoke.sh",
     "test:parser-regression": "bash ./scripts/parse-regression.sh",
     "test:ai-mock": "npm run build && bash ./scripts/test-ai-mock.sh",
-    "test": "npm run build && npm run test:parser-regression",
+    "test": "npm run build && node --test tests/*.mjs && npm run test:parser-regression",
     "check": "npm run build && node bin/cn-resume.js --help",
     "prepack": "npm run build"
   },

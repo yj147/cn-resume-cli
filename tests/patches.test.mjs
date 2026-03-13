@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const patchesModule = await import("../dist/core/patches.js");
+const provenanceModule = await import("../dist/core/provenance.js");
 
 test("createModulePatch captures module diff metadata", () => {
   const createdAt = "2026-03-12T10:00:00.000Z";
@@ -9,7 +10,7 @@ test("createModulePatch captures module diff metadata", () => {
     module: patchesModule.RESUME_MODULES.BASIC,
     previousValue: { name: "旧值" },
     nextValue: { name: "新值" },
-    source: "parsed_exact",
+    source: provenanceModule.FIELD_SOURCES.PARSED_EXACT,
     severity: patchesModule.PATCH_SEVERITIES.WARNING,
     rollback: {
       strategy: "replace",
@@ -19,7 +20,7 @@ test("createModulePatch captures module diff metadata", () => {
   });
 
   assert.equal(patch.module, patchesModule.RESUME_MODULES.BASIC);
-  assert.equal(patch.source, "parsed_exact");
+  assert.equal(patch.source, provenanceModule.FIELD_SOURCES.PARSED_EXACT);
   assert.equal(patch.severity, patchesModule.PATCH_SEVERITIES.WARNING);
   assert.deepEqual(patch.rollback, {
     strategy: "replace",
@@ -38,7 +39,7 @@ test("createResumeDraft groups module patches under one draft contract", () => {
         module: patchesModule.RESUME_MODULES.BASIC,
         previousValue: null,
         nextValue: { name: "杨进" },
-        source: "parsed_exact",
+        source: provenanceModule.FIELD_SOURCES.PARSED_EXACT,
         rollback: {
           strategy: "replace",
           target: "currentResume.model.basic"
