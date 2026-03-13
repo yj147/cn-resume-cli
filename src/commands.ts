@@ -259,8 +259,10 @@ function runTemplateList() {
 
 export async function runTemplatePreview(flags) {
   const name = flags.name || flags.template || "elegant";
-  const sampleModel = createTemplatePreviewSample();
-  const rendered = await renderTemplate(sampleModel, name, false);
+  const previewModel = flags.input
+    ? normalizeReactiveJson(readJson(flags.input))
+    : createTemplatePreviewSample();
+  const rendered = await renderTemplate(previewModel, name, false);
   if (!flags.output) {
     throw new Error("template preview requires --output");
   }

@@ -64,6 +64,14 @@ function dispatchWorkflowEvent(session, event) {
   return session;
 }
 
+function shouldDispatchPlanningEvent(session, plan) {
+  if (plan?.action?.type !== "recommend-template") {
+    return true;
+  }
+  const workflowState = workflowStateRef(session);
+  return workflowState === CHAT_STATES.INTAKE || workflowState === CHAT_STATES.DRAFTING;
+}
+
 function blockedWithSession(session, message) {
   const error = new Error(message);
   (error as any).session = session;
@@ -145,12 +153,13 @@ function resolveChatHandlers(handlers = {}) {
 }
 
 async function handleSlashInput(runtime, input, handlers, io) {
+  const fromIndex = Array.isArray(runtime.session?.transcript) ? runtime.session.transcript.length : 0;
   const slash = handlers.executeSlashCommand(runtime, input);
   let next = slash.runtime;
 
   if (input === "/go") {
     const pendingPatchCount = Array.isArray(next.session?.pendingPatches) ? next.session.pendingPatches.length : 0;
-    const fromIndex = Array.isArray(next.session?.transcript) ? next.session.transcript.length : 0;
+    const goFromIndex = Array.isArray(next.session?.transcript) ? next.session.transcript.length : 0;
     next.session = await confirmPendingPlan(next.session, { runTool: handlers.runTool });
     const layoutResult = normalizeLayoutResult(next.session?.layoutResult);
     if (layoutResult?.status === "overflow" && workflowStateRef(next.session) === CHAT_STATES.CONFIRMED_CONTENT) {
@@ -160,7 +169,7 @@ async function handleSlashInput(runtime, input, handlers, io) {
     if ((Array.isArray(next.session?.pendingPatches) ? next.session.pendingPatches.length : 0) > pendingPatchCount) {
       dispatchWorkflowEvent(next.session, CONTROLLER_EVENTS.PATCH_GENERATED);
     }
-    emitTranscriptDelta(io, next.session, fromIndex);
+    emitTranscriptDelta(io, next.session, goFromIndex);
   } else if (input === "/cancel") {
     if (next.session.phaseB?.status === "awaiting_feedback") {
       emitEvent(
@@ -180,6 +189,10 @@ async function handleSlashInput(runtime, input, handlers, io) {
     } else if (next.session.state.status === CHAT_STATES.WAITING_CONFIRM) {
       next.session = idleSession(next.session);
     }
+  }
+
+  if (input !== "/go") {
+    emitTranscriptDelta(io, next.session, fromIndex);
   }
 
   if (slash.message && slash.message !== "go" && slash.message !== "cancel" && slash.message !== "quit") {
@@ -249,7 +262,9 @@ async function handleChatInput(runtime, input, handlers, io) {
 
   const planned = await handlers.planInput(next, input);
   if (planned.type === "plan") {
-    dispatchWorkflowEvent(next.session, CONTROLLER_EVENTS.USER_PROVIDED_INFO);
+    if (shouldDispatchPlanningEvent(next.session, planned)) {
+      dispatchWorkflowEvent(next.session, CONTROLLER_EVENTS.USER_PROVIDED_INFO);
+    }
     const fromIndex = Array.isArray(next.session?.transcript) ? next.session.transcript.length : 0;
     next.session = planToolAction(next.session, planned);
     emitTranscriptDelta(io, next.session, fromIndex);

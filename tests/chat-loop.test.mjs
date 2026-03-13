@@ -7,6 +7,7 @@ import path from "node:path";
 const chatCommandModule = await import("../dist/commands/chat.js");
 const controllerModule = await import("../dist/chat/controller.js");
 const sessionModule = await import("../dist/chat/session.js");
+const customTemplateModule = await import("../dist/template/custom-template.js");
 
 function withTempHome(run) {
   const originalHome = process.env.HOME;
@@ -282,4 +283,48 @@ test("export gate blocks unresolved overflow and only explicit multipage approva
   assert.equal(ready.workflowState, controllerModule.CHAT_STATES.READY_TO_EXPORT);
   assert.equal(ready.layoutResult.selectedOption, "accept_multipage");
   assert.equal(ready.layoutResult.confirmed, true);
+});
+
+test("runChatLoop builds A/B previews from current resume content and explicit template choice does not mutate confirmed content", async () => {
+  await withTempHome(async (tempHome) => {
+    const runtime = {
+      homeDir: tempHome,
+      config: { apiKey: "", baseUrl: "", model: "" },
+      session: sessionModule.createChatSession("2026-03-11T08:30:00.000Z")
+    };
+    const model = customTemplateModule.createTemplatePreviewSample();
+    model.basic.title.value = "资深 UI 设计师";
+    model.basic.summary.value = "这是当前用户真实内容的专属摘要";
+    const originalModel = structuredClone(model);
+    runtime.session.workflowState = controllerModule.CHAT_STATES.CONFIRMED_CONTENT;
+    runtime.session.currentResume = {
+      sourcePath: "/tmp/resume.json",
+      model
+    };
+
+    const lines = ["推荐模板对比预览", "/go", "/choose-template designer", "/quit"];
+    const events = [];
+
+    const result = await chatCommandModule.runChatLoop(
+      runtime,
+      {
+        readLine: async () => lines.shift() ?? null,
+        write: () => {},
+        emit: (event) => events.push(event)
+      }
+    );
+
+    assert.equal(result.session.artifacts.templateComparison.source, "current_resume");
+    assert.deepEqual(result.session.artifacts.templateComparison.comparedTemplateIds, ["designer", "creative"]);
+    assert.equal(result.session.artifacts.templateComparison.previews.length, 2);
+    assert.equal(
+      result.session.artifacts.templateComparison.previews.every((preview) => preview.html.includes("这是当前用户真实内容的专属摘要")),
+      true
+    );
+    assert.equal(result.session.currentTemplate.templateId, "designer");
+    assert.equal(result.session.currentTemplate.source, "ab_selected");
+    assert.deepEqual(result.session.currentResume.model, originalModel);
+    assert.equal(events.some((event) => event.type === "template_comparison_ready"), true);
+    assert.equal(events.some((event) => event.type === "template_selected"), true);
+  });
 });

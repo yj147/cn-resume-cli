@@ -30,6 +30,16 @@ export async function planChatTurn(runtime, input) {
     };
   }
 
+  if (/(推荐|预览|对比|比较).*(模板)|(模板).*(推荐|预览|对比|比较)/.test(trimmed)) {
+    return {
+      type: "plan",
+      summary: "基于当前内容生成模板对比预览",
+      action: {
+        type: "recommend-template"
+      }
+    };
+  }
+
   return {
     type: "answer",
     message: "我可以帮你解析简历文件，或在加载简历后优化当前内容。"

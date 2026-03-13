@@ -7,6 +7,8 @@ import { runReviewService } from "../eval/review-service.js";
 import { createModulePatch, createResumeDraft, RESUME_MODULES } from "../core/patches.js";
 import { readJson, writeJson } from "../core/io.js";
 import { normalizeLayoutResult } from "../flows/render.js";
+import { renderTemplate } from "../template/custom-template.js";
+import { recommendTemplates } from "../template/recommend.js";
 
 function createToolWorkspace() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "cn-resume-chat-tool-"));
@@ -216,6 +218,43 @@ export async function runChatTool(action, session) {
       },
       taskPatch: {
         status: reviewResult.summary?.blocked ? "blocked" : "done"
+      }
+    };
+  }
+
+  if (action.type === "recommend-template") {
+    if (!session?.currentResume?.model) {
+      throw new Error("BLOCKED: no current resume loaded");
+    }
+
+    const recommendation = recommendTemplates({
+      model: session.currentResume.model,
+      reviewResult: session.reviewResult,
+      preferences: action.preferences || {}
+    });
+    const comparedTemplateIds = recommendation.candidates.slice(0, 2).map((candidate) => candidate.templateId);
+    const previews = [];
+
+    for (const templateId of comparedTemplateIds) {
+      const rendered = await renderTemplate(session.currentResume.model, templateId, false);
+      previews.push({
+        templateId,
+        html: rendered.html
+      });
+    }
+
+    return {
+      artifactPatch: {
+        templateRecommendation: recommendation,
+        templateComparison: {
+          comparedTemplateIds,
+          previews,
+          source: "current_resume",
+          generatedAt: new Date().toISOString()
+        }
+      },
+      taskPatch: {
+        status: "done"
       }
     };
   }

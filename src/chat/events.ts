@@ -10,6 +10,8 @@ export interface ChatEvent {
     | "layout_overflow"
     | "layout_decision_requested"
     | "layout_decision_recorded"
+    | "template_comparison_ready"
+    | "template_selected"
     | "error";
   at: string;
   [key: string]: unknown;

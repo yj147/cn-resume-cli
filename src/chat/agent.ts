@@ -241,6 +241,40 @@ export function confirmLayoutDecision(session, selectedOption: string) {
   return touchSession(next);
 }
 
+export function selectTemplateCandidate(session, templateId: string) {
+  const next = cloneSession(session);
+  const selectedTemplateId = String(templateId || "").trim();
+  const comparedTemplateIds = Array.isArray(next?.artifacts?.templateComparison?.comparedTemplateIds)
+    ? next.artifacts.templateComparison.comparedTemplateIds
+    : [];
+
+  if (!selectedTemplateId || !comparedTemplateIds.includes(selectedTemplateId)) {
+    throw new Error("BLOCKED: template candidate not found in current comparison");
+  }
+
+  next.artifacts = {
+    ...(next.artifacts || {}),
+    templateComparison: {
+      ...(next.artifacts?.templateComparison || {}),
+      selectedTemplateId
+    }
+  };
+  next.currentTemplate = {
+    templateId: selectedTemplateId,
+    source: "ab_selected",
+    comparedTemplateIds: [...comparedTemplateIds],
+    selectedAt: new Date().toISOString()
+  };
+  appendEvent(
+    next,
+    createChatEvent("template_selected", {
+      templateId: selectedTemplateId
+    })
+  );
+  appendMessage(next, "assistant", `已选择模板：${selectedTemplateId}`);
+  return touchSession(next);
+}
+
 export function planToolAction(session, plan) {
   const next = cloneSession(session);
   const task = createTask(next, plan);
@@ -327,6 +361,19 @@ export async function confirmPendingPlan(session, handlers) {
 
     if (result?.phaseB) {
       next.phaseB = result.phaseB;
+    }
+    if (Array.isArray(result?.artifactPatch?.templateComparison?.comparedTemplateIds)) {
+      appendEvent(
+        next,
+        createChatEvent("template_comparison_ready", {
+          templateIds: result.artifactPatch.templateComparison.comparedTemplateIds
+        })
+      );
+      appendMessage(
+        next,
+        "assistant",
+        `已生成基于当前内容的模板对比：${result.artifactPatch.templateComparison.comparedTemplateIds.join(" vs ")}。请用 /choose-template <模板名> 明确选择。`
+      );
     }
     appendLayoutDecisionPrompt(next);
     next.state = { status: CHAT_STATES.IDLE };
