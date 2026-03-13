@@ -26,6 +26,8 @@ export function usage() {
 cn-resume CLI
 
 Usage:
+  cn-resume
+  cn-resume chat
   cn-resume parse --input <file> --output <model.json> [--engine <rule|ai>] [--model <id>] [--prompt-version <vX>]
   cn-resume optimize --input <model.json|txt> [--jd <jd.txt>] [--engine <rule|ai>] [--model <id>] [--prompt-version <vX>] [--feedback <text>] [--confirm] --output <model.json>
   cn-resume prepare-export --input <model.json> [--jd <jd.txt>] [--template <name>] [--accept-multipage] [--engine <hybrid|ai|rule>] [--model <id>] [--prompt-version <vX>] --output <export-ready.json>
@@ -39,6 +41,8 @@ Usage:
   cn-resume template clone --source <template> --name <new-template>
 
 Notes:
+  - Default entry launches the Chat TUI.
+  - Use 'cn-resume chat' to enter the Chat TUI explicitly.
   - Supports 50 template names from JadeAI taxonomy.
   - Default evaluation engine is hybrid (AI output + rule hard gates).
   - Phase B is enforced for CLI-optimized models. Use optimize --feedback and finish with --confirm.
