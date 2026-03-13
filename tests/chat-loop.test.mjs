@@ -9,6 +9,7 @@ const agentModule = await import("../dist/chat/agent.js");
 const controllerModule = await import("../dist/chat/controller.js");
 const sessionModule = await import("../dist/chat/session.js");
 const customTemplateModule = await import("../dist/template/custom-template.js");
+const renderModule = await import("../dist/flows/render.js");
 
 function withTempHome(run) {
   const originalHome = process.env.HOME;
@@ -25,6 +26,21 @@ function withTempHome(run) {
     }
     fs.rmSync(tempHome, { recursive: true, force: true });
   }
+}
+
+function createOverflowModel() {
+  const model = customTemplateModule.createTemplatePreviewSample();
+  model.experience = Array.from({ length: 6 }, (_, idx) => ({
+    company: { value: `公司${idx + 1}` },
+    role: { value: `角色${idx + 1}` },
+    start: { value: "2021-01" },
+    end: { value: "2022-01" },
+    bullets: Array.from(
+      { length: 5 },
+      (_item, bulletIndex) => `负责一个非常长的项目描述 ${idx + 1}-${bulletIndex + 1}，涵盖设计系统、中后台、跨团队协作、指标提升和落地复盘。`
+    )
+  }));
+  return model;
 }
 
 test("runChatLoop executes planned tool after /go and persists active session", async () => {
@@ -354,17 +370,20 @@ test("runChatLoop emits explicit overflow events and pending layout choices", as
         emit: (event) => events.push(event)
       },
       {
-        runTool: async () => ({
-          sessionPatch: {
-            layoutResult: {
-              status: "overflow",
-              pageCount: 2,
-              finding: {
-                message: "当前内容密度较高，排版存在超页风险。"
-              }
+        runTool: async () => {
+          const reviewResult = {
+            summary: {
+              blocked: false
+            },
+            findings: []
+          };
+          return {
+            sessionPatch: {
+              reviewResult,
+              layoutResult: renderModule.buildLayoutResult(createOverflowModel(), reviewResult, "elegant", true)
             }
-          }
-        })
+          };
+        }
       }
     );
 
@@ -372,6 +391,7 @@ test("runChatLoop emits explicit overflow events and pending layout choices", as
     assert.equal(events.some((event) => event.type === "layout_overflow"), true);
     assert.equal(events.some((event) => event.type === "layout_decision_requested"), true);
     assert.equal(result.session.layoutResult.status, "overflow");
+    assert.equal(result.session.layoutResult.source, "paginateDocument");
     assert.equal(result.session.layoutResult.confirmed, false);
     assert.equal(result.session.checkpoints.some((item) => item.key === "layout_overflow"), true);
     assert.deepEqual(

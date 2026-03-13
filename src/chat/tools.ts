@@ -7,7 +7,7 @@ import { runReviewService } from "../eval/review-service.js";
 import { createModulePatch, createResumeDraft, RESUME_MODULES } from "../core/patches.js";
 import { readJson, writeJson } from "../core/io.js";
 import { FIELD_SOURCES } from "../core/provenance.js";
-import { buildLayoutResultFromReview } from "../flows/render.js";
+import { buildLayoutResult } from "../flows/render.js";
 import { parseTextToModel } from "../flows/parse-optimize.js";
 import { renderTemplate } from "../template/custom-template.js";
 import { recommendTemplates } from "../template/recommend.js";
@@ -256,7 +256,8 @@ export async function runChatTool(action, session) {
           ...reviewResult,
           adoptablePatches
         },
-        layoutResult: buildLayoutResultFromReview(
+        layoutResult: buildLayoutResult(
+          session.currentResume.model,
           reviewResult,
           reviewTemplate,
           session?.currentTemplate?.confirmed === true && session?.currentTemplate?.templateId === reviewTemplate

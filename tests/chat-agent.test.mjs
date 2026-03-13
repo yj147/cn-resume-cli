@@ -10,6 +10,7 @@ const reviewServiceModule = await import("../dist/eval/review-service.js");
 const sessionModule = await import("../dist/chat/session.js");
 const toolsModule = await import("../dist/chat/tools.js");
 const provenanceModule = await import("../dist/core/provenance.js");
+const modelModule = await import("../dist/core/model.js");
 
 function loadFixture(name) {
   const file = path.join(process.cwd(), "fixtures", name);
@@ -296,7 +297,7 @@ test("review tool reuses unified review service severity and stores adoptable pa
   const session = sessionModule.createChatSession("2026-03-11T04:00:00.000Z");
   session.currentResume = {
     sourcePath: "/tmp/resume.json",
-    model: loadFixture("sample-resume-contract.json")
+    model: modelModule.normalizeReactiveJson(loadFixture("sample-resume-contract.json"))
   };
   session.currentJd = {
     text: "Kubernetes Go 微服务 架构 性能 数据库"
@@ -331,4 +332,9 @@ test("review tool reuses unified review service severity and stores adoptable pa
   assert.equal(reviewed.reviewResult.adoptablePatches.length > 0, true);
   assert.equal(reviewed.tasks[0].status, reviewed.reviewResult.summary.blocked ? "blocked" : "done");
   assert.equal(typeof reviewed.layoutResult, "object");
+  assert.equal(reviewed.layoutResult.templateId, "elegant");
+  assert.equal(reviewed.layoutResult.stable, false);
+  assert.equal(reviewed.layoutResult.source, "paginateDocument");
+  assert.equal(Array.isArray(reviewed.layoutResult.decisions), true);
+  assert.equal(Array.isArray(reviewed.layoutResult.pages), true);
 });

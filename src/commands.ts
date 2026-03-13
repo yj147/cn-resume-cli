@@ -18,7 +18,7 @@ import {
   parseTextToModel,
   PHASE_B_PROMPT
 } from "./flows/parse-optimize.js";
-import { buildLayoutResultFromReview, generateDocx, modelToPlainText, recordLayoutDecision } from "./flows/render.js";
+import { buildLayoutResult, generateDocx, modelToPlainText, recordLayoutDecision } from "./flows/render.js";
 import { assertModelExportReady } from "./export-gate.js";
 import { parsePdfToText } from "./pdf.js";
 import { generatePdf as renderPdfBuffer } from "./jadeai/generate-pdf.js";
@@ -146,7 +146,7 @@ export async function runPrepareExport(flags) {
     template,
     options: evalOptions
   });
-  let layoutResult = buildLayoutResultFromReview(reviewResult, template, true);
+  let layoutResult = buildLayoutResult(model, reviewResult, template, true);
   if (layoutResult?.status === "overflow" && Boolean(flags["accept-multipage"])) {
     layoutResult = recordLayoutDecision(layoutResult, "accept_multipage");
   }

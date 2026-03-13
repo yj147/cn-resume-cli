@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 const documentIrModule = await import("../dist/layout-core/document-ir.js");
 const paginationModule = await import("../dist/layout-core/pagination.js");
 const templateSpecModule = await import("../dist/template/spec.js");
+const adapterModule = await import("../dist/jadeai/adapter.js");
+const customTemplateModule = await import("../dist/template/custom-template.js");
 
 function createLineBlock(id, lineCount, constraints = {}, type = documentIrModule.BLOCK_TYPES.PARAGRAPH) {
   return documentIrModule.createBlock({
@@ -226,4 +228,32 @@ test("pagination paginates sidebar and main regions independently for two-column
   );
   assert.equal(result.pages[1].regions.main.length, 0);
   assert.equal(result.overflow.length, 0);
+});
+
+test("pagination consumes real document ir from resume model instead of synthetic-only fixtures", () => {
+  const model = customTemplateModule.createTemplatePreviewSample();
+  model.experience = Array.from({ length: 6 }, (_, idx) => ({
+    company: { value: `公司${idx + 1}` },
+    role: { value: `角色${idx + 1}` },
+    start: { value: "2021-01" },
+    end: { value: "2022-01" },
+    bullets: Array.from(
+      { length: 5 },
+      (_item, bulletIndex) => `负责一个非常长的项目描述 ${idx + 1}-${bulletIndex + 1}，涵盖设计系统、中后台、跨团队协作、指标提升和落地复盘。`
+    )
+  }));
+
+  const result = paginationModule.paginateDocument({
+    document: adapterModule.modelToDocumentIR(model, "elegant"),
+    templateSpec: templateSpecModule.resolveTemplateSpec("elegant"),
+    pageBox: {
+      linesPerPage: 40
+    },
+    charsPerLine: 30
+  });
+
+  assert.equal(result.status, "overflow");
+  assert.equal(result.pageCount >= 2, true);
+  assert.equal(result.overflow.length > 0, true);
+  assert.equal(result.decisions.some((decision) => decision.action === "overflow"), true);
 });

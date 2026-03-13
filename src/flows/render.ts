@@ -1,6 +1,9 @@
 import fs from "node:fs";
 import { collectCustomSectionLines, normalizeBulletList } from "../core/model.js";
 import { getFieldValue } from "../core/provenance.js";
+import { modelToDocumentIR } from "../jadeai/adapter.js";
+import { paginateDocument } from "../layout-core/pagination.js";
+import { resolveTemplateSpec } from "../template/spec.js";
 
 export const LAYOUT_DECISION_OPTIONS = Object.freeze([
   {
@@ -29,8 +32,11 @@ function positiveNumber(value, fallback = 0) {
 
 function normalizeLayoutStatus(input) {
   const status = String(input || "").trim().toLowerCase();
-  if (status === "overflow" || status === "multipage") {
+  if (status === "overflow" || status === "multipage" || status === "multi-page") {
     return "overflow";
+  }
+  if (status === "single-page" || status === "single_page" || status === "singlepage") {
+    return "ready";
   }
   if (status === "needs_attention") {
     return "needs_attention";
@@ -97,31 +103,62 @@ export function invalidateLayoutResult(layoutResult, templateId, reason = "templ
   });
 }
 
-export function buildLayoutResultFromReview(reviewResult, templateId = "", stable = false) {
-  const finding = (reviewResult?.findings || []).find((item) => item.category === "layout_quality");
-  if (!finding) {
-    return normalizeLayoutResult({
-      status: reviewResult?.summary?.blocked ? "needs_attention" : "ready",
-      pageCount: 1,
-      templateId,
-      stable
-    });
+function resolveLayoutFinding(reviewResult) {
+  return (reviewResult?.findings || []).find((item) => item.category === "layout_quality") || null;
+}
+
+function resolveLayoutCharsPerLine(model, templateSpec) {
+  const fontSize = positiveNumber(model?.render_config?.font_size, 14) || 14;
+  const baseCharsPerLine = templateSpec?.layoutFamily === "two-column" ? 24 : 30;
+  return Math.max(18, Math.round(baseCharsPerLine * (14 / fontSize)));
+}
+
+function resolveLayoutPageBox(model, templateSpec) {
+  const fontSize = positiveNumber(model?.render_config?.font_size, 14) || 14;
+  const baseMainLines = templateSpec?.layoutFamily === "two-column" ? 38 : 40;
+  const mainLinesPerPage = Math.max(24, Math.round(baseMainLines * (14 / fontSize)));
+  if (templateSpec?.layoutFamily !== "two-column") {
+    return {
+      linesPerPage: mainLinesPerPage
+    };
   }
-  if (finding.severity === "warning" || finding.severity === "blocker" || /超页|一页|版面/.test(String(finding.message || ""))) {
-    return normalizeLayoutResult({
-      status: "overflow",
-      pageCount: 2,
-      templateId,
-      stable,
-      finding
-    });
-  }
+  return {
+    linesPerPage: mainLinesPerPage,
+    regions: {
+      sidebar: {
+        linesPerPage: Math.max(18, mainLinesPerPage - 10)
+      }
+    }
+  };
+}
+
+function resolveLayoutTemplateId(model, templateId = "") {
+  return normalizeTemplateId(templateId || model?.render_config?.template || model?.meta?.template || "elegant");
+}
+
+export function buildLayoutResult(model, reviewResult, templateId = "", stable = false) {
+  const resolvedTemplateId = resolveLayoutTemplateId(model, templateId);
+  const templateSpec = resolveTemplateSpec(resolvedTemplateId);
+  const paginationResult = paginateDocument({
+    document: modelToDocumentIR(model, resolvedTemplateId),
+    templateSpec,
+    pageBox: resolveLayoutPageBox(model, templateSpec),
+    charsPerLine: resolveLayoutCharsPerLine(model, templateSpec)
+  });
+  const rawStatus = paginationResult.status === "single-page"
+    ? reviewResult?.summary?.blocked ? "needs_attention" : "ready"
+    : paginationResult.status;
+
   return normalizeLayoutResult({
-    status: reviewResult?.summary?.blocked ? "needs_attention" : "ready",
-    pageCount: 1,
-    templateId,
+    status: rawStatus,
+    pageCount: paginationResult.pageCount,
+    templateId: resolvedTemplateId,
     stable,
-    finding
+    finding: resolveLayoutFinding(reviewResult),
+    pages: paginationResult.pages,
+    decisions: paginationResult.decisions,
+    overflow: paginationResult.overflow,
+    source: "paginateDocument"
   });
 }
 

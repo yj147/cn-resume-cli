@@ -367,8 +367,65 @@
         }
       ],
       "completed_at": "2026-03-13T09:36:33Z"
+    },
+    {
+      "id": "task-012",
+      "title": "实现 issue-39：将 paginateDocument 接入 layout 主链并以真实分页结果驱动 export gate",
+      "status": "completed",
+      "priority": "P0",
+      "depends_on": [
+        "task-011"
+      ],
+      "attempts": 0,
+      "max_attempts": 3,
+      "started_at_commit": "17767f8",
+      "validation": {
+        "command": "npm run build && node --test tests/pagination.test.mjs tests/chat-loop.test.mjs tests/resume-agent-e2e.test.mjs",
+        "timeout_seconds": 1800
+      },
+      "on_failure": {
+        "cleanup": null
+      },
+      "error_log": [],
+      "checkpoints": [
+        {
+          "step": 1,
+          "total": 2,
+          "description": "replaced review-only layout heuristics with a paginateDocument-backed layout builder and wired chat review plus prepare-export to the same layout source of truth",
+          "timestamp": "2026-03-13T09:48:32Z"
+        },
+        {
+          "step": 2,
+          "total": 2,
+          "description": "verified pagination main-chain coverage with pagination, chat-agent, chat-loop, prepare-export, and resume-agent e2e regressions",
+          "timestamp": "2026-03-13T09:48:32Z"
+        }
+      ],
+      "completed_at": "2026-03-13T09:48:32Z"
+    },
+    {
+      "id": "task-013",
+      "title": "实现 issue-40：完成设计/实施计划回写与架构师复审闭环",
+      "status": "pending",
+      "priority": "P0",
+      "depends_on": [
+        "task-012"
+      ],
+      "attempts": 0,
+      "max_attempts": 3,
+      "started_at_commit": null,
+      "validation": {
+        "command": "npm run build && npm test",
+        "timeout_seconds": 1800
+      },
+      "on_failure": {
+        "cleanup": null
+      },
+      "error_log": [],
+      "checkpoints": [],
+      "completed_at": null
     }
   ],
   "session_count": 6,
-  "last_session": "2026-03-13T09:36:33Z"
+  "last_session": "2026-03-13T09:48:32Z"
 }

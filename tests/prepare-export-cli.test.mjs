@@ -54,7 +54,13 @@ test("prepare-export creates export-ready model for pure CLI generate flow witho
     assert.equal(prepared.render_config.template, "elegant");
     assert.equal(prepared.render_config.templateConfirmed, true);
     assert.equal(prepared.meta.reviewResult.summary.blocked, false);
+    assert.equal(prepared.meta.layoutResult.source, "paginateDocument");
+    assert.equal(prepared.meta.layoutResult.status, "overflow");
+    assert.equal(Array.isArray(prepared.meta.layoutResult.pages), true);
+    assert.equal(Array.isArray(prepared.meta.layoutResult.decisions), true);
     assert.equal(prepared.meta.layoutResult.templateId, "elegant");
+    assert.equal(prepared.meta.layoutResult.selectedOption, "accept_multipage");
+    assert.equal(prepared.meta.layoutResult.confirmed, true);
     assert.equal(prepared.meta.layoutResult.stable, true);
 
     await commandsModule.runGenerate({

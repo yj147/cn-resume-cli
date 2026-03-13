@@ -221,3 +221,7 @@
 [2026-03-13T09:36:33Z] [SESSION-6] CHECKPOINT [task-011] step=1/2 "collapsed workflow truth into workflowState, derived UI status from session data, and stopped persisting legacy state payloads"
 [2026-03-13T09:36:33Z] [SESSION-6] CHECKPOINT [task-011] step=2/2 "verified automatic stable checkpoints and recovery persistence with targeted chat regression suites"
 [2026-03-13T09:36:33Z] [SESSION-6] Completed [task-011] (commit pending)
+[2026-03-13T09:37:30Z] [SESSION-6] Starting [task-012] 实现 issue-39：将 paginateDocument 接入 layout 主链并以真实分页结果驱动 export gate (base=17767f8)
+[2026-03-13T09:48:32Z] [SESSION-6] CHECKPOINT [task-012] step=1/2 "replaced review-only layout heuristics with paginateDocument-backed layout solving for chat review and prepare-export"
+[2026-03-13T09:48:32Z] [SESSION-6] CHECKPOINT [task-012] step=2/2 "verified pagination-backed layout main chain with pagination, chat-agent, chat-loop, prepare-export, and resume-agent e2e regressions"
+[2026-03-13T09:48:32Z] [SESSION-6] Completed [task-012] (commit pending)

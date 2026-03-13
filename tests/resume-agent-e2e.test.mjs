@@ -9,6 +9,8 @@ const chatCommandModule = await import("../dist/commands/chat.js");
 const agentModule = await import("../dist/chat/agent.js");
 const controllerModule = await import("../dist/chat/controller.js");
 const sessionModule = await import("../dist/chat/session.js");
+const toolsModule = await import("../dist/chat/tools.js");
+const customTemplateModule = await import("../dist/template/custom-template.js");
 
 async function withTempDir(run) {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "cn-resume-agent-e2e-"));
@@ -55,6 +57,21 @@ function acceptAllPendingPatches(session) {
     });
   }
   return next;
+}
+
+function createOverflowModel() {
+  const model = customTemplateModule.createTemplatePreviewSample();
+  model.experience = Array.from({ length: 6 }, (_, idx) => ({
+    company: { value: `公司${idx + 1}` },
+    role: { value: `角色${idx + 1}` },
+    start: { value: "2021-01" },
+    end: { value: "2022-01" },
+    bullets: Array.from(
+      { length: 5 },
+      (_item, bulletIndex) => `负责一个非常长的项目描述 ${idx + 1}-${bulletIndex + 1}，涵盖设计系统、中后台、跨团队协作、指标提升和落地复盘。`
+    )
+  }));
+  return model;
 }
 
 test("parse-first export path blocks unconfirmed facts, review blockers, missing template, and unstable pagination before allowing export", async () => {
@@ -272,6 +289,39 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
     assert.equal(countOccurrences(fs.readFileSync(outputPath, "utf8"), projectDescription), 1);
     assert.equal(countOccurrences(fs.readFileSync(htmlPath, "utf8"), projectDescription), 1);
   });
+});
+
+test("chat review flow writes paginateDocument-backed layout results for export gate consumption", async () => {
+  const session = sessionModule.createChatSession("2026-03-11T08:40:00.000Z");
+  session.currentResume = {
+    sourcePath: "/tmp/resume.json",
+    model: createOverflowModel()
+  };
+  session.currentTemplate = {
+    templateId: "elegant",
+    confirmed: true
+  };
+  session.currentJd = {
+    text: "设计系统 中后台 组件库 体验优化"
+  };
+
+  const planned = agentModule.planToolAction(session, {
+    summary: "审核当前简历",
+    action: {
+      type: "review-resume",
+      engine: "rule"
+    }
+  });
+  const reviewed = await agentModule.confirmPendingPlan(planned, {
+    runTool: toolsModule.runChatTool
+  });
+
+  assert.equal(reviewed.layoutResult.source, "paginateDocument");
+  assert.equal(reviewed.layoutResult.templateId, "elegant");
+  assert.equal(reviewed.layoutResult.status, "overflow");
+  assert.equal(Array.isArray(reviewed.layoutResult.pages), true);
+  assert.equal(Array.isArray(reviewed.layoutResult.decisions), true);
+  assert.equal(reviewed.layoutResult.overflow.length > 0, true);
 });
 
 test("0-1 authoring export path blocks pending facts, review blockers and unresolved multipage until explicit approvals complete", async () => {
