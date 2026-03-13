@@ -332,8 +332,43 @@
         }
       ],
       "completed_at": "2026-03-13T09:14:58Z"
+    },
+    {
+      "id": "task-011",
+      "title": "实现 issue-38：收敛 chat 单一状态真相并自动写 stable checkpoints",
+      "status": "completed",
+      "priority": "P0",
+      "depends_on": [
+        "task-010"
+      ],
+      "attempts": 0,
+      "max_attempts": 3,
+      "started_at_commit": "b82f90c",
+      "validation": {
+        "command": "npm run build && node --test tests/chat-persistence.test.mjs tests/chat-loop.test.mjs",
+        "timeout_seconds": 1800
+      },
+      "on_failure": {
+        "cleanup": null
+      },
+      "error_log": [],
+      "checkpoints": [
+        {
+          "step": 1,
+          "total": 2,
+          "description": "collapsed workflow truth into workflowState, derived UI status on read/write, and stopped persisting legacy state payloads",
+          "timestamp": "2026-03-13T09:36:33Z"
+        },
+        {
+          "step": 2,
+          "total": 2,
+          "description": "verified automatic stable checkpoints across patch/review/layout/export flows and recovery persistence with targeted chat regressions",
+          "timestamp": "2026-03-13T09:36:33Z"
+        }
+      ],
+      "completed_at": "2026-03-13T09:36:33Z"
     }
   ],
   "session_count": 6,
-  "last_session": "2026-03-13T09:14:58Z"
+  "last_session": "2026-03-13T09:36:33Z"
 }

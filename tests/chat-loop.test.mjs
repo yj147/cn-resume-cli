@@ -106,6 +106,8 @@ test("runChatLoop starts a real 0-1 authoring draft from natural language input"
     assert.equal(result.session.pendingPatches.some((patch) => patch.module === "basic"), true);
     assert.equal(result.session.pendingPatches.some((patch) => patch.module === "experience"), true);
     assert.ok(result.session.artifacts.latestModelPath);
+    assert.equal(result.session.checkpoints.some((item) => item.key === "authoring_completed"), true);
+    assert.equal(result.session.checkpoints.some((item) => item.key === "patch_generated"), true);
   });
 });
 
@@ -147,6 +149,7 @@ test("slash patch acceptance stays in pending_confirmation until the last patch 
     assert.equal(runtime.session.workflowState, controllerModule.CHAT_STATES.PENDING_CONFIRMATION);
     assert.equal(runtime.session.pendingPatches.length, 1);
     assert.equal(runtime.session.currentResume.model.basic.name.value, "林青");
+    assert.equal(runtime.session.checkpoints.some((item) => item.key === "patch_accepted"), true);
 
     ({ runtime } = await chatCommandModule.submitChatInput(runtime, "/accept-patch experience", io, handlers));
     assert.equal(runtime.session.workflowState, controllerModule.CHAT_STATES.CONFIRMED_CONTENT);
@@ -192,6 +195,7 @@ test("slash patch rejection records audit trail and returns controller to drafti
     assert.equal(runtime.session.currentResume, undefined);
     assert.equal(runtime.session.patchDecisions[0].decision, "rejected");
     assert.equal(runtime.session.patchDecisions[0].reason, "用户拒绝该改写");
+    assert.equal(runtime.session.checkpoints.some((item) => item.key === "patch_rejected"), true);
   });
 });
 
@@ -369,6 +373,7 @@ test("runChatLoop emits explicit overflow events and pending layout choices", as
     assert.equal(events.some((event) => event.type === "layout_decision_requested"), true);
     assert.equal(result.session.layoutResult.status, "overflow");
     assert.equal(result.session.layoutResult.confirmed, false);
+    assert.equal(result.session.checkpoints.some((item) => item.key === "layout_overflow"), true);
     assert.deepEqual(
       result.session.layoutResult.options.map((option) => option.id),
       ["accept_multipage", "switch_compact_template", "generate_compaction_patch"]
@@ -411,6 +416,8 @@ test("export gate blocks unresolved overflow and only explicit multipage approva
   assert.equal(ready.workflowState, controllerModule.CHAT_STATES.READY_TO_EXPORT);
   assert.equal(ready.layoutResult.selectedOption, "accept_multipage");
   assert.equal(ready.layoutResult.confirmed, true);
+  assert.equal(ready.checkpoints.some((item) => item.key === "layout_decision_recorded"), true);
+  assert.equal(ready.checkpoints.some((item) => item.key === "ready_to_export"), true);
 });
 
 test("export gate blocks when template has not been explicitly selected", () => {
@@ -525,5 +532,6 @@ test("runChatLoop builds 3-template previews from current resume content and exp
     assert.deepEqual(result.session.currentResume.model, originalModel);
     assert.equal(events.some((event) => event.type === "template_comparison_ready"), true);
     assert.equal(events.some((event) => event.type === "template_selected"), true);
+    assert.equal(result.session.checkpoints.some((item) => item.key === "template_selected"), true);
   });
 });

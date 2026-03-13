@@ -122,7 +122,8 @@ test("chat direct call sites use controller constants instead of hardcoded state
   const runtimeSource = readSource("../src/chat/runtime.ts");
   const sessionSource = readSource("../src/chat/session.ts");
 
-  assert.match(agentSource, /CHAT_STATES\.WAITING_CONFIRM/);
+  assert.match(sessionSource, /CHAT_STATES\.WAITING_CONFIRM/);
+  assert.match(sessionSource, /deriveSessionStatus/);
   assert.doesNotMatch(agentSource, /status:\s*"waiting_confirm"/);
   assert.match(runtimeSource, /CHAT_STATES/);
   assert.match(sessionSource, /CHAT_STATES\.IDLE/);

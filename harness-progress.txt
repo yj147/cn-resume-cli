@@ -217,3 +217,7 @@
 [2026-03-13T09:14:58Z] [SESSION-6] CHECKPOINT [task-010] step=1/2 "added /accept-patch and /reject-patch slash commands and wired final patch decisions through controller transitions"
 [2026-03-13T09:14:58Z] [SESSION-6] CHECKPOINT [task-010] step=2/2 "verified slash-based patch confirmation and rejection flow with multi-patch pending_confirmation coverage"
 [2026-03-13T09:14:58Z] [SESSION-6] Completed [task-010] (commit pending)
+[2026-03-13T09:17:23Z] [SESSION-6] Starting [task-011] 实现 issue-38：收敛 chat 单一状态真相并自动写 stable checkpoints (base=b82f90c)
+[2026-03-13T09:36:33Z] [SESSION-6] CHECKPOINT [task-011] step=1/2 "collapsed workflow truth into workflowState, derived UI status from session data, and stopped persisting legacy state payloads"
+[2026-03-13T09:36:33Z] [SESSION-6] CHECKPOINT [task-011] step=2/2 "verified automatic stable checkpoints and recovery persistence with targeted chat regression suites"
+[2026-03-13T09:36:33Z] [SESSION-6] Completed [task-011] (commit pending)

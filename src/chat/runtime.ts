@@ -6,7 +6,7 @@ import { loadChatConfig } from "./config.js";
 import { createChatEvent } from "./events.js";
 import { normalizeLayoutResult } from "../flows/render.js";
 import { planChatTurn } from "./planner.js";
-import { loadActiveSession, loadNamedSession, saveActiveSession } from "./session.js";
+import { loadActiveSession, loadNamedSession, recordCheckpoint, saveActiveSession, syncSessionState } from "./session.js";
 import { executeSlashCommand } from "./slash.js";
 import { runChatTool } from "./tools.js";
 import { assertSessionExportReady } from "../export-gate.js";
@@ -30,8 +30,7 @@ function cloneRuntime(runtime) {
 function idleSession(session) {
   session.pendingPlan = undefined;
   session.pendingApproval = undefined;
-  session.state = { status: CHAT_STATES.IDLE };
-  return session;
+  return syncSessionState(session);
 }
 
 function defaultWrite(text) {
@@ -90,6 +89,7 @@ export function advanceExportWorkflow(session) {
     if (layoutResult?.status === "overflow" && currentState === CHAT_STATES.CONFIRMED_CONTENT) {
       next.layoutResult = layoutResult;
       dispatchWorkflowEvent(next, CONTROLLER_EVENTS.LAYOUT_OVERFLOW);
+      recordCheckpoint(next, "layout_overflow", { stable: false });
     }
     throw blockedWithSession(next, String(error?.message || error));
   }
@@ -98,15 +98,19 @@ export function advanceExportWorkflow(session) {
     next.layoutResult = gate.layoutResult;
     if (currentState === CHAT_STATES.CONFIRMED_CONTENT) {
       dispatchWorkflowEvent(next, CONTROLLER_EVENTS.LAYOUT_OVERFLOW);
+      recordCheckpoint(next, "layout_overflow", { stable: false });
     }
     if (workflowStateRef(next) === CHAT_STATES.LAYOUT_SOLVING) {
       dispatchWorkflowEvent(next, CONTROLLER_EVENTS.USER_APPROVED_MULTIPAGE);
+      recordCheckpoint(next, "layout_decision_recorded");
+      recordCheckpoint(next, "ready_to_export");
     }
     return next;
   }
 
   if (currentState === CHAT_STATES.CONFIRMED_CONTENT || currentState === CHAT_STATES.READY_TO_EXPORT) {
     dispatchWorkflowEvent(next, CONTROLLER_EVENTS.EXPORT_REQUESTED);
+    recordCheckpoint(next, next.workflowState === CHAT_STATES.EXPORTED ? "exported" : "ready_to_export");
     return next;
   }
 
@@ -164,16 +168,13 @@ async function handleSlashInput(runtime, input, handlers, io) {
   let next = slash.runtime;
 
   if (input === "/go") {
-    const pendingPatchCount = Array.isArray(next.session?.pendingPatches) ? next.session.pendingPatches.length : 0;
     const goFromIndex = Array.isArray(next.session?.transcript) ? next.session.transcript.length : 0;
     next.session = await confirmPendingPlan(next.session, { runTool: handlers.runTool });
     const layoutResult = normalizeLayoutResult(next.session?.layoutResult);
     if (layoutResult?.status === "overflow" && workflowStateRef(next.session) === CHAT_STATES.CONFIRMED_CONTENT) {
       next.session.layoutResult = layoutResult;
       dispatchWorkflowEvent(next.session, CONTROLLER_EVENTS.LAYOUT_OVERFLOW);
-    }
-    if ((Array.isArray(next.session?.pendingPatches) ? next.session.pendingPatches.length : 0) > pendingPatchCount) {
-      dispatchWorkflowEvent(next.session, CONTROLLER_EVENTS.PATCH_GENERATED);
+      recordCheckpoint(next.session, "layout_overflow", { stable: false });
     }
     emitTranscriptDelta(io, next.session, goFromIndex);
   } else if (input === "/cancel") {
@@ -192,7 +193,7 @@ async function handleSlashInput(runtime, input, handlers, io) {
           stdoutText: "Phase B 待确认，不能取消。请输入反馈文本完成确认。"
         }
       );
-    } else if (next.session.state.status === CHAT_STATES.WAITING_CONFIRM) {
+    } else if (next.session.pendingPlan?.action || next.session.pendingApproval) {
       next.session = idleSession(next.session);
     }
   }

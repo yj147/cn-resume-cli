@@ -8,6 +8,7 @@ const configModule = await import("../dist/chat/config.js");
 const sessionModule = await import("../dist/chat/session.js");
 const controllerModule = await import("../dist/chat/controller.js");
 const envModule = await import("../dist/env.js");
+const chatCommandModule = await import("../dist/commands/chat.js");
 
 function withTempHome(run) {
   const originalHome = process.env.HOME;
@@ -201,6 +202,7 @@ test("saveActiveSession and saveNamedSession persist session state", () => {
     assert.equal(Object.hasOwn(rawActive, "layoutResult"), true);
     assert.equal(Object.hasOwn(rawActive, "currentTemplate"), true);
     assert.equal(Object.hasOwn(rawActive, "checkpoints"), true);
+    assert.equal(Object.hasOwn(rawActive, "state"), false);
     assert.equal(namedSession.meta.updatedAt, savedActive.meta.updatedAt);
   });
 });
@@ -293,5 +295,48 @@ test("loadActiveSession restores workflow state from latest stable checkpoint wh
         stable: true
       }
     ]);
+  });
+});
+
+test("auto-generated checkpoints persist across save and reload", async () => {
+  await withTempHome(async (tempHome) => {
+    let runtime = {
+      homeDir: tempHome,
+      config: { apiKey: "", baseUrl: "", model: "" },
+      session: sessionModule.createChatSession("2026-03-11T07:45:00.000Z")
+    };
+    const io = {
+      emit: () => {},
+      write: () => {}
+    };
+    const handlers = {
+      planInput: async () => ({
+        type: "plan",
+        summary: "优化当前简历",
+        action: { type: "optimize-resume" }
+      }),
+      runTool: async () => ({
+        resumeDraft: {
+          source: "optimize-resume",
+          patches: [
+            { patchId: "patch-basic", module: "basic", nextValue: { name: { value: "林青" } } }
+          ]
+        }
+      })
+    };
+
+    ({ runtime } = await chatCommandModule.submitChatInput(runtime, "优化当前简历", io, handlers));
+    ({ runtime } = await chatCommandModule.submitChatInput(runtime, "/go", io, handlers));
+    ({ runtime } = await chatCommandModule.submitChatInput(runtime, "/accept-patch basic", io, handlers));
+
+    const activeFile = path.join(tempHome, ".cn-resume", "chat", "active.json");
+    const rawActive = JSON.parse(fs.readFileSync(activeFile, "utf8"));
+    const reloaded = sessionModule.loadActiveSession(tempHome);
+
+    assert.equal(rawActive.checkpoints.some((item) => item.key === "patch_generated"), true);
+    assert.equal(rawActive.checkpoints.some((item) => item.key === "patch_accepted"), true);
+    assert.equal(reloaded.checkpoints.some((item) => item.key === "patch_generated"), true);
+    assert.equal(reloaded.checkpoints.some((item) => item.key === "patch_accepted"), true);
+    assert.equal(reloaded.workflowState, controllerModule.CHAT_STATES.CONFIRMED_CONTENT);
   });
 });

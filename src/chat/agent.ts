@@ -1,5 +1,6 @@
 import { createChatEvent } from "./events.js";
 import { CHAT_STATES, CONTROLLER_EVENTS, transitionWorkflowState } from "./controller.js";
+import { recordCheckpoint, syncSessionState } from "./session.js";
 import { invalidateLayoutResult, normalizeLayoutResult, recordLayoutDecision } from "../flows/render.js";
 
 function cloneSession(session) {
@@ -12,7 +13,7 @@ function touchSession(session) {
   if (session.meta && typeof session.meta === "object") {
     session.meta.updatedAt = updatedAt;
   }
-  return session;
+  return syncSessionState(session);
 }
 
 function appendMessage(session, role, content) {
@@ -224,6 +225,7 @@ export function acceptPendingPatch(session, options: Record<string, any> = {}) {
   applyPatch(next, patch);
   recordPatchDecision(next, patch, "accepted");
   updateWorkflowAfterPatchDecision(next, CONTROLLER_EVENTS.PATCH_ACCEPTED);
+  recordCheckpoint(next, "patch_accepted");
   return touchSession(next);
 }
 
@@ -236,6 +238,7 @@ export function rejectPendingPatch(session, options: Record<string, any> = {}) {
   const [patch] = pendingPatchesRef(next).splice(patchIndex, 1);
   recordPatchDecision(next, patch, "rejected", String(options?.reason || ""));
   updateWorkflowAfterPatchDecision(next, CONTROLLER_EVENTS.PATCH_REJECTED);
+  recordCheckpoint(next, "patch_rejected");
   return touchSession(next);
 }
 
@@ -250,6 +253,7 @@ export function confirmLayoutDecision(session, selectedOption: string) {
     })
   );
   appendMessage(next, "assistant", `已记录排版决策：${next.layoutResult.selectedOption}`);
+  recordCheckpoint(next, "layout_decision_recorded");
   return touchSession(next);
 }
 
@@ -289,6 +293,7 @@ export function selectTemplateCandidate(session, templateId: string) {
     })
   );
   appendMessage(next, "assistant", `已选择模板：${selectedTemplateId}`);
+  recordCheckpoint(next, "template_selected");
   return touchSession(next);
 }
 
@@ -306,7 +311,6 @@ export function planToolAction(session, plan) {
     action: plan.action,
     taskId: task.id
   };
-  next.state = { status: CHAT_STATES.WAITING_CONFIRM };
   appendEvent(
     next,
     createChatEvent("plan_proposed", {
@@ -332,7 +336,6 @@ export async function confirmPendingPlan(session, handlers) {
 
   const next = cloneSession(session);
   const pendingPlan = next.pendingPlan;
-  next.state = { status: CHAT_STATES.RUNNING };
   updateTaskStatus(next, pendingPlan.taskId, "running");
   appendEvent(
     next,
@@ -349,6 +352,24 @@ export async function confirmPendingPlan(session, handlers) {
     mergeArtifactPatch(next, result?.artifactPatch);
     next.pendingPlan = undefined;
     next.pendingApproval = undefined;
+    if (Array.isArray(result?.resumeDraft?.patches) && result.resumeDraft.patches.length > 0) {
+      if (next.workflowState === CHAT_STATES.DRAFTING) {
+        next.workflowState = transitionWorkflowState(next.workflowState, CONTROLLER_EVENTS.PATCH_GENERATED);
+      }
+      recordCheckpoint(next, "patch_generated");
+      if (pendingPlan.action.type === "parse-resume") {
+        recordCheckpoint(next, "parse_completed");
+      }
+      if (pendingPlan.action.type === "author-resume") {
+        recordCheckpoint(next, "authoring_completed");
+      }
+    }
+    if (result?.sessionPatch?.reviewResult) {
+      recordCheckpoint(next, "review_completed");
+      if (result.sessionPatch.reviewResult.summary?.blocked && next.workflowState === CHAT_STATES.CONFIRMED_CONTENT) {
+        next.workflowState = transitionWorkflowState(next.workflowState, CONTROLLER_EVENTS.REVIEW_FAILED);
+      }
+    }
     updateTaskStatus(next, pendingPlan.taskId, result?.taskPatch?.status || "done");
     appendEvent(
       next,
@@ -364,7 +385,6 @@ export async function confirmPendingPlan(session, handlers) {
         action: pendingPlan.action,
         taskId: pendingPlan.taskId
       };
-      next.state = { status: CHAT_STATES.WAITING_PHASE_B_FEEDBACK };
       updateTaskStatus(next, pendingPlan.taskId, "waiting_phase_b_feedback");
       appendEvent(
         next,
@@ -393,11 +413,10 @@ export async function confirmPendingPlan(session, handlers) {
       );
     }
     appendLayoutDecisionPrompt(next);
-    next.state = { status: CHAT_STATES.IDLE };
     return touchSession(next);
   } catch (error) {
     const message = String(error?.message || error);
-    next.state = { status: CHAT_STATES.ERROR, message };
+    next.workflowState = CHAT_STATES.ERROR;
     updateTaskStatus(next, pendingPlan.taskId, "error");
     appendEvent(
       next,
@@ -424,7 +443,6 @@ export async function confirmPhaseB(session, feedbackText, handlers) {
   }
 
   const next = cloneSession(session);
-  next.state = { status: CHAT_STATES.RUNNING };
   const taskId = next.phaseB.taskId;
   updateTaskStatus(next, taskId, "running");
 
@@ -450,6 +468,9 @@ export async function confirmPhaseB(session, feedbackText, handlers) {
       ...next.phaseB,
       status: "confirmed"
     };
+    if (next.phaseB.status === "confirmed") {
+      recordCheckpoint(next, "phase_b_confirmed");
+    }
     appendEvent(
       next,
       createChatEvent("task_finished", {
@@ -465,12 +486,11 @@ export async function confirmPhaseB(session, feedbackText, handlers) {
         })
       );
     }
-    next.state = next.phaseB.status === "awaiting_feedback" ? { status: CHAT_STATES.WAITING_PHASE_B_FEEDBACK } : { status: CHAT_STATES.IDLE };
     updateTaskStatus(next, taskId, next.phaseB.status === "awaiting_feedback" ? "waiting_phase_b_feedback" : (result?.taskPatch?.status || "done"));
     return touchSession(next);
   } catch (error) {
     const message = String(error?.message || error);
-    next.state = { status: CHAT_STATES.ERROR, message };
+    next.workflowState = CHAT_STATES.ERROR;
     updateTaskStatus(next, taskId, "error");
     appendEvent(
       next,

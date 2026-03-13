@@ -20,6 +20,69 @@ function buildSessionId(now) {
   return `session-${now.replace(/[^\d]/g, "").slice(0, 14)}`;
 }
 
+function deriveWorkflowState(session, fallback = CHAT_STATES.INTAKE) {
+  if (typeof session?.workflowState === "string" && session.workflowState) {
+    return session.workflowState;
+  }
+  const legacyStatus = String(session?.state?.status || "").trim();
+  if (legacyStatus === CHAT_STATES.BLOCKED || legacyStatus === CHAT_STATES.ERROR) {
+    return CHAT_STATES.BLOCKED;
+  }
+  if (legacyStatus === CHAT_STATES.WAITING_CONFIRM || legacyStatus === CHAT_STATES.WAITING_PHASE_B_FEEDBACK) {
+    return CHAT_STATES.DRAFTING;
+  }
+  if (legacyStatus === CHAT_STATES.IDLE || legacyStatus === CHAT_STATES.RUNNING) {
+    return fallback;
+  }
+  return fallback;
+}
+
+function deriveSessionStatus(session) {
+  const workflowState = deriveWorkflowState(session);
+  if (workflowState === CHAT_STATES.BLOCKED || workflowState === CHAT_STATES.ERROR) {
+    return workflowState;
+  }
+  if (session?.phaseB?.status === "awaiting_feedback") {
+    return CHAT_STATES.WAITING_PHASE_B_FEEDBACK;
+  }
+  if (session?.pendingPlan?.action || session?.pendingApproval) {
+    return CHAT_STATES.WAITING_CONFIRM;
+  }
+  return CHAT_STATES.IDLE;
+}
+
+export function syncSessionState(session) {
+  const stableCheckpoint = [...(Array.isArray(session?.checkpoints) ? session.checkpoints : [])].reverse().find(
+    (item) => item && typeof item === "object" && item.stable === true && typeof item.workflowState === "string" && item.workflowState
+  );
+  session.workflowState = deriveWorkflowState(session, stableCheckpoint?.workflowState || CHAT_STATES.INTAKE);
+  session.state = { status: deriveSessionStatus(session) };
+  return session;
+}
+
+export function recordCheckpoint(session, key, options: Record<string, any> = {}) {
+  if (!Array.isArray(session.checkpoints)) {
+    session.checkpoints = [];
+  }
+  const workflowState = String(options.workflowState || session.workflowState || CHAT_STATES.INTAKE);
+  const checkpoint = {
+    key: String(key || "").trim(),
+    workflowState,
+    stable: options.stable !== false,
+    recordedAt: String(options.recordedAt || new Date().toISOString())
+  };
+  const last = session.checkpoints.at(-1);
+  if (
+    last?.key === checkpoint.key &&
+    last?.workflowState === checkpoint.workflowState &&
+    last?.stable === checkpoint.stable
+  ) {
+    return session;
+  }
+  session.checkpoints.push(checkpoint);
+  return session;
+}
+
 function normalizeSession(session) {
   const now = new Date().toISOString();
   const sessionMeta = session?.meta && typeof session.meta === "object" ? session.meta : {};
@@ -48,14 +111,8 @@ function normalizeSession(session) {
         detailsTab: "plan"
       };
   const checkpoints = Array.isArray(session?.checkpoints) ? session.checkpoints : [];
-  const stableCheckpoint = [...checkpoints].reverse().find(
-    (item) => item && typeof item === "object" && item.stable === true && typeof item.workflowState === "string" && item.workflowState
-  );
-  const workflowState = typeof session?.workflowState === "string" && session.workflowState
-    ? session.workflowState
-    : stableCheckpoint?.workflowState || CHAT_STATES.INTAKE;
 
-  return {
+  return syncSessionState({
     ...session,
     meta: {
       ...sessionMeta,
@@ -70,13 +127,11 @@ function normalizeSession(session) {
     updatedAt,
     messages,
     transcript,
-    state: session?.state && typeof session.state === "object" ? session.state : { status: CHAT_STATES.IDLE },
     artifacts: session?.artifacts && typeof session.artifacts === "object" ? session.artifacts : {},
     tasks: Array.isArray(session?.tasks) ? session.tasks : [],
     pendingPatches: Array.isArray(session?.pendingPatches) ? session.pendingPatches : [],
     patchDecisions: Array.isArray(session?.patchDecisions) ? session.patchDecisions : [],
     pendingApproval: session?.pendingApproval && typeof session.pendingApproval === "object" ? session.pendingApproval : undefined,
-    workflowState,
     reviewResult: session?.reviewResult && typeof session.reviewResult === "object" ? session.reviewResult : null,
     layoutResult: session?.layoutResult && typeof session.layoutResult === "object" ? session.layoutResult : null,
     currentTemplate: session?.currentTemplate && typeof session.currentTemplate === "object" ? session.currentTemplate : null,
@@ -84,7 +139,7 @@ function normalizeSession(session) {
     contextRefs: Array.isArray(session?.contextRefs) ? session.contextRefs : [],
     selection,
     composerDraft: String(session?.composerDraft || "")
-  };
+  });
 }
 
 function resolveNamedSessionFile(name, homeDir = os.homedir()) {
@@ -101,7 +156,6 @@ export function createChatSession(now = new Date().toISOString()) {
     createdAt: now,
     updatedAt: now,
     messages: [],
-    state: { status: CHAT_STATES.IDLE },
     artifacts: {},
     workflowState: CHAT_STATES.INTAKE,
     reviewResult: null,
@@ -125,14 +179,16 @@ export function saveActiveSession(session, homeDir = os.homedir()) {
     ...session,
     updatedAt: new Date().toISOString()
   });
-  writeJson(activeFile, normalized);
+  const { state: _state, ...persisted } = normalized;
+  writeJson(activeFile, persisted);
   return normalized;
 }
 
 export function saveNamedSession(name, session, homeDir = os.homedir()) {
   const filePath = resolveNamedSessionFile(name, homeDir);
   const normalized = normalizeSession(session);
-  writeJson(filePath, normalized);
+  const { state: _state, ...persisted } = normalized;
+  writeJson(filePath, persisted);
   return normalized;
 }
 
