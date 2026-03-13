@@ -3,6 +3,21 @@ function extractInputPath(input) {
   return match?.[1] || "";
 }
 
+function hasCurrentResume(runtime) {
+  return Boolean(runtime?.session?.currentResume?.model);
+}
+
+function looksLikeAuthoringInput(input) {
+  const trimmed = String(input || "").trim();
+  if (!trimmed || trimmed.length < 8) {
+    return false;
+  }
+  if (trimmed.includes("\n")) {
+    return true;
+  }
+  return /(我叫|我是|邮箱|电话|手机|职位|求职|教育|学校|技能|经历|项目|负责|参与|熟悉|擅长)/.test(trimmed);
+}
+
 export async function planChatTurn(runtime, input) {
   const trimmed = String(input || "").trim();
   const inputPath = extractInputPath(trimmed);
@@ -17,7 +32,18 @@ export async function planChatTurn(runtime, input) {
     };
   }
 
-  if (/[优化|润色|改写]/.test(trimmed)) {
+  if (!hasCurrentResume(runtime) && looksLikeAuthoringInput(trimmed)) {
+    return {
+      type: "plan",
+      summary: "根据你的口述生成简历草稿",
+      action: {
+        type: "author-resume",
+        inputText: trimmed
+      }
+    };
+  }
+
+  if (/(优化|润色|改写)/.test(trimmed)) {
     return {
       type: "plan",
       summary: "优化当前简历",
@@ -42,6 +68,6 @@ export async function planChatTurn(runtime, input) {
 
   return {
     type: "answer",
-    message: "我可以帮你解析简历文件，或在加载简历后优化当前内容。"
+    message: "我可以帮你解析简历文件，或直接根据你的口述先生成一版简历草稿。"
   };
 }

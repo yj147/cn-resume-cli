@@ -262,8 +262,43 @@
         }
       ],
       "completed_at": "2026-03-13T08:01:32Z"
+    },
+    {
+      "id": "task-009",
+      "title": "实现 issue-36：0-1 authoring 真入口并汇入 canonical model",
+      "status": "completed",
+      "priority": "P0",
+      "depends_on": [
+        "task-008"
+      ],
+      "attempts": 0,
+      "max_attempts": 3,
+      "started_at_commit": "499c5ae",
+      "validation": {
+        "command": "npm run build && node --test tests/chat-loop.test.mjs tests/resume-agent-e2e.test.mjs",
+        "timeout_seconds": 1800
+      },
+      "on_failure": {
+        "cleanup": null
+      },
+      "error_log": [],
+      "checkpoints": [
+        {
+          "step": 1,
+          "total": 2,
+          "description": "added author-resume planning/tool path and unified multi-module draft generation with parse-first",
+          "timestamp": "2026-03-13T09:10:07Z"
+        },
+        {
+          "step": 2,
+          "total": 2,
+          "description": "verified real natural-language authoring flow via chat-loop and resume-agent e2e targeted regressions",
+          "timestamp": "2026-03-13T09:10:07Z"
+        }
+      ],
+      "completed_at": "2026-03-13T09:10:07Z"
     }
   ],
-  "session_count": 5,
-  "last_session": "2026-03-13T08:01:32Z"
+  "session_count": 6,
+  "last_session": "2026-03-13T09:10:07Z"
 }

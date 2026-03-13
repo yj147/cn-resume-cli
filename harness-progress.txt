@@ -207,3 +207,9 @@
 [2026-03-13T08:01:32Z] [SESSION-5] Completed [task-008] (commit pending)
 [2026-03-13T08:01:32Z] [SESSION-5] STATS tasks_total=8 completed=8 failed=0 pending=0 blocked=0 attempts_total=0 checkpoints=13
 [2026-03-13T08:01:32Z] [SESSION-5] LOCK released
+[2026-03-13T08:52:50Z] [SESSION-6] INIT issues.csv task-engine session restarted for issue-36
+[2026-03-13T08:52:50Z] [SESSION-6] LOCK acquired (pid=task-engine)
+[2026-03-13T08:52:50Z] [SESSION-6] Starting [task-009] 实现 issue-36：0-1 authoring 真入口并汇入 canonical model (base=499c5ae)
+[2026-03-13T09:10:07Z] [SESSION-6] CHECKPOINT [task-009] step=1/2 "added author-resume planning/tool path and unified multi-module draft generation with parse-first"
+[2026-03-13T09:10:07Z] [SESSION-6] CHECKPOINT [task-009] step=2/2 "verified real natural-language authoring flow via chat-loop and resume-agent e2e targeted regressions"
+[2026-03-13T09:10:07Z] [SESSION-6] Completed [task-009] (commit pending)

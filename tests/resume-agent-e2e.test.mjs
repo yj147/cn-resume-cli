@@ -6,9 +6,9 @@ import path from "node:path";
 
 const commandsModule = await import("../dist/commands.js");
 const chatCommandModule = await import("../dist/commands/chat.js");
+const agentModule = await import("../dist/chat/agent.js");
 const controllerModule = await import("../dist/chat/controller.js");
 const sessionModule = await import("../dist/chat/session.js");
-const customTemplateModule = await import("../dist/template/custom-template.js");
 
 async function withTempDir(run) {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "cn-resume-agent-e2e-"));
@@ -45,6 +45,16 @@ function writeJson(filePath, payload) {
 
 function countOccurrences(text, needle) {
   return String(text).split(needle).length - 1;
+}
+
+function acceptAllPendingPatches(session) {
+  let next = structuredClone(session);
+  while (next.pendingPatches.length) {
+    next = agentModule.acceptPendingPatch(next, {
+      patchId: next.pendingPatches[0].patchId
+    });
+  }
+  return next;
 }
 
 test("parse-first export path blocks unconfirmed facts, review blockers, missing template, and unstable pagination before allowing export", async () => {
@@ -271,20 +281,34 @@ test("0-1 authoring export path blocks pending facts, review blockers and unreso
       config: { apiKey: "", baseUrl: "", model: "" },
       session: sessionModule.createChatSession("2026-03-11T09:00:00.000Z")
     };
-    const model = customTemplateModule.createTemplatePreviewSample();
-    model.basic.title.value = "资深 UI 设计师";
-    model.basic.summary.value = "0-1 authoring 链路真实内容";
-    runtime.session.workflowState = controllerModule.CHAT_STATES.CONFIRMED_CONTENT;
-    runtime.session.currentResume = {
-      sourcePath: "/tmp/authoring.json",
-      model
-    };
-    runtime.session.reviewResult = {
+    const authoringInput = [
+      "我叫林青，邮箱 lingqing@example.com，电话 13800000001。",
+      "目标岗位：资深 UI 设计师。",
+      "工作经历：2021-03 至今在星海科技负责 B 端设计系统与中后台体验优化。",
+      "项目经历：主导组件库重构，设计交付效率提升 40%。",
+      "技能：Figma、Sketch、Design Token。"
+    ].join("\n");
+    const authoringLines = [authoringInput, "/go", "/quit"];
+    const authoringResult = await chatCommandModule.runChatLoop(
+      runtime,
+      {
+        readLine: async () => authoringLines.shift() ?? null,
+        write: () => {},
+        emit: () => {}
+      }
+    );
+
+    assert.equal(authoringResult.session.workflowState, controllerModule.CHAT_STATES.PENDING_CONFIRMATION);
+    assert.equal(authoringResult.session.pendingPatches.length > 0, true);
+
+    const accepted = acceptAllPendingPatches(authoringResult.session);
+    accepted.workflowState = controllerModule.CHAT_STATES.CONFIRMED_CONTENT;
+    accepted.reviewResult = {
       summary: {
         blocked: false
       }
     };
-    runtime.session.layoutResult = {
+    accepted.layoutResult = {
       status: "overflow",
       pageCount: 2,
       finding: {
@@ -294,7 +318,10 @@ test("0-1 authoring export path blocks pending facts, review blockers and unreso
 
     const lines = ["推荐模板对比预览", "/go", "/choose-template designer", "/quit"];
     const result = await chatCommandModule.runChatLoop(
-      runtime,
+      {
+        ...runtime,
+        session: accepted
+      },
       {
         readLine: async () => lines.shift() ?? null,
         write: () => {},
@@ -346,5 +373,6 @@ test("0-1 authoring export path blocks pending facts, review blockers and unreso
 
     assert.equal(ready.workflowState, controllerModule.CHAT_STATES.READY_TO_EXPORT);
     assert.equal(ready.currentTemplate.templateId, "designer");
+    assert.match(ready.currentResume.model.basic.title.value, /资深 UI 设计师/);
   });
 });

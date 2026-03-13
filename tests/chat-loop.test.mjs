@@ -75,6 +75,40 @@ test("runChatLoop executes planned tool after /go and persists active session", 
   });
 });
 
+test("runChatLoop starts a real 0-1 authoring draft from natural language input", async () => {
+  await withTempHome(async (tempHome) => {
+    const runtime = {
+      homeDir: tempHome,
+      config: { apiKey: "", baseUrl: "", model: "" },
+      session: sessionModule.createChatSession("2026-03-11T05:10:00.000Z")
+    };
+
+    const authoringInput = [
+      "姓名：林青",
+      "邮箱：lingqing@example.com",
+      "电话：13800000001",
+      "目标岗位：资深 UI 设计师",
+      "工作经历：2021-03 至今在星海科技负责 B 端设计系统与中后台体验优化。",
+      "项目经历：主导组件库重构，设计交付效率提升 40%。",
+      "技能：Figma、Sketch、Design Token。"
+    ].join("\n");
+    const lines = [authoringInput, "/go", "/quit"];
+
+    const result = await chatCommandModule.runChatLoop(runtime, {
+      readLine: async () => lines.shift() ?? null,
+      write: () => {},
+      emit: () => {}
+    });
+
+    assert.equal(result.session.workflowState, controllerModule.CHAT_STATES.PENDING_CONFIRMATION);
+    assert.equal(result.session.currentResume, undefined);
+    assert.equal(result.session.pendingPatches.length > 0, true);
+    assert.equal(result.session.pendingPatches.some((patch) => patch.module === "basic"), true);
+    assert.equal(result.session.pendingPatches.some((patch) => patch.module === "experience"), true);
+    assert.ok(result.session.artifacts.latestModelPath);
+  });
+});
+
 test("runChatLoop does not let /cancel bypass pending phase b confirmation", async () => {
   assert.equal(typeof chatCommandModule.runChatLoop, "function");
 

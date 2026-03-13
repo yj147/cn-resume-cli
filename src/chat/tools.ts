@@ -8,8 +8,22 @@ import { createModulePatch, createResumeDraft, RESUME_MODULES } from "../core/pa
 import { readJson, writeJson } from "../core/io.js";
 import { FIELD_SOURCES } from "../core/provenance.js";
 import { buildLayoutResultFromReview } from "../flows/render.js";
+import { parseTextToModel } from "../flows/parse-optimize.js";
 import { renderTemplate } from "../template/custom-template.js";
 import { recommendTemplates } from "../template/recommend.js";
+
+const DRAFT_MODULE_ORDER = [
+  RESUME_MODULES.BASIC,
+  RESUME_MODULES.EXPERIENCE,
+  RESUME_MODULES.PROJECTS,
+  RESUME_MODULES.EDUCATION,
+  RESUME_MODULES.SKILLS,
+  RESUME_MODULES.CERTIFICATIONS,
+  RESUME_MODULES.LANGUAGES,
+  RESUME_MODULES.GITHUB,
+  RESUME_MODULES.QR_CODES,
+  RESUME_MODULES.CUSTOM_SECTIONS
+];
 
 function createToolWorkspace() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "cn-resume-chat-tool-"));
@@ -31,22 +45,35 @@ function buildToolFlags(action, extraFlags: Record<string, any> = {}) {
   return flags;
 }
 
-function buildParseDraft(session, inputPath, model) {
+function hasFieldContent(value) {
+  return String(value?.value || "").trim().length > 0;
+}
+
+function moduleHasContent(moduleName, value) {
+  if (moduleName === RESUME_MODULES.BASIC) {
+    return value && typeof value === "object" && Object.values(value).some((field) => hasFieldContent(field));
+  }
+  return Array.isArray(value) ? value.length > 0 : Boolean(value);
+}
+
+function buildDraftFromModel(session, model, summary, draftSource, patchSource) {
   return createResumeDraft({
-    source: "parse-resume",
-    summary: "解析结果待确认",
-    patches: [
-      createModulePatch({
-        module: RESUME_MODULES.BASIC,
-        previousValue: session?.currentResume?.model?.basic || null,
-        nextValue: model.basic || null,
-        source: FIELD_SOURCES.PARSED_EXACT,
-        rollback: {
-          strategy: "replace",
-          target: "currentResume.model.basic"
-        }
-      })
-    ]
+    source: draftSource,
+    summary,
+    patches: DRAFT_MODULE_ORDER
+      .filter((moduleName) => moduleHasContent(moduleName, model?.[moduleName]))
+      .map((moduleName) =>
+        createModulePatch({
+          module: moduleName,
+          previousValue: session?.currentResume?.model?.[moduleName] || null,
+          nextValue: model?.[moduleName] || null,
+          source: patchSource,
+          rollback: {
+            strategy: "replace",
+            target: `currentResume.model.${moduleName}`
+          }
+        })
+      )
   });
 }
 
@@ -113,10 +140,42 @@ export async function runChatTool(action, session) {
     );
     const model = readJson(outputPath);
     return {
-      resumeDraft: buildParseDraft(session, action.inputPath, model),
+      resumeDraft: buildDraftFromModel(
+        session,
+        model,
+        "解析结果待确认",
+        "parse-resume",
+        FIELD_SOURCES.PARSED_EXACT
+      ),
       artifactPatch: {
         latestModelPath: outputPath,
         latestDraftSourcePath: action.inputPath
+      },
+      taskPatch: {
+        status: "done"
+      }
+    };
+  }
+
+  if (action.type === "author-resume") {
+    const workspace = createToolWorkspace();
+    const inputPath = path.join(workspace, "authoring.txt");
+    const outputPath = path.join(workspace, "authored.json");
+    const inputText = String(action.inputText || "").trim();
+    fs.writeFileSync(inputPath, inputText, "utf8");
+    const model = parseTextToModel(inputText);
+    writeJson(outputPath, model);
+    return {
+      resumeDraft: buildDraftFromModel(
+        session,
+        model,
+        "根据口述内容生成结构化简历草稿",
+        "author-resume",
+        FIELD_SOURCES.PARSED_EXACT
+      ),
+      artifactPatch: {
+        latestModelPath: outputPath,
+        latestDraftSourcePath: inputPath
       },
       taskPatch: {
         status: "done"
