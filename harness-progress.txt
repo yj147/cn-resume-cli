@@ -1,3 +1,209 @@
 [2026-03-10T17:17:28Z] [SESSION-0] INIT Harness initialized for project /home/jikns/Projects/cn-resume-cli
 [2026-03-10T17:17:51Z] [SESSION-1] INIT Migration target ready at /home/jikns/Projects/cn-resume-cli
 [2026-03-10T17:17:51Z] [SESSION-1] LOCK acquired (pid=38779)
+[2026-03-12T15:44:27Z] [SESSION-1] INIT issues.csv loop session start for .
+[2026-03-12T15:44:27Z] [SESSION-1] LOCK acquired (pid=72814)
+[2026-03-12T15:44:27Z] [SESSION-1] Starting [issue-1] 冻结字段来源与状态枚举 (base=d457003)
+[2026-03-12T15:48:39Z] [SESSION-1] CHECKPOINT [issue-1] step=1/4 "added failing model-normalization test, running RED build"
+[2026-03-12T15:52:21Z] [SESSION-1] CHECKPOINT [issue-1] step=2/4 "implemented provenance helper and minimal build prerequisites"
+[2026-03-12T15:52:37Z] [SESSION-1] CHECKPOINT [issue-1] step=2/4 "fixed config typing and re-running build"
+[2026-03-12T15:52:52Z] [SESSION-1] CHECKPOINT [issue-1] step=3/4 "running targeted model and chat regression tests"
+[2026-03-12T15:53:00Z] [SESSION-1] CHECKPOINT [issue-1] step=4/4 "build and targeted regressions passed; running review search"
+[2026-03-12T15:55:19Z] [SESSION-1] Completed [issue-1] (commit 8df2218)
+[2026-03-12T15:55:19Z] [SESSION-1] Starting [issue-2] 给基础信息字段加 envelope (base=8df2218)
+[2026-03-12T15:56:41Z] [SESSION-1] CHECKPOINT [issue-2] step=1/4 "added failing basic envelope tests and running RED"
+[2026-03-12T16:00:44Z] [SESSION-1] CHECKPOINT [issue-2] step=2/4 "implemented basic envelope migration and running GREEN"
+[2026-03-12T16:01:03Z] [SESSION-1] CHECKPOINT [issue-2] step=2/4 "fixed provenance option typing and re-running GREEN"
+[2026-03-12T16:01:26Z] [SESSION-1] CHECKPOINT [issue-2] step=2/4 "typed createFieldEnvelope params and re-running GREEN"
+[2026-03-12T16:01:49Z] [SESSION-1] CHECKPOINT [issue-2] step=2/4 "widened status typing and re-running GREEN"
+[2026-03-12T16:02:12Z] [SESSION-1] CHECKPOINT [issue-2] step=3/4 "green tests passed; running review searches"
+[2026-03-12T16:04:59Z] [SESSION-1] CHECKPOINT [issue-2] step=4/4 "issue row marked complete; preparing commit"
+[2026-03-12T16:05:25Z] [SESSION-1] Completed [issue-2] (commit 7be9de3)
+[2026-03-12T16:05:25Z] [SESSION-1] Starting [issue-3] 给经历与项目集合加 provenance (base=7be9de3)
+[2026-03-12T16:07:50Z] [SESSION-1] CHECKPOINT [issue-3] step=0/4 "self-reflect passed for issues 1-2; scanning collection field readers"
+[2026-03-12T16:09:42Z] [SESSION-1] CHECKPOINT [issue-3] step=0/4 "self-check found jade adapter regression; patched test fixture normalization"
+[2026-03-12T16:12:25Z] [SESSION-1] CHECKPOINT [issue-3] step=1/4 "added failing collection provenance tests and running RED"
+[2026-03-12T16:16:32Z] [SESSION-1] CHECKPOINT [issue-3] step=2/4 "implemented collection envelopes and running GREEN"
+[2026-03-12T16:17:54Z] [SESSION-1] CHECKPOINT [issue-3] step=3/4 "running parser regression and targeted suite before commit"
+[2026-03-12T16:19:12Z] [SESSION-1] CHECKPOINT [issue-3] step=3/4 "patched parse-regression expectations and re-running verification"
+[2026-03-12T16:19:30Z] [SESSION-1] CHECKPOINT [issue-3] step=3/4 "parser regression still failing; probing parseInput/buildSectionFirstParseEvidence"
+[2026-03-12T16:20:08Z] [SESSION-1] CHECKPOINT [issue-3] step=3/4 "patched raw-vs-envelope dedupe path and rerunning parser regression"
+[2026-03-12T16:22:12Z] [SESSION-1] CHECKPOINT [issue-3] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T16:22:25Z] [SESSION-1] Completed [issue-3] (commit 0a642d9)
+[2026-03-12T16:22:25Z] [SESSION-1] Starting [issue-4] 给技能与附加区块加 provenance 并补归一化测试 (base=0a642d9)
+[2026-03-12T16:23:51Z] [SESSION-1] CHECKPOINT [issue-4] step=0/4 "self-reflect iteration 2 passed; scanning issue4 readers and tests"
+[2026-03-12T16:24:40Z] [SESSION-1] CHECKPOINT [issue-4] step=0/4 "self-reflect iteration 3 passed; reading issue4 code paths"
+[2026-03-12T16:25:52Z] [SESSION-1] CHECKPOINT [issue-4] step=1/4 "added failing issue4 tests and running RED"
+[2026-03-12T16:26:48Z] [SESSION-1] CHECKPOINT [issue-4] step=2/4 "implemented issue4 provenance metadata and running GREEN"
+[2026-03-12T16:27:11Z] [SESSION-1] CHECKPOINT [issue-4] step=2/4 "added render_config provenance default and re-running GREEN"
+[2026-03-12T16:27:32Z] [SESSION-1] CHECKPOINT [issue-4] step=2/4 "patched commands render_config provenance and re-running GREEN"
+[2026-03-12T16:27:49Z] [SESSION-1] CHECKPOINT [issue-4] step=3/4 "running parser regression and full targeted suite"
+[2026-03-12T16:28:05Z] [SESSION-1] CHECKPOINT [issue-4] step=4/4 "all verification passed; reviewing staging boundary"
+[2026-03-12T16:28:49Z] [SESSION-1] CHECKPOINT [issue-4] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T16:28:59Z] [SESSION-1] Completed [issue-4] (commit 3b91f77)
+[2026-03-12T16:28:59Z] [SESSION-1] Starting [issue-5] 定义 ResumeDraft 与模块级 patch 协议 (base=3b91f77)
+[2026-03-12T16:29:23Z] [SESSION-1] CHECKPOINT [issue-5] step=0/4 "issue 5 locked; scanning chat tool patch insertion points"
+[2026-03-12T16:30:00Z] [SESSION-1] CHECKPOINT [issue-5] step=1/4 "added failing patch protocol tests and running RED"
+[2026-03-12T16:30:32Z] [SESSION-1] CHECKPOINT [issue-5] step=2/4 "implemented patch protocol and chat reference, running GREEN"
+[2026-03-12T16:30:58Z] [SESSION-1] CHECKPOINT [issue-5] step=2/4 "widened patch protocol typing and re-running GREEN"
+[2026-03-12T16:31:16Z] [SESSION-1] CHECKPOINT [issue-5] step=3/4 "running parser regression and broad targeted suite"
+[2026-03-12T16:37:04Z] [SESSION-1] CHECKPOINT [issue-5] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T16:37:15Z] [SESSION-1] Completed [issue-5] (commit e341d57)
+[2026-03-12T16:37:15Z] [SESSION-1] Starting [issue-6] 把解析工具改成返回 draft patch (base=e341d57)
+[2026-03-12T16:38:00Z] [SESSION-1] CHECKPOINT [issue-6] step=0/4 "self-reflect iteration 4 passed; scanning parse tool and agent tests"
+[2026-03-12T16:38:57Z] [SESSION-1] CHECKPOINT [issue-6] step=1/4 "added failing parse-draft tests and running RED"
+[2026-03-12T16:39:29Z] [SESSION-1] CHECKPOINT [issue-6] step=2/4 "implemented parse draft flow in chat tool/agent and running GREEN"
+[2026-03-12T16:39:45Z] [SESSION-1] CHECKPOINT [issue-6] step=3/4 "running parser regression and broad targeted suite"
+[2026-03-12T16:40:24Z] [SESSION-1] CHECKPOINT [issue-6] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T16:40:38Z] [SESSION-1] Completed [issue-6] (commit 4e888a5)
+[2026-03-12T16:40:38Z] [SESSION-1] Starting [issue-7] 把优化工具改成返回 patch 与 Phase B 状态 (base=4e888a5)
+[2026-03-12T16:41:05Z] [SESSION-1] CHECKPOINT [issue-7] step=0/4 "self-reflect iteration 5 passed; scanning optimize patch flow and tests"
+[2026-03-12T16:41:56Z] [SESSION-1] CHECKPOINT [issue-7] step=1/4 "added failing optimize patch tests and running RED"
+[2026-03-12T16:47:47Z] [SESSION-1] CHECKPOINT [issue-7] step=2/4 "removed optimize direct resume write and re-running GREEN"
+[2026-03-12T16:48:08Z] [SESSION-1] CHECKPOINT [issue-7] step=3/4 "running parser regression and broad targeted suite"
+[2026-03-12T16:48:37Z] [SESSION-1] CHECKPOINT [issue-7] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T16:48:48Z] [SESSION-1] Completed [issue-7] (commit 73efd57)
+[2026-03-12T16:48:48Z] [SESSION-1] Starting [issue-8] 让 chat agent 接管 patch 队列与模块确认 (base=73efd57)
+[2026-03-12T16:53:37Z] [SESSION-1] CHECKPOINT [issue-8] step=0/4 "resume turn; reading agent/session patch queue state"
+[2026-03-12T16:55:03Z] [SESSION-1] CHECKPOINT [issue-8] step=1/4 "added failing patch acceptance/rejection tests and running RED"
+[2026-03-12T16:55:52Z] [SESSION-1] CHECKPOINT [issue-8] step=2/4 "implemented patch accept/reject flow and session defaults, running GREEN"
+[2026-03-12T16:56:18Z] [SESSION-1] CHECKPOINT [issue-8] step=2/4 "fixed decision option typing and re-running GREEN"
+[2026-03-12T16:56:33Z] [SESSION-1] CHECKPOINT [issue-8] step=3/4 "running parser regression and broad targeted suite"
+[2026-03-12T16:57:19Z] [SESSION-1] CHECKPOINT [issue-8] step=3/4 "verification rerun sequentially after shared dist race; all checks passed"
+[2026-03-12T16:57:41Z] [SESSION-1] CHECKPOINT [issue-8] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T16:57:53Z] [SESSION-1] Completed [issue-8] (commit 5f8dab9)
+[2026-03-12T16:57:53Z] [SESSION-1] Starting [issue-9] 定义控制器状态与事件模型 (base=5f8dab9)
+[2026-03-12T16:58:18Z] [SESSION-1] CHECKPOINT [issue-9] step=0/4 "issue 9 locked; scanning runtime/agent state strings and events"
+[2026-03-12T17:06:21Z] [SESSION-1] CHECKPOINT [issue-9] step=1/4 "added controller coverage + source-scan regression and observed RED"
+[2026-03-12T17:06:21Z] [SESSION-1] CHECKPOINT [issue-9] step=2/4 "removed residual state literals in agent/session and re-ran GREEN"
+[2026-03-12T17:06:21Z] [SESSION-1] CHECKPOINT [issue-9] step=3/4 "ran build, chat targeted suite, and full sequential regression"
+[2026-03-12T17:06:21Z] [SESSION-1] CHECKPOINT [issue-9] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T17:07:39Z] [SESSION-1] Completed [issue-9] (commit 9ffa8dc)
+[2026-03-12T17:07:39Z] [SESSION-1] Starting [issue-10] 把 workflow state 与 checkpoint 持久化进 session (base=9ffa8dc)
+[2026-03-12T17:13:53Z] [SESSION-1] CHECKPOINT [issue-10] step=1/4 "added persistence coverage for workflow state/review/layout/template/checkpoints and observed RED"
+[2026-03-12T17:13:53Z] [SESSION-1] CHECKPOINT [issue-10] step=2/4 "implemented session defaults plus stable-checkpoint recovery and re-ran GREEN"
+[2026-03-12T17:13:53Z] [SESSION-1] CHECKPOINT [issue-10] step=3/4 "ran targeted chat persistence/runtime loop suite and full sequential regression"
+[2026-03-12T17:13:53Z] [SESSION-1] CHECKPOINT [issue-10] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T17:14:16Z] [SESSION-1] Completed [issue-10] (commit e49626f)
+[2026-03-12T17:14:16Z] [SESSION-1] Starting [issue-11] 把 runtime 改成只分发控制器事件 (base=e49626f)
+[2026-03-12T17:19:33Z] [SESSION-1] CHECKPOINT [issue-11] step=1/4 "added runtime controller-routing tests and observed RED"
+[2026-03-12T17:19:33Z] [SESSION-1] CHECKPOINT [issue-11] step=2/4 "wired runtime workflow events through controller and re-ran GREEN"
+[2026-03-12T17:19:33Z] [SESSION-1] CHECKPOINT [issue-11] step=3/4 "ran targeted runtime/chat suites and full sequential regression"
+[2026-03-12T17:19:33Z] [SESSION-1] CHECKPOINT [issue-11] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T17:19:51Z] [SESSION-1] Completed [issue-11] (commit b2ae72d)
+[2026-03-12T17:19:51Z] [SESSION-1] Starting [issue-12] 抽出统一 review service (base=b2ae72d)
+[2026-03-12T17:26:40Z] [SESSION-1] CHECKPOINT [issue-12] step=1/4 "added unified review service tests and observed missing module RED"
+[2026-03-12T17:26:40Z] [SESSION-1] CHECKPOINT [issue-12] step=2/4 "implemented review service aggregation/mapping and re-ran GREEN"
+[2026-03-12T17:26:40Z] [SESSION-1] CHECKPOINT [issue-12] step=3/4 "ran review-service test and full sequential regression"
+[2026-03-12T17:26:40Z] [SESSION-1] CHECKPOINT [issue-12] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T17:29:01Z] [SESSION-1] CHECKPOINT [issue-13] step=1/4 "extended review-service tests to cover CLI routing and observed RED"
+[2026-03-12T17:29:01Z] [SESSION-1] CHECKPOINT [issue-13] step=2/4 "switched CLI review commands to unified service and re-ran GREEN"
+[2026-03-12T17:29:01Z] [SESSION-1] CHECKPOINT [issue-13] step=3/4 "ran review-service test and full sequential regression"
+[2026-03-12T17:29:01Z] [SESSION-1] CHECKPOINT [issue-13] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T17:29:16Z] [SESSION-1] Completed [issue-12] (commit 048a0e6)
+[2026-03-12T17:29:16Z] [SESSION-1] Completed [issue-13] (commit 5b9b5d9)
+[2026-03-12T17:29:16Z] [SESSION-1] Starting [issue-14] 把 chat review 工具接到统一审核链 (base=5b9b5d9)
+[2026-03-12T17:31:38Z] [SESSION-1] CHECKPOINT [issue-14] step=1/4 "added chat review tool tests and observed RED"
+[2026-03-12T17:31:38Z] [SESSION-1] CHECKPOINT [issue-14] step=2/4 "wired chat review tool to unified service and re-ran GREEN"
+[2026-03-12T17:31:38Z] [SESSION-1] CHECKPOINT [issue-14] step=3/4 "ran chat-agent/review-service targeted suite and full sequential regression"
+[2026-03-12T17:31:38Z] [SESSION-1] CHECKPOINT [issue-14] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T17:31:56Z] [SESSION-1] Completed [issue-14] (commit b01149a)
+[2026-03-12T17:31:56Z] [SESSION-1] Starting [issue-15] 定义 ResumeDocument IR 的 block 与约束模型 (base=b01149a)
+[2026-03-12T17:34:11Z] [SESSION-1] CHECKPOINT [issue-15] step=1/4 "added document IR tests and observed missing module RED"
+[2026-03-12T17:34:11Z] [SESSION-1] CHECKPOINT [issue-15] step=2/4 "implemented minimal document IR schema/builders and re-ran GREEN"
+[2026-03-12T17:34:11Z] [SESSION-1] CHECKPOINT [issue-15] step=3/4 "ran document-ir test and full sequential regression"
+[2026-03-12T17:34:11Z] [SESSION-1] CHECKPOINT [issue-15] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T17:34:33Z] [SESSION-1] Completed [issue-15] (commit aea7353)
+[2026-03-12T17:34:33Z] [SESSION-1] Starting [issue-16] 把 jade adapter 改成 canonical model 到 IR (base=aea7353)
+[2026-03-12T17:38:21Z] [SESSION-1] CHECKPOINT [issue-16] step=1/4 "added adapter IR-seed test and observed RED"
+[2026-03-12T17:38:21Z] [SESSION-1] CHECKPOINT [issue-16] step=2/4 "wired adapter through Document IR before Jade resume mapping and re-ran GREEN"
+[2026-03-12T17:38:21Z] [SESSION-1] CHECKPOINT [issue-16] step=3/4 "ran document-ir/jade tests and full sequential regression"
+[2026-03-12T17:38:21Z] [SESSION-1] CHECKPOINT [issue-16] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T17:38:37Z] [SESSION-1] Completed [issue-16] (commit 29ad2bb)
+[2026-03-12T17:38:37Z] [SESSION-1] Starting [issue-17] 建立 50 模板的 TemplateSpec 注册表 (base=29ad2bb)
+[2026-03-12T17:41:16Z] [SESSION-1] CHECKPOINT [issue-17] step=1/4 "added template-spec tests and observed missing module RED"
+[2026-03-12T17:41:16Z] [SESSION-1] CHECKPOINT [issue-17] step=2/4 "added template spec registry and derived constants from it"
+[2026-03-12T17:41:16Z] [SESSION-1] CHECKPOINT [issue-17] step=3/4 "ran template-spec test and full sequential regression"
+[2026-03-12T17:41:16Z] [SESSION-1] CHECKPOINT [issue-17] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T17:41:34Z] [SESSION-1] Completed [issue-17] (commit f79015d)
+[2026-03-12T17:41:34Z] [SESSION-1] Starting [issue-18] 让 custom-template 接入 TemplateSpec (base=f79015d)
+[2026-03-12T17:43:10Z] [SESSION-1] CHECKPOINT [issue-18] step=1/4 "extended template-spec tests for resolveTemplate protocol and observed RED"
+[2026-03-12T17:43:10Z] [SESSION-1] CHECKPOINT [issue-18] step=2/4 "switched custom-template resolution to TemplateSpec and re-ran GREEN"
+[2026-03-12T17:43:10Z] [SESSION-1] CHECKPOINT [issue-18] step=3/4 "ran template-spec test and full sequential regression"
+[2026-03-12T17:43:10Z] [SESSION-1] CHECKPOINT [issue-18] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T17:43:46Z] [SESSION-1] Completed [issue-17] (commit f79015d)
+[2026-03-12T17:43:46Z] [SESSION-1] Completed [issue-18] (commit 6e5aa7f)
+[2026-03-12T17:43:46Z] [SESSION-1] Starting [issue-19] 定义 render tree 单一渲染真相 (base=6e5aa7f)
+[2026-03-12T17:48:25Z] [SESSION-1] CHECKPOINT [issue-19] step=1/4 "added render-tree tests and observed missing module RED"
+[2026-03-12T17:48:25Z] [SESSION-1] CHECKPOINT [issue-19] step=2/4 "implemented render-tree schema/builders and re-ran GREEN"
+[2026-03-12T17:48:25Z] [SESSION-1] CHECKPOINT [issue-19] step=3/4 "ran render-tree test and full sequential regression"
+[2026-03-12T17:48:25Z] [SESSION-1] CHECKPOINT [issue-19] step=4/4 "issue row marked complete; creating commit"
+[2026-03-12T17:49:00Z] [SESSION-1] Completed [issue-19] (commit 885bf66)
+[2026-03-12T17:49:00Z] [SESSION-1] Starting [issue-20] 把 jade builders 改成 IR + TemplateSpec + render tree (base=885bf66)
+[2026-03-12T17:52:41Z] [SESSION-1] CHECKPOINT [issue-20] step=1/4 "switched jade builder tests to IR+TemplateSpec input and observed RED"
+[2026-03-12T17:52:41Z] [SESSION-1] CHECKPOINT [issue-20] step=2/4 "wired builders/custom-template through render tree and re-ran GREEN"
+[2026-03-12T17:52:41Z] [SESSION-1] CHECKPOINT [issue-20] step=3/4 "ran jade/render-tree targeted suite and full sequential regression"
+[2026-03-12T17:52:41Z] [SESSION-1] CHECKPOINT [issue-20] step=4/4 "issue row marked complete; creating commit"
+[2026-03-13T05:42:27Z] [SESSION-2] INIT Functional E2E verification session started for issues.csv coverage
+[2026-03-13T05:42:27Z] [SESSION-2] LOCK acquired (pid=33078)
+[2026-03-13T05:47:54Z] [SESSION-2] CHECKPOINT [task-001] step=1/1 "generated functional E2E test case document"
+[2026-03-13T05:47:54Z] [SESSION-2] Completed [task-001] (commit 5bbd9a4)
+[2026-03-13T05:47:54Z] [SESSION-2] Starting [task-002] 执行功能性端到端测试并记录问题-修复-复测闭环 (base=5bbd9a4)
+[2026-03-13T05:52:59Z] [SESSION-2] CHECKPOINT [task-002] step=1/4 "manual QA found duplicate project description in final export; adding regression test before fix"
+[2026-03-13T05:53:14Z] [SESSION-2] CHECKPOINT [task-002] step=2/4 "duplicate-description regression test passed after minimal fix; running broader verification"
+[2026-03-13T05:53:47Z] [SESSION-2] CHECKPOINT [task-002] step=3/4 "broader targeted suites and parser regression passed; re-running final validation command"
+[2026-03-13T05:55:02Z] [SESSION-2] CHECKPOINT [task-002] step=4/4 "documented issue-fix-retest loop and manual artifact retest"
+[2026-03-13T05:55:02Z] [SESSION-2] Completed [task-002] (commit 5bbd9a4)
+[2026-03-13T05:55:02Z] [SESSION-2] Starting [task-003] 稳定化所有功能并完成最终导出质量验证 (base=5bbd9a4)
+[2026-03-13T05:55:02Z] [SESSION-2] CHECKPOINT [task-003] step=1/1 "final validation command passed"
+[2026-03-13T05:55:02Z] [SESSION-2] Completed [task-003] (commit 5bbd9a4)
+[2026-03-13T05:55:02Z] [SESSION-2] STATS tasks_total=3 completed=3 failed=0 pending=0 blocked=0 attempts_total=0 checkpoints=3
+[2026-03-13T05:55:02Z] [SESSION-2] LOCK released
+[2026-03-13T06:40:52Z] [SESSION-3] INIT issues.csv task-engine session started
+[2026-03-13T06:40:52Z] [SESSION-3] LOCK acquired (pid=45121)
+[2026-03-13T06:40:52Z] [SESSION-3] CHECKPOINT [issue-26] step=0/4 "normalized pending issue states and locked first eligible row"
+[2026-03-13T06:40:52Z] [SESSION-3] Starting [issue-26] 接通 thumbnail 渲染主链
+[2026-03-13T06:42:28Z] [SESSION-3] CHECKPOINT [issue-26] step=1/4 "added thumbnail regression test and observed missing renderTemplateThumbnail / src/template/thumbnail.ts RED"
+[2026-03-13T06:44:15Z] [SESSION-3] CHECKPOINT [issue-26] step=2/4 "implemented shared template render context and thumbnail entry on render-tree truth"
+[2026-03-13T06:44:15Z] [SESSION-3] CHECKPOINT [issue-26] step=3/4 "passed targeted thumbnail/render/template/chat regression suite"
+[2026-03-13T06:49:08Z] [SESSION-3] CHECKPOINT [issue-26] step=4/4 "task completed, row marked done, commit d0c1653 created"
+[2026-03-13T06:49:08Z] [SESSION-3] Completed [issue-26] (commit d0c1653)
+[2026-03-13T06:49:08Z] [SESSION-3] Starting [issue-27] 把模板与分页稳定性纳入导出 gate (base=d0c1653)
+[2026-03-13T06:55:25Z] [SESSION-3] CHECKPOINT [issue-27] step=1/4 "added stability-gate regression coverage and observed template confirmation/layout stability RED"
+[2026-03-13T07:03:01Z] [SESSION-3] CHECKPOINT [issue-27] step=2/4 "implemented explicit template confirmation and layout stability gate across session/model paths"
+[2026-03-13T07:03:01Z] [SESSION-3] CHECKPOINT [issue-27] step=3/4 "passed targeted export-gate, thumbnail, recommendation, jade, and chat regression suite"
+[2026-03-13T07:04:41Z] [SESSION-3] CHECKPOINT [issue-27] step=4/4 "task completed, row marked done, commit 914fda1 created"
+[2026-03-13T07:04:41Z] [SESSION-3] Completed [issue-27] (commit 914fda1)
+[2026-03-13T07:04:41Z] [SESSION-3] STATS issues_total=27 completed=27 failed=0 pending=0 blocked=0 attempts_total=0 checkpoints=7
+[2026-03-13T07:04:41Z] [SESSION-3] LOCK released
+[2026-03-13T07:13:54Z] [SESSION-4] INIT e2e test-loop session started
+[2026-03-13T07:13:54Z] [SESSION-4] LOCK acquired (pid=50902)
+[2026-03-13T07:13:54Z] [SESSION-4] Starting [task-004] 补齐功能测试用例文档，覆盖 thumbnail / 稳定性 / 自定义内容产物 (base=HEAD)
+[2026-03-13T07:23:39Z] [SESSION-4] CHECKPOINT [task-004] step=1/1 "expanded functional test cases doc for issue 26/27 and custom-content resume target"
+[2026-03-13T07:23:39Z] [SESSION-4] Completed [task-004] (commit pending)
+[2026-03-13T07:23:39Z] [SESSION-4] Starting [task-005] 补齐自定义内容简历的端到端自动化测试并修复暴露的问题 (base=HEAD)
+[2026-03-13T07:25:06Z] [SESSION-4] CHECKPOINT [task-005] step=1/2 "added automated custom-content e2e regression for txt/html/docx/thumbnail outputs"
+[2026-03-13T07:25:06Z] [SESSION-4] CHECKPOINT [task-005] step=2/2 "custom-content e2e regression passed"
+[2026-03-13T07:25:06Z] [SESSION-4] Completed [task-005] (commit pending)
+[2026-03-13T07:25:06Z] [SESSION-4] Starting [task-006] 执行全链路测试-bug-修复-复测循环并生成自定义内容简历产物 (base=HEAD)
+[2026-03-13T07:29:52Z] [SESSION-4] CHECKPOINT [task-006] step=1/3 "generated custom-content resume artifacts under tasks/e2e-custom-output"
+[2026-03-13T07:29:52Z] [SESSION-4] CHECKPOINT [task-006] step=2/3 "full validation loop passed: typecheck, build, node --test tests/*.mjs, npm test"
+[2026-03-13T07:29:52Z] [SESSION-4] CHECKPOINT [task-006] step=3/3 "updated e2e QA loop document with current round findings and residual limitation"
+[2026-03-13T07:29:52Z] [SESSION-4] Completed [task-006] (commit pending)
+[2026-03-13T07:29:52Z] [SESSION-4] STATS tasks_total=6 completed=6 failed=0 pending=0 blocked=0 attempts_total=0 checkpoints=9
+[2026-03-13T07:29:52Z] [SESSION-4] LOCK released
+[2026-03-13T07:30:38Z] [SESSION-4] Completed [task-004] (commit a4126f1)
+[2026-03-13T07:30:38Z] [SESSION-4] Completed [task-005] (commit 02def47)
+[2026-03-13T07:30:38Z] [SESSION-4] Completed [task-006] (commit 3696d87)
+[2026-03-13T07:35:25Z] [SESSION-5] INIT cli-prepare-export and visual-regression session started
+[2026-03-13T07:35:25Z] [SESSION-5] LOCK acquired (pid=53557)
+[2026-03-13T07:35:25Z] [SESSION-5] Starting [task-007] 打通纯 CLI export-ready 闭环，去掉手工 export-ready 补丁步骤 (base=HEAD)
+[2026-03-13T07:41:30Z] [SESSION-5] CHECKPOINT [task-007] step=1/2 "added prepare-export CLI command and removed manual smoke patch step"
+[2026-03-13T07:41:30Z] [SESSION-5] CHECKPOINT [task-007] step=2/2 "prepare-export CLI regression passed"
+[2026-03-13T07:41:30Z] [SESSION-5] Completed [task-007] (commit pending)
+[2026-03-13T07:41:30Z] [SESSION-5] Starting [task-008] 补 PDF/视觉截图回归并把截图产物纳入全链路测试输出 (base=HEAD)
+[2026-03-13T08:01:32Z] [SESSION-5] CHECKPOINT [task-008] step=1/2 "visual regression passed and screenshot artifacts were written under tasks/e2e-custom-output"
+[2026-03-13T08:01:32Z] [SESSION-5] CHECKPOINT [task-008] step=2/2 "full regression plus smoke passed after stabilizing validate normalization and smoke export path"
+[2026-03-13T08:01:32Z] [SESSION-5] Completed [task-008] (commit pending)
+[2026-03-13T08:01:32Z] [SESSION-5] STATS tasks_total=8 completed=8 failed=0 pending=0 blocked=0 attempts_total=0 checkpoints=13
+[2026-03-13T08:01:32Z] [SESSION-5] LOCK released

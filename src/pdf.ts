@@ -62,3 +62,21 @@ export async function loadPdfForAiParsing(inputPath) {
   return { text: trimmed, images };
 }
 
+export async function renderPdfPagesToPngBuffers(inputPath, maxPages = 1) {
+  const buffer = fs.readFileSync(inputPath);
+  const { mupdf, doc } = await loadMupdfDoc(buffer);
+  const pageCount = doc.countPages();
+  const limit = Math.min(pageCount, Math.max(1, Number(maxPages) || 1));
+  const images = [];
+  for (let i = 0; i < limit; i += 1) {
+    const page = doc.loadPage(i);
+    const pixmap = page.toPixmap(
+      mupdf.Matrix.scale(PDF_VISION_RENDER_SCALE, PDF_VISION_RENDER_SCALE),
+      mupdf.ColorSpace.DeviceRGB,
+      false,
+      true
+    );
+    images.push(Buffer.from(pixmap.asPNG()));
+  }
+  return images;
+}

@@ -21,10 +21,6 @@ function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
-function writeJson(filePath, payload) {
-  fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), "utf8");
-}
-
 test("custom content resume e2e produces txt/html/docx artifacts and shared thumbnail output", async () => {
   await withTempDir(async (tempDir) => {
     const inputPath = path.join(tempDir, "custom-input.json");
@@ -44,7 +40,7 @@ test("custom content resume e2e produces txt/html/docx artifacts and shared thum
       }
     ];
     inputModel.basic.summary = "聚焦复杂业务场景下的定制化简历交付。";
-    writeJson(inputPath, inputModel);
+    fs.writeFileSync(inputPath, JSON.stringify(inputModel, null, 2), "utf8");
 
     await commandsModule.runOptimize({
       input: inputPath,
@@ -54,33 +50,22 @@ test("custom content resume e2e produces txt/html/docx artifacts and shared thum
       output: optimizedPath
     });
 
-    const optimized = readJson(optimizedPath);
-    const exportReady = {
-      ...optimized,
-      render_config: {
-        ...(optimized.render_config || {}),
-        template: "elegant",
-        templateConfirmed: true
-      },
-      meta: {
-        ...(optimized.meta || {}),
-        template: "elegant",
-        templateConfirmed: true,
-        reviewResult: {
-          summary: {
-            blocked: false
-          }
-        },
-        layoutResult: {
-          status: "ready",
-          pageCount: 1,
-          confirmed: true,
-          stable: true,
-          templateId: "elegant"
-        }
-      }
-    };
-    writeJson(exportReadyPath, exportReady);
+    await commandsModule.runPrepareExport({
+      input: optimizedPath,
+      jd: jdFixture,
+      template: "elegant",
+      "accept-multipage": true,
+      engine: "rule",
+      output: exportReadyPath
+    });
+
+    const exportReady = readJson(exportReadyPath);
+    assert.equal(exportReady.meta.template, "elegant");
+    assert.equal(exportReady.meta.templateConfirmed, true);
+    assert.equal(exportReady.render_config.templateConfirmed, true);
+    assert.equal(exportReady.meta.reviewResult.summary.blocked, false);
+    assert.equal(exportReady.meta.layoutResult.templateId, "elegant");
+    assert.equal(exportReady.meta.layoutResult.stable, true);
 
     await commandsModule.runGenerate({
       input: exportReadyPath,

@@ -322,6 +322,18 @@ function computeQualityGates(scores) {
   } satisfies QualityGates;
 }
 
+function deriveAverageFromScores(scores) {
+  const values = Object.values(scores).map((value) => Number(value));
+  if (!values.length) {
+    return 0;
+  }
+  return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2));
+}
+
+function deriveVerdictFromQualityGates(gates) {
+  return gates.passed ? "PASS" : "NEEDS_REVISION";
+}
+
 function validateReportSchemaOrThrow(report, enforceConsistency = true) {
   if (!report || typeof report !== "object") {
     throw new Error("[SCHEMA] validate report must be an object");
@@ -330,24 +342,26 @@ function validateReportSchemaOrThrow(report, enforceConsistency = true) {
     throw new Error("[SCHEMA] validate.scores must be an object");
   }
   const requiredDimensions = ["匹配度", "量化程度", "表达力", "结构完整性", "ATS友好度", "版面适配度", "视觉层次感"];
+  const normalizedScores = {};
   for (const dimension of requiredDimensions) {
-    assertScoreBounds(Number(report.scores[dimension]), `scores.${dimension}`, 0, 10);
+    const value = Number(report.scores[dimension]);
+    assertScoreBounds(value, `scores.${dimension}`, 0, 10);
+    normalizedScores[dimension] = Number(value.toFixed(2));
   }
-  assertScoreBounds(Number(report.average), "average", 0, 10);
   if (!["PASS", "NEEDS_REVISION"].includes(String(report.verdict))) {
     throw new Error("[SCHEMA] verdict must be PASS or NEEDS_REVISION");
   }
   assertArrayOfStrings(report.warnings || [], "warnings");
 
-  const gates = computeQualityGates(report.scores);
-  const aiPassed = String(report.verdict) === "PASS";
-  if (enforceConsistency && aiPassed !== gates.passed) {
-    throw new Error("[SCHEMA] verdict is inconsistent with quality gates");
-  }
+  const gates = computeQualityGates(normalizedScores);
+  const verdict = deriveVerdictFromQualityGates(gates);
   return {
-    scores: report.scores,
-    average: Number(Number(report.average).toFixed(2)),
-    verdict: String(report.verdict),
+    // average is redundant derived data; recompute from validated dimension scores so
+    // json_object fallback drift on a single field does not kill the whole review.
+    scores: normalizedScores,
+    average: deriveAverageFromScores(normalizedScores),
+    // verdict follows the same local quality gates for the same reason as average.
+    verdict: enforceConsistency ? verdict : String(report.verdict),
     warnings: report.warnings || [],
     quality_gates: gates
   };

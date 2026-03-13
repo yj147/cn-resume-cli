@@ -6,7 +6,264 @@
     "max_tasks_per_session": 20,
     "max_sessions": 50
   },
-  "tasks": [],
-  "session_count": 0,
-  "last_session": "2026-03-10T17:17:28Z"
+  "tasks": [
+    {
+      "id": "task-001",
+      "title": "生成 issues.csv 全覆盖功能性端到端测试用例文档",
+      "status": "completed",
+      "priority": "P0",
+      "depends_on": [],
+      "attempts": 0,
+      "max_attempts": 3,
+      "started_at_commit": "5bbd9a4",
+      "validation": {
+        "command": "test -f tests/functional-e2e-test-cases.md",
+        "timeout_seconds": 30
+      },
+      "on_failure": {
+        "cleanup": null
+      },
+      "error_log": [],
+      "checkpoints": [
+        {
+          "step": 1,
+          "total": 1,
+          "description": "generated tests/functional-e2e-test-cases.md from issues.csv coverage matrix",
+          "timestamp": "2026-03-13T05:47:54Z"
+        }
+      ],
+      "completed_at": "2026-03-13T05:47:54Z"
+    },
+    {
+      "id": "task-002",
+      "title": "执行功能性端到端测试并记录问题-修复-复测闭环",
+      "status": "completed",
+      "priority": "P0",
+      "depends_on": [
+        "task-001"
+      ],
+      "attempts": 0,
+      "max_attempts": 3,
+      "started_at_commit": "5bbd9a4",
+      "validation": {
+        "command": "test -f tests/e2e-qa-loop.md",
+        "timeout_seconds": 30
+      },
+      "on_failure": {
+        "cleanup": null
+      },
+      "error_log": [],
+      "checkpoints": [
+        {
+          "step": 4,
+          "total": 4,
+          "description": "recorded issue-fix-retest loop in tests/e2e-qa-loop.md",
+          "timestamp": "2026-03-13T05:55:02Z"
+        }
+      ],
+      "completed_at": "2026-03-13T05:55:02Z"
+    },
+    {
+      "id": "task-003",
+      "title": "稳定化所有功能并完成最终导出质量验证",
+      "status": "completed",
+      "priority": "P0",
+      "depends_on": [
+        "task-002"
+      ],
+      "attempts": 0,
+      "max_attempts": 3,
+      "started_at_commit": "5bbd9a4",
+      "validation": {
+        "command": "npm run typecheck && npm run build && node --test tests/resume-agent-e2e.test.mjs tests/chat-loop.test.mjs tests/chat-runtime.test.mjs tests/template-recommend.test.mjs tests/pagination.test.mjs tests/review-service.test.mjs && npm test",
+        "timeout_seconds": 1800
+      },
+      "on_failure": {
+        "cleanup": null
+      },
+      "error_log": [],
+      "checkpoints": [
+        {
+          "step": 1,
+          "total": 1,
+          "description": "final validation command passed after duplicate-description fix",
+          "timestamp": "2026-03-13T05:55:02Z"
+        }
+      ],
+      "completed_at": "2026-03-13T05:55:02Z"
+    },
+    {
+      "id": "task-004",
+      "title": "补齐功能测试用例文档，覆盖 thumbnail / 稳定性 / 自定义内容产物",
+      "status": "completed",
+      "priority": "P0",
+      "depends_on": [],
+      "attempts": 0,
+      "max_attempts": 3,
+      "started_at_commit": "914fda1",
+      "validation": {
+        "command": "grep -q \"ISSUE-026\" tests/functional-e2e-test-cases.md && grep -q \"ISSUE-027\" tests/functional-e2e-test-cases.md && grep -q \"自定义内容\" tests/functional-e2e-test-cases.md",
+        "timeout_seconds": 30
+      },
+      "on_failure": {
+        "cleanup": null
+      },
+      "error_log": [],
+      "checkpoints": [
+        {
+          "step": 1,
+          "total": 1,
+          "description": "expanded functional test cases for thumbnail, stability, custom content, authoring E2E, and artifact recovery",
+          "timestamp": "2026-03-13T07:23:39Z"
+        }
+      ],
+      "completed_at": "2026-03-13T07:23:39Z"
+    },
+    {
+      "id": "task-005",
+      "title": "补齐自定义内容简历的端到端自动化测试并修复暴露的问题",
+      "status": "completed",
+      "priority": "P0",
+      "depends_on": [
+        "task-004"
+      ],
+      "attempts": 0,
+      "max_attempts": 3,
+      "started_at_commit": "a4126f1",
+      "validation": {
+        "command": "npm run build && node --test tests/resume-custom-content-e2e.test.mjs",
+        "timeout_seconds": 900
+      },
+      "on_failure": {
+        "cleanup": null
+      },
+      "error_log": [],
+      "checkpoints": [
+        {
+          "step": 1,
+          "total": 2,
+          "description": "added automated custom-content e2e regression covering optimize -> export-ready -> txt/html/docx/thumbnail",
+          "timestamp": "2026-03-13T07:25:06Z"
+        },
+        {
+          "step": 2,
+          "total": 2,
+          "description": "validated tests/resume-custom-content-e2e.test.mjs passes locally",
+          "timestamp": "2026-03-13T07:25:06Z"
+        }
+      ],
+      "completed_at": "2026-03-13T07:25:06Z"
+    },
+    {
+      "id": "task-006",
+      "title": "执行全链路测试-bug-修复-复测循环并生成自定义内容简历产物",
+      "status": "completed",
+      "priority": "P0",
+      "depends_on": [
+        "task-005"
+      ],
+      "attempts": 0,
+      "max_attempts": 3,
+      "started_at_commit": "02def47",
+      "validation": {
+        "command": "npm run typecheck && npm run build && node --test tests/*.mjs && npm test && test -f tasks/e2e-custom-output/custom-resume.html && test -f tasks/e2e-custom-output/custom-resume.txt",
+        "timeout_seconds": 2400
+      },
+      "on_failure": {
+        "cleanup": null
+      },
+      "error_log": [],
+      "checkpoints": [
+        {
+          "step": 1,
+          "total": 3,
+          "description": "generated custom-content resume artifacts under tasks/e2e-custom-output",
+          "timestamp": "2026-03-13T07:29:52Z"
+        },
+        {
+          "step": 2,
+          "total": 3,
+          "description": "ran full validation loop: typecheck, build, node --test tests/*.mjs, npm test",
+          "timestamp": "2026-03-13T07:29:52Z"
+        },
+        {
+          "step": 3,
+          "total": 3,
+          "description": "updated tests/e2e-qa-loop.md with custom-content and stability coverage results",
+          "timestamp": "2026-03-13T07:29:52Z"
+        }
+      ],
+      "completed_at": "2026-03-13T07:29:52Z"
+    },
+    {
+      "id": "task-007",
+      "title": "打通纯 CLI export-ready 闭环，去掉手工 export-ready 补丁步骤",
+      "status": "completed",
+      "priority": "P0",
+      "depends_on": [],
+      "attempts": 0,
+      "max_attempts": 3,
+      "started_at_commit": "3696d87",
+      "validation": {
+        "command": "npm run build && node --test tests/prepare-export-cli.test.mjs",
+        "timeout_seconds": 1200
+      },
+      "on_failure": {
+        "cleanup": null
+      },
+      "error_log": [],
+      "checkpoints": [
+        {
+          "step": 1,
+          "total": 2,
+          "description": "added prepare-export CLI command and rewired smoke to use explicit export-ready command",
+          "timestamp": "2026-03-13T07:41:30Z"
+        },
+        {
+          "step": 2,
+          "total": 2,
+          "description": "prepare-export CLI regression passed without manual JSON patch step",
+          "timestamp": "2026-03-13T07:41:30Z"
+        }
+      ],
+      "completed_at": "2026-03-13T07:41:30Z"
+    },
+    {
+      "id": "task-008",
+      "title": "补 PDF/视觉截图回归并把截图产物纳入全链路测试输出",
+      "status": "completed",
+      "priority": "P0",
+      "depends_on": [
+        "task-007"
+      ],
+      "attempts": 0,
+      "max_attempts": 3,
+      "started_at_commit": "bad34a9",
+      "validation": {
+        "command": "npm run build && node --test tests/resume-visual-regression.test.mjs tests/review-service.test.mjs && npm run smoke",
+        "timeout_seconds": 1200
+      },
+      "on_failure": {
+        "cleanup": null
+      },
+      "error_log": [],
+      "checkpoints": [
+        {
+          "step": 1,
+          "total": 2,
+          "description": "visual regression passed and screenshot artifacts were written under tasks/e2e-custom-output",
+          "timestamp": "2026-03-13T08:01:32Z"
+        },
+        {
+          "step": 2,
+          "total": 2,
+          "description": "full regression plus smoke passed after stabilizing validate normalization and smoke export path",
+          "timestamp": "2026-03-13T08:01:32Z"
+        }
+      ],
+      "completed_at": "2026-03-13T08:01:32Z"
+    }
+  ],
+  "session_count": 5,
+  "last_session": "2026-03-13T08:01:32Z"
 }

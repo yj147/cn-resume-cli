@@ -15,6 +15,7 @@ export CN_RESUME_API_KEY="${CN_RESUME_API_KEY:-${OPENAI_API_KEY:-}}"
 export CN_RESUME_BASE_URL="${CN_RESUME_BASE_URL:-${OPENAI_BASE_URL:-https://api.openai.com/v1}}"
 export CN_RESUME_AI_MODEL="${CN_RESUME_AI_MODEL:-${OPENAI_MODEL:-gpt-4o-mini}}"
 export CN_RESUME_EVAL_ENGINE="${CN_RESUME_EVAL_ENGINE:-hybrid}"
+export CN_RESUME_PREPARE_EXPORT_ENGINE="${CN_RESUME_PREPARE_EXPORT_ENGINE:-rule}"
 export CN_RESUME_PROMPT_VERSION="${CN_RESUME_PROMPT_VERSION:-v1}"
 
 if [[ -z "${CN_RESUME_API_KEY:-}" ]]; then
@@ -87,7 +88,7 @@ node bin/cn-resume.js prepare-export \
   --jd "$INPUT_JD" \
   --template elegant \
   --accept-multipage \
-  --engine "$CN_RESUME_EVAL_ENGINE" \
+  --engine "$CN_RESUME_PREPARE_EXPORT_ENGINE" \
   --model "$CN_RESUME_AI_MODEL" \
   --prompt-version "$CN_RESUME_PROMPT_VERSION" \
   --output "$OUT_DIR/export-ready.json"

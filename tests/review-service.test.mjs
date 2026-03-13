@@ -143,3 +143,59 @@ test("commands route review entrypoints through unified review service", async (
   assert.match(commandSource, /runReviewService/);
   assert.doesNotMatch(commandSource, /validateByRule|validateByAI|analyzeByRule|analyzeJdByAI|grammarByRule|grammarCheckByAI/);
 });
+
+test("validateByAI derives average and verdict from scores when provider returns malformed aggregate fields", async () => {
+  const originalFetch = global.fetch;
+  let fetchCalls = 0;
+  global.fetch = async () => {
+    fetchCalls += 1;
+    return {
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                scores: {
+                  匹配度: 8,
+                  量化程度: 7,
+                  表达力: 8,
+                  结构完整性: 7,
+                  ATS友好度: 8,
+                  版面适配度: 7,
+                  视觉层次感: 7
+                },
+                average: "7/10",
+                verdict: "NEEDS_REVISION",
+                warnings: [],
+                confidence: 0.91
+              })
+            }
+          }
+        ]
+      })
+    };
+  };
+
+  try {
+    const report = await evaluationModule.validateByAI(
+      buildReviewModel(),
+      "Kubernetes Go 微服务 架构 性能 优化 数据库",
+      "elegant",
+      {
+        engine: "hybrid",
+        model: "stub-model",
+        promptVersion: "v1",
+        apiKey: "stub-key",
+        baseUrl: "https://example.com/v1"
+      }
+    );
+
+    assert.equal(report.average, 7.43);
+    assert.equal(report.verdict, "PASS");
+    assert.equal(report.quality_gates.passed, true);
+    assert.equal(fetchCalls, 1);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});

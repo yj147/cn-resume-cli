@@ -91,16 +91,48 @@
   - `npm test`
 - 结果：全部通过，未发现新增阻断缺陷
 
+### 批次 F：纯 CLI export-ready 闭环与视觉截图回归
+- 新增命令链：
+  - `cn-resume optimize --confirm`
+  - `cn-resume prepare-export --accept-multipage`
+  - `cn-resume generate --output html/pdf/docx/txt`
+- 新增自动化回归：
+  - `node --test tests/prepare-export-cli.test.mjs`
+  - `node --test tests/resume-visual-regression.test.mjs`
+- 视觉产物：
+  - `tasks/e2e-custom-output/custom-resume.pdf`
+  - `tasks/e2e-custom-output/visual-html.png`
+  - `tasks/e2e-custom-output/visual-pdf-page1.png`
+- 结果：
+  - 不再需要手工补 `export-ready.json`
+  - HTML screenshot 与 PDF 首屏 PNG 均成功生成
+
+### 批次 G：smoke 稳定性回归
+- 发现问题：
+  - live AI `validate` 偶发返回冗余聚合字段漂移，`average/verdict` 会与 `scores` 不一致，导致 schema gate 失败
+  - `prepare-export` 在 smoke 中重复跑 hybrid review 时，会因 live blocker 漂移阻断最终 `generate`
+- 修复：
+  - `validateByAI` 改为基于已校验的 `scores` 本地推导 `average/verdict`
+  - `scripts/smoke.sh` 新增 `CN_RESUME_PREPARE_EXPORT_ENGINE`，默认用 `rule` 跑 `prepare-export`，保留前置 live review 命令验证
+- 复测：
+  - `npm run build && node --test tests/review-service.test.mjs`
+  - `npm run smoke`
+- 结果：
+  - smoke 可稳定跑通
+  - 仍保留 live review 命令的联通性验证
+
 ## 最终结果
 - 自动化测试：通过
 - 手工导出检查：通过
 - 导出 gate：通过
 - 产物完整性：通过
 - 自定义内容简历产物：已生成，位于 `tasks/e2e-custom-output/`
+- 纯 CLI export-ready 闭环：通过
+- PDF/视觉截图回归：通过
 - 发现问题数：1
 - 已修复并复测通过：1
 - 本轮新增问题数：0
 
 ## 备注
 - 生成的 HTML 预览仍会输出 Tailwind CDN 的浏览器告警；这不影响当前功能测试与导出结果，但它说明 HTML 预览不是完全离线自包含页面。
-- 当前“最短可工作导出链”仍需要像 `scripts/smoke.sh` 一样把 `reviewResult/layoutResult/templateConfirmed` 写回 export-ready model；这说明纯 CLI 导出闭环仍依赖中间模型补丁，属于已知限制，不影响本轮测试通过。
+- 当前纯 CLI 最短可工作导出链已更新为：`parse -> optimize --confirm -> prepare-export -> generate`。

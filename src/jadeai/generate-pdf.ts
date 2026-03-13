@@ -12,6 +12,12 @@ interface PdfOptions {
   fitOnePage?: boolean;
 }
 
+interface ScreenshotOptions {
+  fullPage?: boolean;
+  width?: number;
+  height?: number;
+}
+
 async function getBrowser() {
   // Docker / self-hosted: use system Chromium via CHROME_PATH
   if (process.env.CHROME_PATH) {
@@ -251,6 +257,29 @@ export async function generatePdf(html: string, options: PdfOptions = {}): Promi
       margin: { top: '0', right: '0', bottom: '0', left: '0' },
     });
     return Buffer.from(pdf);
+  } finally {
+    await browser.close();
+  }
+}
+
+export async function renderHtmlScreenshot(html: string, options: ScreenshotOptions = {}): Promise<Buffer> {
+  const browser = await getBrowser();
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({
+      width: Number(options.width || A4_WIDTH_PX),
+      height: Number(options.height || A4_HEIGHT_PX)
+    });
+    await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    await Promise.race([
+      page.evaluate(() => document.fonts.ready),
+      new Promise((resolve) => setTimeout(resolve, 1500))
+    ]);
+    const screenshot = await page.screenshot({
+      type: 'png',
+      fullPage: options.fullPage !== false
+    });
+    return Buffer.from(screenshot);
   } finally {
     await browser.close();
   }

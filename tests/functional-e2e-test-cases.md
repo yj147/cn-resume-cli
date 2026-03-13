@@ -210,6 +210,38 @@
   - 最终得到一份支持自定义内容的简历产物
 - **Postconditions**: 生成可用于人工验收的自定义内容简历
 
+#### TC-F-013: 纯 CLI export-ready 闭环可直接导出，不再依赖手工补 export-ready JSON
+- **Requirement**: USER-REQ-002
+- **Priority**: High
+- **Preconditions**:
+  - 已有 `parse -> optimize --confirm` 产物
+  - 可使用 `prepare-export` 命令
+- **Test Steps**:
+  1. 运行 `cn-resume prepare-export --input <optimized.json> --jd <jd.txt> --template elegant --accept-multipage --output <export-ready.json>`
+  2. 检查输出模型是否自动写回 `reviewResult/layoutResult/templateConfirmed`
+  3. 直接运行 `cn-resume generate --input <export-ready.json> --output <resume.html>`
+- **Expected Results**:
+  - 不需要额外手工 patch JSON
+  - `generate` 可直接消费 `prepare-export` 产物
+  - 导出闭环保持纯 CLI
+- **Postconditions**: 形成 parse -> optimize -> prepare-export -> generate 的可执行命令链
+
+#### TC-F-014: PDF/视觉截图回归能稳定产出 HTML screenshot 与 PDF 首屏 PNG
+- **Requirement**: USER-REQ-003
+- **Priority**: High
+- **Preconditions**:
+  - 已有 export-ready 模型
+  - Puppeteer / PDF 渲染环境可用
+- **Test Steps**:
+  1. 导出 `resume.html` 与 `resume.pdf`
+  2. 生成 HTML screenshot
+  3. 渲染 PDF 首屏 PNG
+  4. 校验截图文件非空、PNG 头正确、尺寸合理
+- **Expected Results**:
+  - HTML screenshot 与 PDF 首屏 PNG 均可稳定生成
+  - 视觉回归链可作为后续人工审查基线
+- **Postconditions**: 获得可复查的视觉回归产物
+
 ### 2. Edge Case Tests
 
 #### TC-E-001: 空值、推断值、确认值在统一模型中状态正确
@@ -385,6 +417,8 @@
 | ISSUE-026 | TC-F-010, TC-F-011 | ✓ Complete |
 | ISSUE-027 | TC-F-011, TC-F-012, TC-ERR-003, TC-ST-003 | ✓ Complete |
 | USER-REQ-001 | TC-F-011, TC-F-012 | ✓ Complete |
+| USER-REQ-002 | TC-F-013 | ✓ Complete |
+| USER-REQ-003 | TC-F-014 | ✓ Complete |
 
 ## Notes
 - 本轮测试优先覆盖“用户主导事实确认 + 高风险 gate + 导出质量”，不做与 issues.csv 无关的额外扩展。
