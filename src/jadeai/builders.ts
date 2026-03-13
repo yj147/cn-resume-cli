@@ -176,7 +176,7 @@ function renderTreeToResume(renderTree, input): ResumeWithSections {
       title: section.title?.text || section.sectionType,
       sortOrder: Number(section.sortOrder || 0),
       visible: true,
-      content: section.body?.children?.[0]?.content || {},
+      content: structuredClone(section.body?.children?.[0]?.content || {}),
       createdAt: now,
       updatedAt: now
     }));
@@ -194,8 +194,11 @@ function renderTreeToResume(renderTree, input): ResumeWithSections {
   };
 }
 
-export async function generateHtml(input, forPdf = false): Promise<string> {
-  const renderTree = buildRenderTree(input);
+export async function generateHtml(input, forPdf = false, renderTreeOverride = null): Promise<string> {
+  const renderTree =
+    renderTreeOverride && typeof renderTreeOverride === "object"
+      ? renderTreeOverride
+      : buildRenderTree(input);
   const resume = renderTreeToResume(renderTree, input);
   // Pre-generate QR SVGs so sync template builders can use them
   await preGenerateQrSvgs(resume);

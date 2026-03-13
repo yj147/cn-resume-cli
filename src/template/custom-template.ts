@@ -7,8 +7,10 @@ import { buildEmptyField, buildEmptyModel, collectCustomSectionLines, normalizeB
 import { FIELD_SOURCES, FIELD_STATUSES, getFieldValue } from "../core/provenance.js";
 import { modelToDocumentIR, modelToThemeConfig } from "../jadeai/adapter.js";
 import { generateHtml as buildTemplateHtml } from "../jadeai/builders.js";
+import { buildRenderTree } from "../layout-core/render-tree.js";
 import { modelToPlainText } from "../flows/render.js";
 import { resolveTemplateSpec } from "./spec.js";
+import { generateThumbnail } from "./thumbnail.js";
 
 type CustomTemplateConfig = {
   aliases: Record<string, string>;
@@ -227,6 +229,24 @@ function renderImportedTemplate(model, resolvedTemplate: ResolvedTemplate) {
   return rendered;
 }
 
+function createBuiltinRenderContext(model, resolvedTemplate: ResolvedTemplate) {
+  if (resolvedTemplate.kind !== "builtin" || !resolvedTemplate.spec) {
+    throw new Error("BLOCKED: builtin template render context requires TemplateSpec.");
+  }
+  const basicName = getFieldValue(model?.basic?.name);
+  const input = {
+    document: modelToDocumentIR(model, resolvedTemplate.resolved),
+    templateSpec: resolvedTemplate.spec,
+    themeConfig: modelToThemeConfig(model, resolvedTemplate.resolved),
+    title: basicName ? `${basicName}-resume` : "resume",
+    language: "zh"
+  };
+  return {
+    input,
+    renderTree: buildRenderTree(input)
+  };
+}
+
 export async function renderTemplate(model, templateName, forPdf = false) {
   const customConfig = loadCustomTemplateConfig();
   const resolvedTemplate = resolveTemplate(templateName, customConfig);
@@ -237,20 +257,31 @@ export async function renderTemplate(model, templateName, forPdf = false) {
       custom: true
     };
   }
-  const basicName = getFieldValue(model?.basic?.name);
+  const { input, renderTree } = createBuiltinRenderContext(model, resolvedTemplate);
   return {
-    html: await buildTemplateHtml(
-      {
-        document: modelToDocumentIR(model, resolvedTemplate.resolved),
-        templateSpec: resolvedTemplate.spec,
-        themeConfig: modelToThemeConfig(model, resolvedTemplate.resolved),
-        title: basicName ? `${basicName}-resume` : "resume",
-        language: "zh"
-      },
-      forPdf
-    ),
+    html: await buildTemplateHtml(input, forPdf, renderTree),
     template: resolvedTemplate.resolved,
-    custom: false
+    custom: false,
+    renderTree
+  };
+}
+
+export async function renderTemplateThumbnail(model, templateName) {
+  const customConfig = loadCustomTemplateConfig();
+  const resolvedTemplate = resolveTemplate(templateName, customConfig);
+  if (resolvedTemplate.kind !== "builtin") {
+    throw new Error("BLOCKED: thumbnail rendering only supports builtin templates.");
+  }
+  const { input, renderTree } = createBuiltinRenderContext(model, resolvedTemplate);
+  const thumbnail = generateThumbnail(input, renderTree);
+  return {
+    html: thumbnail.html,
+    template: resolvedTemplate.resolved,
+    custom: false,
+    renderTree: thumbnail.renderTree,
+    sections: thumbnail.sections,
+    accentColor: thumbnail.accentColor,
+    layoutFamily: thumbnail.layoutFamily
   };
 }
 
