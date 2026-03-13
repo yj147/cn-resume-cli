@@ -6,7 +6,7 @@ import { loadChatConfig } from "./config.js";
 import { createChatEvent } from "./events.js";
 import { normalizeLayoutResult } from "../flows/render.js";
 import { planChatTurn } from "./planner.js";
-import { loadActiveSession, loadNamedSession, recordCheckpoint, saveActiveSession, syncSessionState } from "./session.js";
+import { createChatSession, loadActiveSession, loadNamedSession, recordCheckpoint, saveActiveSession, syncSessionState } from "./session.js";
 import { SLASH_COMMANDS } from "./command-registry.js";
 import { executeSlashCommand } from "./slash.js";
 import { runChatTool } from "./tools.js";
@@ -14,7 +14,10 @@ import { assertSessionExportReady } from "../export-gate.js";
 
 function loadChatSession(flags, homeDir) {
   const resume = String(flags?.resume || "").trim();
-  if (!resume || resume === "last") {
+  if (!resume) {
+    return createChatSession();
+  }
+  if (resume === "last") {
     return loadActiveSession(homeDir);
   }
   return loadNamedSession(resume, homeDir);

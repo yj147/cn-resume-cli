@@ -26,7 +26,7 @@ function withTempHome(run) {
   }
 }
 
-test("loadChatRuntime loads active session and config by default", () => {
+test("loadChatRuntime starts a fresh session by default even when an active session exists", () => {
   return withTempHome((tempHome) => {
     assert.equal(typeof runtimeModule.loadChatRuntime, "function");
 
@@ -42,8 +42,20 @@ test("loadChatRuntime loads active session and config by default", () => {
 
     const runtime = runtimeModule.loadChatRuntime({}, { homeDir: tempHome });
     assert.equal(runtime.config.model, "gpt-4.1-mini");
+    assert.notEqual(runtime.session.id, active.id);
+    assert.equal(runtime.session.messages.length, 0);
+  });
+});
+
+test("loadChatRuntime restores the active session only when resume=last is provided", () => {
+  return withTempHome((tempHome) => {
+    const active = sessionModule.createChatSession("2026-03-11T01:00:00.000Z");
+    active.messages.push({ role: "user", content: "resume last" });
+    sessionModule.saveActiveSession(active);
+
+    const runtime = runtimeModule.loadChatRuntime({ resume: "last" }, { homeDir: tempHome });
     assert.equal(runtime.session.id, active.id);
-    assert.equal(runtime.session.messages.length, 1);
+    assert.equal(runtime.session.messages[0].content, "resume last");
   });
 });
 
