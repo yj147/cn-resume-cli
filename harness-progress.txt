@@ -213,3 +213,7 @@
 [2026-03-13T09:10:07Z] [SESSION-6] CHECKPOINT [task-009] step=1/2 "added author-resume planning/tool path and unified multi-module draft generation with parse-first"
 [2026-03-13T09:10:07Z] [SESSION-6] CHECKPOINT [task-009] step=2/2 "verified real natural-language authoring flow via chat-loop and resume-agent e2e targeted regressions"
 [2026-03-13T09:10:07Z] [SESSION-6] Completed [task-009] (commit pending)
+[2026-03-13T09:12:36Z] [SESSION-6] Starting [task-010] 实现 issue-37：patch 接受/拒绝用户入口并接入 controller 事件 (base=26a60bd)
+[2026-03-13T09:14:58Z] [SESSION-6] CHECKPOINT [task-010] step=1/2 "added /accept-patch and /reject-patch slash commands and wired final patch decisions through controller transitions"
+[2026-03-13T09:14:58Z] [SESSION-6] CHECKPOINT [task-010] step=2/2 "verified slash-based patch confirmation and rejection flow with multi-patch pending_confirmation coverage"
+[2026-03-13T09:14:58Z] [SESSION-6] Completed [task-010] (commit pending)

@@ -1,5 +1,5 @@
 import { createChatSession, loadNamedSession } from "./session.js";
-import { selectTemplateCandidate } from "./agent.js";
+import { acceptPendingPatch, rejectPendingPatch, selectTemplateCandidate } from "./agent.js";
 
 function cloneRuntime(runtime) {
   return {
@@ -24,7 +24,11 @@ export function executeSlashCommand(runtime, input) {
     return { runtime: next, message: "quit", exit: true };
   }
   if (command === "/help") {
-    return { runtime: next, message: "可用命令：/go /cancel /quit /choose-template <name>", exit: false };
+    return {
+      runtime: next,
+      message: "可用命令：/go /cancel /quit /choose-template <name> /accept-patch <patch-id|module> /reject-patch <patch-id|module> [reason]",
+      exit: false
+    };
   }
   if (command === "/clear") {
     return {
@@ -61,6 +65,38 @@ export function executeSlashCommand(runtime, input) {
         session: selectTemplateCandidate(next.session, name)
       },
       message: `已选择模板 ${name}`,
+      exit: false
+    };
+  }
+  if (command === "/accept-patch") {
+    const target = String(args[0] || "").trim();
+    if (!target) {
+      throw new Error("accept-patch requires a patch id or module name");
+    }
+    return {
+      runtime: {
+        ...next,
+        session: acceptPendingPatch(next.session, target.startsWith("patch-") ? { patchId: target } : { module: target })
+      },
+      message: `已接受 patch ${target}`,
+      exit: false
+    };
+  }
+  if (command === "/reject-patch") {
+    const target = String(args[0] || "").trim();
+    if (!target) {
+      throw new Error("reject-patch requires a patch id or module name");
+    }
+    const reason = String(args.slice(1).join(" ") || "").trim();
+    return {
+      runtime: {
+        ...next,
+        session: rejectPendingPatch(
+          next.session,
+          target.startsWith("patch-") ? { patchId: target, reason } : { module: target, reason }
+        )
+      },
+      message: `已拒绝 patch ${target}${reason ? `：${reason}` : ""}`,
       exit: false
     };
   }

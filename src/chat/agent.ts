@@ -1,5 +1,5 @@
 import { createChatEvent } from "./events.js";
-import { CHAT_STATES } from "./controller.js";
+import { CHAT_STATES, CONTROLLER_EVENTS, transitionWorkflowState } from "./controller.js";
 import { invalidateLayoutResult, normalizeLayoutResult, recordLayoutDecision } from "../flows/render.js";
 
 function cloneSession(session) {
@@ -178,6 +178,16 @@ function applyPatch(session, patch) {
   };
 }
 
+function updateWorkflowAfterPatchDecision(session, event) {
+  if (session?.workflowState !== CHAT_STATES.PENDING_CONFIRMATION) {
+    return;
+  }
+  if (Array.isArray(session?.pendingPatches) && session.pendingPatches.length > 0) {
+    return;
+  }
+  session.workflowState = transitionWorkflowState(session.workflowState, event);
+}
+
 function appendLayoutDecisionPrompt(session) {
   const layoutResult = normalizeLayoutResult(session?.layoutResult);
   if (!layoutResult || layoutResult.status !== "overflow" || layoutResult.selectedOption) {
@@ -213,6 +223,7 @@ export function acceptPendingPatch(session, options: Record<string, any> = {}) {
   const [patch] = pendingPatchesRef(next).splice(patchIndex, 1);
   applyPatch(next, patch);
   recordPatchDecision(next, patch, "accepted");
+  updateWorkflowAfterPatchDecision(next, CONTROLLER_EVENTS.PATCH_ACCEPTED);
   return touchSession(next);
 }
 
@@ -224,6 +235,7 @@ export function rejectPendingPatch(session, options: Record<string, any> = {}) {
   }
   const [patch] = pendingPatchesRef(next).splice(patchIndex, 1);
   recordPatchDecision(next, patch, "rejected", String(options?.reason || ""));
+  updateWorkflowAfterPatchDecision(next, CONTROLLER_EVENTS.PATCH_REJECTED);
   return touchSession(next);
 }
 

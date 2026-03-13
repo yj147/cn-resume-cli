@@ -109,6 +109,92 @@ test("runChatLoop starts a real 0-1 authoring draft from natural language input"
   });
 });
 
+test("slash patch acceptance stays in pending_confirmation until the last patch is accepted", async () => {
+  await withTempHome(async (tempHome) => {
+    const handlers = {
+      planInput: async () => ({
+        type: "plan",
+        summary: "优化当前简历",
+        action: { type: "optimize-resume" }
+      }),
+      runTool: async () => ({
+        resumeDraft: {
+          source: "optimize-resume",
+          patches: [
+            { patchId: "patch-basic", module: "basic", nextValue: { name: { value: "林青" } } },
+            { patchId: "patch-experience", module: "experience", nextValue: [{ company: "星海科技" }] }
+          ]
+        }
+      })
+    };
+    const io = {
+      write: () => {},
+      emit: () => {}
+    };
+
+    let runtime = {
+      homeDir: tempHome,
+      config: { apiKey: "", baseUrl: "", model: "" },
+      session: sessionModule.createChatSession("2026-03-11T05:20:00.000Z")
+    };
+
+    ({ runtime } = await chatCommandModule.submitChatInput(runtime, "优化当前简历", io, handlers));
+    ({ runtime } = await chatCommandModule.submitChatInput(runtime, "/go", io, handlers));
+    assert.equal(runtime.session.workflowState, controllerModule.CHAT_STATES.PENDING_CONFIRMATION);
+    assert.equal(runtime.session.pendingPatches.length, 2);
+
+    ({ runtime } = await chatCommandModule.submitChatInput(runtime, "/accept-patch basic", io, handlers));
+    assert.equal(runtime.session.workflowState, controllerModule.CHAT_STATES.PENDING_CONFIRMATION);
+    assert.equal(runtime.session.pendingPatches.length, 1);
+    assert.equal(runtime.session.currentResume.model.basic.name.value, "林青");
+
+    ({ runtime } = await chatCommandModule.submitChatInput(runtime, "/accept-patch experience", io, handlers));
+    assert.equal(runtime.session.workflowState, controllerModule.CHAT_STATES.CONFIRMED_CONTENT);
+    assert.equal(runtime.session.pendingPatches.length, 0);
+    assert.equal(runtime.session.currentResume.model.experience[0].company, "星海科技");
+  });
+});
+
+test("slash patch rejection records audit trail and returns controller to drafting when last patch is rejected", async () => {
+  await withTempHome(async (tempHome) => {
+    const handlers = {
+      planInput: async () => ({
+        type: "plan",
+        summary: "优化当前简历",
+        action: { type: "optimize-resume" }
+      }),
+      runTool: async () => ({
+        resumeDraft: {
+          source: "optimize-resume",
+          patches: [
+            { patchId: "patch-basic", module: "basic", nextValue: { name: { value: "林青" } } }
+          ]
+        }
+      })
+    };
+    const io = {
+      write: () => {},
+      emit: () => {}
+    };
+
+    let runtime = {
+      homeDir: tempHome,
+      config: { apiKey: "", baseUrl: "", model: "" },
+      session: sessionModule.createChatSession("2026-03-11T05:25:00.000Z")
+    };
+
+    ({ runtime } = await chatCommandModule.submitChatInput(runtime, "优化当前简历", io, handlers));
+    ({ runtime } = await chatCommandModule.submitChatInput(runtime, "/go", io, handlers));
+    ({ runtime } = await chatCommandModule.submitChatInput(runtime, "/reject-patch basic 用户拒绝该改写", io, handlers));
+
+    assert.equal(runtime.session.workflowState, controllerModule.CHAT_STATES.DRAFTING);
+    assert.equal(runtime.session.pendingPatches.length, 0);
+    assert.equal(runtime.session.currentResume, undefined);
+    assert.equal(runtime.session.patchDecisions[0].decision, "rejected");
+    assert.equal(runtime.session.patchDecisions[0].reason, "用户拒绝该改写");
+  });
+});
+
 test("runChatLoop does not let /cancel bypass pending phase b confirmation", async () => {
   assert.equal(typeof chatCommandModule.runChatLoop, "function");
 
