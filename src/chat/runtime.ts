@@ -7,6 +7,7 @@ import { createChatEvent } from "./events.js";
 import { normalizeLayoutResult } from "../flows/render.js";
 import { planChatTurn } from "./planner.js";
 import { loadActiveSession, loadNamedSession, recordCheckpoint, saveActiveSession, syncSessionState } from "./session.js";
+import { SLASH_COMMANDS } from "./command-registry.js";
 import { executeSlashCommand } from "./slash.js";
 import { runChatTool } from "./tools.js";
 import { assertSessionExportReady } from "../export-gate.js";
@@ -167,7 +168,7 @@ async function handleSlashInput(runtime, input, handlers, io) {
   const slash = handlers.executeSlashCommand(runtime, input);
   let next = slash.runtime;
 
-  if (input === "/go") {
+  if (slash.command === SLASH_COMMANDS.GO) {
     const goFromIndex = Array.isArray(next.session?.transcript) ? next.session.transcript.length : 0;
     next.session = await confirmPendingPlan(next.session, { runTool: handlers.runTool });
     const layoutResult = normalizeLayoutResult(next.session?.layoutResult);
@@ -177,7 +178,7 @@ async function handleSlashInput(runtime, input, handlers, io) {
       recordCheckpoint(next.session, "layout_overflow", { stable: false });
     }
     emitTranscriptDelta(io, next.session, goFromIndex);
-  } else if (input === "/cancel") {
+  } else if (slash.command === SLASH_COMMANDS.CANCEL) {
     if (next.session.phaseB?.status === "awaiting_feedback") {
       emitEvent(
         next.session,
@@ -198,11 +199,16 @@ async function handleSlashInput(runtime, input, handlers, io) {
     }
   }
 
-  if (input !== "/go") {
+  if (slash.command !== SLASH_COMMANDS.GO) {
     emitTranscriptDelta(io, next.session, fromIndex);
   }
 
-  if (slash.message && slash.message !== "go" && slash.message !== "cancel" && slash.message !== "quit") {
+  if (
+    slash.message &&
+    slash.command !== SLASH_COMMANDS.GO &&
+    slash.command !== SLASH_COMMANDS.CANCEL &&
+    slash.command !== SLASH_COMMANDS.QUIT
+  ) {
     emitEvent(
       next.session,
       io,
