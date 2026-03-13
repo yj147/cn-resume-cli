@@ -1,0 +1,223 @@
+import { normalizeBulletList } from "../core/model.js";
+import { getFieldValue } from "../core/provenance.js";
+import { BUILTIN_TEMPLATE_NAMES, resolveTemplateSpec } from "./spec.js";
+
+const ATS_SAFE_TEMPLATES = new Set(["ats", "compact", "classic", "minimal", "elegant"]);
+const DENSE_SAFE_TEMPLATES = new Set(["compact", "ats", "elegant", "minimal", "classic"]);
+const DESIGN_TEMPLATES = new Set(["designer", "creative", "artistic", "gradient", "watercolor", "mosaic"]);
+const ENGINEERING_TEMPLATES = new Set(["developer", "engineer", "modern", "elegant", "compact"]);
+
+function positiveInt(value, fallback = 1) {
+  const normalized = Number(value);
+  if (!Number.isFinite(normalized) || normalized <= 0) {
+    return fallback;
+  }
+  return Math.round(normalized);
+}
+
+function textValue(field) {
+  if (typeof field === "string") {
+    return field.trim();
+  }
+  return String(getFieldValue(field) || "").trim();
+}
+
+function collectBullets(model) {
+  const experienceBullets = (model?.experience || []).flatMap((item) => normalizeBulletList(item?.bullets || []));
+  const projectBullets = (model?.projects || []).flatMap((item) => normalizeBulletList(item?.bullets || []));
+  return [...experienceBullets, ...projectBullets];
+}
+
+function collectTextLength(model, bullets) {
+  const summary = textValue(model?.basic?.summary);
+  const title = textValue(model?.basic?.title);
+  const skills = JSON.stringify(model?.skills || []);
+  return `${summary} ${title} ${skills} ${bullets.join(" ")}`.trim().length;
+}
+
+function normalizeKeywords(input) {
+  return (Array.isArray(input) ? input : [])
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+}
+
+function hasAny(text, patterns) {
+  const normalized = String(text || "").toLowerCase();
+  return patterns.some((pattern) => normalized.includes(pattern));
+}
+
+function detectOverflowRisk(reviewResult) {
+  const findings = Array.isArray(reviewResult?.findings) ? reviewResult.findings : [];
+  return findings.some((item) => {
+    const category = String(item?.category || "");
+    const message = String(item?.message || "");
+    return category === "layout_quality" && /超页|一页|版面/.test(message);
+  });
+}
+
+export function collectRecommendationSignals(input: Record<string, any> = {}) {
+  const model = input.model || {};
+  const preferences = input.preferences || {};
+  const bullets = collectBullets(model);
+  const textLength = collectTextLength(model, bullets);
+  const bulletCount = bullets.length;
+  const contentDensityScore = bulletCount * 120 + textLength;
+  const contentDensity =
+    contentDensityScore >= 2200 || bulletCount >= 10
+      ? "high"
+      : contentDensityScore >= 1200 || bulletCount >= 5
+        ? "medium"
+        : "low";
+  const targetRole = String(preferences.targetRole || textValue(model?.basic?.title) || "").trim();
+  const preferenceKeywords = normalizeKeywords(preferences.preferenceKeywords);
+  const pageGoal = positiveInt(preferences.pageGoal || model?.render_config?.pages || 1, 1);
+  const atsPreferred =
+    Boolean(preferences.atsPreferred) ||
+    preferenceKeywords.some((keyword) => /ats/i.test(keyword));
+  const overflowRisk = detectOverflowRisk(input.reviewResult);
+  const keywordText = `${targetRole} ${preferenceKeywords.join(" ")}`.toLowerCase();
+
+  return {
+    contentDensity: {
+      level: contentDensity,
+      bulletCount,
+      textLength,
+      score: contentDensityScore
+    },
+    targetRole,
+    preferenceKeywords,
+    pageGoal,
+    atsPreferred,
+    overflowRisk,
+    designFocus: hasAny(keywordText, ["设计", "ui", "ux", "视觉", "创意", "作品"]),
+    engineeringFocus: hasAny(keywordText, ["开发", "工程", "后端", "前端", "全栈", "平台", "架构", "技术"])
+  };
+}
+
+function scoreTemplate(templateId, signals) {
+  let score = 0;
+  const spec = resolveTemplateSpec(templateId);
+
+  if (signals.pageGoal === 1 && DENSE_SAFE_TEMPLATES.has(templateId)) {
+    score += templateId === "compact" ? 6 : templateId === "ats" ? 5 : 3;
+  }
+  if (signals.contentDensity.level === "high" && DENSE_SAFE_TEMPLATES.has(templateId)) {
+    score += templateId === "compact" ? 5 : templateId === "ats" ? 4 : templateId === "elegant" ? 3 : 2;
+  }
+  if (signals.overflowRisk && DENSE_SAFE_TEMPLATES.has(templateId)) {
+    score += templateId === "compact" ? 5 : templateId === "ats" ? 4 : templateId === "elegant" ? 3 : 1;
+  }
+  if (signals.atsPreferred && ATS_SAFE_TEMPLATES.has(templateId)) {
+    score += templateId === "ats" ? 6 : templateId === "compact" ? 5 : templateId === "elegant" ? 4 : 3;
+  }
+  if (signals.designFocus) {
+    if (templateId === "designer") score += 12;
+    else if (templateId === "creative") score += 10;
+    else if (templateId === "minimal") score += 5;
+    else if (DESIGN_TEMPLATES.has(templateId)) score += 3;
+  }
+  if (signals.engineeringFocus && ENGINEERING_TEMPLATES.has(templateId)) {
+    score += templateId === "developer" || templateId === "engineer" ? 6 : templateId === "modern" ? 5 : 4;
+  }
+  if (signals.pageGoal >= 2) {
+    if (templateId === "minimal") score += 4;
+    if (templateId === "designer" || templateId === "creative") score += 1;
+    if (spec.layoutFamily === "two-column" && !signals.atsPreferred) score += 1;
+  }
+  if (signals.preferenceKeywords.some((keyword) => /创意|视觉|作品/.test(keyword))) {
+    if (templateId === "designer") score += 3;
+    if (templateId === "creative") score += 2;
+  }
+  if (signals.preferenceKeywords.some((keyword) => /稳重|简洁|保守|ats/i.test(keyword))) {
+    if (ATS_SAFE_TEMPLATES.has(templateId)) score += 2;
+  }
+
+  if (score === 0) {
+    if (templateId === "elegant") score = 3;
+    else if (templateId === "modern") score = 2;
+    else if (templateId === "classic") score = 1;
+  }
+
+  return score;
+}
+
+function buildReasons(templateId, signals) {
+  const reasons = [];
+  const spec = resolveTemplateSpec(templateId);
+
+  if (signals.contentDensity.level === "high" && DENSE_SAFE_TEMPLATES.has(templateId)) {
+    reasons.push("当前内容密度偏高，先看更稳的紧凑版式。");
+  }
+  if (signals.overflowRisk && DENSE_SAFE_TEMPLATES.has(templateId)) {
+    reasons.push("审核已提示超页风险，这个模板更适合先控制页数。");
+  }
+  if (signals.atsPreferred && ATS_SAFE_TEMPLATES.has(templateId)) {
+    reasons.push("你偏向 ATS 友好输出，这个模板结构更保守。");
+  }
+  if (signals.designFocus && templateId === "designer") {
+    reasons.push("岗位目标偏设计/视觉表达，designer 更贴近作品化展示。");
+  }
+  if (signals.designFocus && templateId === "creative") {
+    reasons.push("偏好词强调创意与视觉层次，creative 的风格更匹配。");
+  }
+  if (signals.engineeringFocus && (templateId === "developer" || templateId === "engineer")) {
+    reasons.push("岗位目标偏工程交付，这个模板更接近技术岗位语境。");
+  }
+  if (signals.pageGoal >= 2 && templateId === "minimal") {
+    reasons.push("页数目标放宽后，minimal 更容易稳住长文案可读性。");
+  }
+  if (!reasons.length) {
+    reasons.push(
+      spec.layoutFamily === "two-column"
+        ? "双栏结构便于把辅助信息收进侧栏，减少主叙事干扰。"
+        : "单栏阅读路径更直接，适合作为默认候选先比较。"
+    );
+  }
+
+  return reasons;
+}
+
+function buildRisks(templateId, signals) {
+  const spec = resolveTemplateSpec(templateId);
+
+  if (DESIGN_TEMPLATES.has(templateId) || templateId === "designer" || templateId === "creative") {
+    return ["设计感更强，正式/ATS 场景下会比经典模板更激进。"] as string[];
+  }
+  if (ATS_SAFE_TEMPLATES.has(templateId)) {
+    return ["版式更保守，视觉个性会弱于更强调风格的模板。"] as string[];
+  }
+  if (spec.layoutFamily === "two-column") {
+    return ["双栏模板更依赖真实内容预览，内容继续增长时需要额外留意分页。"] as string[];
+  }
+  if (signals.pageGoal === 1 && signals.contentDensity.level !== "low") {
+    return ["如果内容继续增长，仍可能逼近一页上限。"] as string[];
+  }
+  return ["仍需结合真实内容预览确认最终观感。"] as string[];
+}
+
+export function recommendTemplates(input: Record<string, any> = {}) {
+  const limit = positiveInt(input.limit, 3);
+  const signals = collectRecommendationSignals(input);
+  const ranked = BUILTIN_TEMPLATE_NAMES
+    .map((templateId) => ({
+      templateId,
+      score: scoreTemplate(templateId, signals)
+    }))
+    .sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+      return BUILTIN_TEMPLATE_NAMES.indexOf(left.templateId) - BUILTIN_TEMPLATE_NAMES.indexOf(right.templateId);
+    })
+    .slice(0, limit)
+    .map((candidate) => ({
+      ...candidate,
+      reasons: buildReasons(candidate.templateId, signals),
+      risks: buildRisks(candidate.templateId, signals)
+    }));
+
+  return {
+    signals,
+    candidates: ranked
+  };
+}
