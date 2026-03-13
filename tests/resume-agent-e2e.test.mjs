@@ -43,6 +43,10 @@ function writeJson(filePath, payload) {
   fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), "utf8");
 }
 
+function countOccurrences(text, needle) {
+  return String(text).split(needle).length - 1;
+}
+
 test("parse-first export path blocks unconfirmed facts, review blockers, missing template, and unstable pagination before allowing export", async () => {
   await withTempDir(async (tempDir) => {
     const parsedPath = path.join(tempDir, "parsed.json");
@@ -130,6 +134,36 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
       /template_selection_required/
     );
 
+    const unconfirmedTemplatePath = path.join(tempDir, "template-unconfirmed.json");
+    writeJson(unconfirmedTemplatePath, {
+      ...confirmedModel,
+      render_config: {
+        ...(confirmedModel.render_config || {}),
+        template: "elegant"
+      },
+      meta: {
+        ...(confirmedModel.meta || {}),
+        template: "elegant",
+        templateConfirmed: false,
+        reviewResult: {
+          summary: {
+            blocked: false
+          }
+        },
+        layoutResult: {
+          status: "ready",
+          pageCount: 1,
+          confirmed: true,
+          stable: true,
+          templateId: "elegant"
+        }
+      }
+    });
+    await assert.rejects(
+      () => commandsModule.runGenerate({ input: unconfirmedTemplatePath, output: outputPath }),
+      /template_confirmation_required/
+    );
+
     const noLayoutPath = path.join(tempDir, "no-layout.json");
     writeJson(noLayoutPath, {
       ...confirmedModel,
@@ -139,6 +173,8 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
       },
       meta: {
         ...(confirmedModel.meta || {}),
+        template: "elegant",
+        templateConfirmed: true,
         reviewResult: {
           summary: {
             blocked: false
@@ -152,6 +188,36 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
       /layout_result_required/
     );
 
+    const unstableLayoutPath = path.join(tempDir, "layout-unstable.json");
+    writeJson(unstableLayoutPath, {
+      ...confirmedModel,
+      render_config: {
+        ...(confirmedModel.render_config || {}),
+        template: "elegant"
+      },
+      meta: {
+        ...(confirmedModel.meta || {}),
+        template: "elegant",
+        templateConfirmed: true,
+        reviewResult: {
+          summary: {
+            blocked: false
+          }
+        },
+        layoutResult: {
+          status: "ready",
+          pageCount: 1,
+          confirmed: true,
+          stable: false,
+          templateId: "elegant"
+        }
+      }
+    });
+    await assert.rejects(
+      () => commandsModule.runGenerate({ input: unstableLayoutPath, output: outputPath }),
+      /layout_stability_required/
+    );
+
     const readyPath = path.join(tempDir, "export-ready.json");
     writeJson(readyPath, {
       ...confirmedModel,
@@ -161,6 +227,8 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
       },
       meta: {
         ...(confirmedModel.meta || {}),
+        template: "elegant",
+        templateConfirmed: true,
         reviewResult: {
           summary: {
             blocked: false
@@ -169,7 +237,9 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
         layoutResult: {
           status: "ready",
           pageCount: 1,
-          confirmed: true
+          confirmed: true,
+          stable: true,
+          templateId: "elegant"
         }
       }
     });
@@ -181,6 +251,16 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
 
     assert.equal(fs.existsSync(outputPath), true);
     assert.equal(fs.readFileSync(outputPath, "utf8").length > 0, true);
+
+    const htmlPath = path.join(tempDir, "resume.html");
+    await commandsModule.runGenerate({
+      input: readyPath,
+      output: htmlPath
+    });
+
+    const projectDescription = "负责核心数据服务与权限体系设计。";
+    assert.equal(countOccurrences(fs.readFileSync(outputPath, "utf8"), projectDescription), 1);
+    assert.equal(countOccurrences(fs.readFileSync(htmlPath, "utf8"), projectDescription), 1);
   });
 });
 
@@ -246,6 +326,22 @@ test("0-1 authoring export path blocks pending facts, review blockers and unreso
     );
 
     const approved = chatCommandModule.confirmLayoutDecision(result.session, "accept_multipage");
+    assert.throws(
+      () => chatCommandModule.advanceExportWorkflow(approved),
+      /layout_stability_required/
+    );
+
+    approved.layoutResult = {
+      status: "overflow",
+      pageCount: 2,
+      selectedOption: "accept_multipage",
+      confirmed: true,
+      stable: true,
+      templateId: "designer",
+      finding: {
+        message: "当前内容密度较高，排版存在超页风险。"
+      }
+    };
     const ready = chatCommandModule.advanceExportWorkflow(approved);
 
     assert.equal(ready.workflowState, controllerModule.CHAT_STATES.READY_TO_EXPORT);

@@ -329,8 +329,8 @@ export function modelToDocumentIR(model: ResumeModel, templateName: string) {
 
   const projects = (model.projects || []).map((item, idx) => {
     const end = resolveEndDate(item);
-    const highlights = normalizeList(item.bullets || []);
     const normalizedDescription = getFieldValue(item.description).trim();
+    const highlights = normalizeList(item.bullets || []).filter((line) => line !== normalizedDescription);
     return {
       id: `project-${idx + 1}`,
       name: getFieldValue(item.name),

@@ -16,20 +16,44 @@ function assertReviewReady(reviewResult, commandName) {
   return reviewResult || null;
 }
 
-function assertTemplateSelected(templateId, commandName) {
+function resolveTemplateConfirmed(options: Record<string, any> = {}) {
+  if (options.explicitInput === true) {
+    return true;
+  }
+  const flags = [
+    options.metaTemplateConfirmed,
+    options.metaTemplateConfirmedLegacy,
+    options.renderTemplateConfirmed
+  ].filter((value) => typeof value === "boolean");
+  if (flags.includes(false)) {
+    return false;
+  }
+  return flags.includes(true);
+}
+
+function assertTemplateSelected(templateId, commandName, options: Record<string, any> = {}) {
   const resolved = String(templateId || "").trim();
   if (!resolved) {
     throw new Error(`BLOCKED: template_selection_required. Choose a template before ${commandName}.`);
   }
+  if (resolveTemplateConfirmed(options) !== true) {
+    throw new Error(`BLOCKED: template_confirmation_required. Explicitly confirm template '${resolved}' before ${commandName}.`);
+  }
   return resolved;
 }
 
-function assertLayoutReady(layoutResult, commandName) {
+function assertLayoutReady(layoutResult, commandName, templateId = "") {
   const normalized = normalizeLayoutResult(layoutResult);
   if (!normalized) {
     throw new Error(`BLOCKED: layout_result_required. Solve layout before ${commandName}.`);
   }
   assertLayoutExportReady(normalized, commandName);
+  if (templateId && normalized.templateId !== templateId) {
+    throw new Error(`BLOCKED: layout_stability_required. Re-run layout for template '${templateId}' before ${commandName}.`);
+  }
+  if (normalized.stable !== true) {
+    throw new Error(`BLOCKED: layout_stability_required. Re-run layout before ${commandName}.`);
+  }
   return normalized;
 }
 
@@ -43,8 +67,10 @@ export function assertSessionExportReady(session, commandName = "export") {
 
   return {
     reviewResult: assertReviewReady(session?.reviewResult, commandName),
-    templateId: assertTemplateSelected(session?.currentTemplate?.templateId, commandName),
-    layoutResult: assertLayoutReady(session?.layoutResult, commandName)
+    templateId: assertTemplateSelected(session?.currentTemplate?.templateId, commandName, {
+      metaTemplateConfirmed: session?.currentTemplate?.confirmed
+    }),
+    layoutResult: assertLayoutReady(session?.layoutResult, commandName, session?.currentTemplate?.templateId)
   };
 }
 
@@ -56,11 +82,18 @@ export function assertModelExportReady(model, input: Record<string, any> = {}) {
     reviewResult: assertReviewReady(model?.meta?.reviewResult || model?.meta?.review_result, commandName),
     templateId: assertTemplateSelected(
       input.templateId || model?.render_config?.template || model?.meta?.template,
-      commandName
+      commandName,
+      {
+        explicitInput: input.explicitTemplateSelection === true,
+        metaTemplateConfirmed: model?.meta?.templateConfirmed,
+        metaTemplateConfirmedLegacy: model?.meta?.template_confirmed,
+        renderTemplateConfirmed: model?.render_config?.templateConfirmed
+      }
     ),
     layoutResult: assertLayoutReady(
       model?.meta?.layoutResult || model?.meta?.layout_result || model?.render_config?.layoutResult,
-      commandName
+      commandName,
+      input.templateId || model?.render_config?.template || model?.meta?.template
     )
   };
 }

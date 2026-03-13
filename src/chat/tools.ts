@@ -90,7 +90,7 @@ function buildAdoptablePatches(reviewResult) {
   }));
 }
 
-function buildLayoutResult(reviewResult) {
+function buildLayoutResult(reviewResult, templateId = "", stable = false) {
   const finding = (reviewResult.findings || []).find((item) => item.category === "layout_quality");
   if (!finding) {
     return null;
@@ -99,12 +99,16 @@ function buildLayoutResult(reviewResult) {
     return normalizeLayoutResult({
       status: "overflow",
       pageCount: 2,
+      templateId,
+      stable,
       finding
     });
   }
   return normalizeLayoutResult({
     status: reviewResult.summary?.blocked ? "needs_attention" : "ready",
     pageCount: 1,
+    templateId,
+    stable,
     finding
   });
 }
@@ -200,10 +204,11 @@ export async function runChatTool(action, session) {
     if (!session?.currentResume?.model) {
       throw new Error("BLOCKED: no current resume loaded");
     }
+    const reviewTemplate = resolveReviewTemplate(session, action);
     const reviewResult = await runReviewService({
       model: session.currentResume.model,
       jdText: String(action.jdText || session.currentJd?.text || ""),
-      template: resolveReviewTemplate(session, action),
+      template: reviewTemplate,
       options: resolveEvalOptions(buildToolFlags(action)),
       checks: action.checks
     });
@@ -214,7 +219,11 @@ export async function runChatTool(action, session) {
           ...reviewResult,
           adoptablePatches
         },
-        layoutResult: buildLayoutResult(reviewResult)
+        layoutResult: buildLayoutResult(
+          reviewResult,
+          reviewTemplate,
+          session?.currentTemplate?.confirmed === true && session?.currentTemplate?.templateId === reviewTemplate
+        )
       },
       taskPatch: {
         status: reviewResult.summary?.blocked ? "blocked" : "done"

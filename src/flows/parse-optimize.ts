@@ -1100,7 +1100,7 @@ export function optimizeModel(model, jdText = "", feedbackText = "") {
   output.projects = (output.projects || []).map((proj) => ({
     ...proj,
     bullets: dedupeStringList(
-      normalizeBulletList([...(normalizeBulletList(proj.bullets || [])), getFieldValue(proj.description)])
+      normalizeBulletList(proj.bullets || [])
         .map(cleanBulletText)
         .filter(isMeaningfulBullet)
         .map((line) => rewriteBullet(line))
@@ -1173,7 +1173,7 @@ export async function optimizeModelByAI(model, jdText, feedbackText, options) {
   merged.projects = (merged.projects || []).map((proj) => ({
     ...proj,
     bullets: dedupeStringList(
-      normalizeBulletList([...(normalizeBulletList(proj.bullets || [])), getFieldValue(proj.description)])
+      normalizeBulletList(proj.bullets || [])
         .map(cleanBulletText)
         .filter(isMeaningfulBullet)
     ).slice(0, 6)

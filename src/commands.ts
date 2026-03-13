@@ -138,7 +138,8 @@ export async function runGenerate(flags) {
   const templateInput = flags.template || model?.render_config?.template || model?.meta?.template || "";
   assertModelExportReady(model, {
     commandName: "generate",
-    templateId: templateInput
+    templateId: templateInput,
+    explicitTemplateSelection: Boolean(flags.template)
   });
   const resolvedTemplate = resolveTemplate(templateInput);
   const template = resolvedTemplate.resolved;

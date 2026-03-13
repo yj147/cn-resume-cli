@@ -1,6 +1,6 @@
 import { createChatEvent } from "./events.js";
 import { CHAT_STATES } from "./controller.js";
-import { normalizeLayoutResult, recordLayoutDecision } from "../flows/render.js";
+import { invalidateLayoutResult, normalizeLayoutResult, recordLayoutDecision } from "../flows/render.js";
 
 function cloneSession(session) {
   return structuredClone(session);
@@ -243,6 +243,7 @@ export function confirmLayoutDecision(session, selectedOption: string) {
 
 export function selectTemplateCandidate(session, templateId: string) {
   const next = cloneSession(session);
+  const previousTemplateId = String(next?.currentTemplate?.templateId || "").trim();
   const selectedTemplateId = String(templateId || "").trim();
   const comparedTemplateIds = Array.isArray(next?.artifacts?.templateComparison?.comparedTemplateIds)
     ? next.artifacts.templateComparison.comparedTemplateIds
@@ -262,9 +263,13 @@ export function selectTemplateCandidate(session, templateId: string) {
   next.currentTemplate = {
     templateId: selectedTemplateId,
     source: "ab_selected",
+    confirmed: true,
     comparedTemplateIds: [...comparedTemplateIds],
     selectedAt: new Date().toISOString()
   };
+  if (next.layoutResult && previousTemplateId !== selectedTemplateId) {
+    next.layoutResult = invalidateLayoutResult(next.layoutResult, selectedTemplateId);
+  }
   appendEvent(
     next,
     createChatEvent("template_selected", {

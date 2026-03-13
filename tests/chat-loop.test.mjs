@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 
 const chatCommandModule = await import("../dist/commands/chat.js");
+const agentModule = await import("../dist/chat/agent.js");
 const controllerModule = await import("../dist/chat/controller.js");
 const sessionModule = await import("../dist/chat/session.js");
 const customTemplateModule = await import("../dist/template/custom-template.js");
@@ -260,11 +261,14 @@ test("export gate blocks unresolved overflow and only explicit multipage approva
   session.workflowState = controllerModule.CHAT_STATES.CONFIRMED_CONTENT;
   session.currentTemplate = {
     templateId: "elegant",
-    source: "user_selected"
+    source: "user_selected",
+    confirmed: true
   };
   session.layoutResult = {
     status: "overflow",
     pageCount: 2,
+    templateId: "elegant",
+    stable: true,
     finding: {
       message: "当前内容密度较高，排版存在超页风险。"
     }
@@ -300,13 +304,63 @@ test("export gate blocks when template has not been explicitly selected", () => 
   session.layoutResult = {
     status: "ready",
     pageCount: 1,
-    confirmed: true
+    confirmed: true,
+    stable: true,
+    templateId: "elegant"
   };
 
   assert.throws(
     () => chatCommandModule.advanceExportWorkflow(session),
     /template_selection_required/
   );
+});
+
+test("template change invalidates stale layout results until the chosen template gets a fresh stable layout", () => {
+  const session = sessionModule.createChatSession("2026-03-11T08:20:00.000Z");
+  session.workflowState = controllerModule.CHAT_STATES.CONFIRMED_CONTENT;
+  session.reviewResult = {
+    summary: {
+      blocked: false
+    }
+  };
+  session.currentTemplate = {
+    templateId: "elegant",
+    source: "user_selected",
+    confirmed: true
+  };
+  session.layoutResult = {
+    status: "ready",
+    pageCount: 1,
+    confirmed: true,
+    stable: true,
+    templateId: "elegant"
+  };
+  session.artifacts = {
+    templateComparison: {
+      comparedTemplateIds: ["elegant", "designer"],
+      previews: []
+    }
+  };
+
+  const switched = agentModule.selectTemplateCandidate(session, "designer");
+  assert.equal(switched.currentTemplate.templateId, "designer");
+  assert.equal(switched.currentTemplate.confirmed, true);
+  assert.equal(switched.layoutResult.stable, false);
+
+  assert.throws(
+    () => chatCommandModule.advanceExportWorkflow(switched),
+    /layout_stability_required/
+  );
+
+  switched.layoutResult = {
+    status: "ready",
+    pageCount: 1,
+    confirmed: true,
+    stable: true,
+    templateId: "designer"
+  };
+  const ready = chatCommandModule.advanceExportWorkflow(switched);
+  assert.equal(ready.workflowState, controllerModule.CHAT_STATES.READY_TO_EXPORT);
 });
 
 test("runChatLoop builds A/B previews from current resume content and explicit template choice does not mutate confirmed content", async () => {
@@ -347,6 +401,7 @@ test("runChatLoop builds A/B previews from current resume content and explicit t
     );
     assert.equal(result.session.currentTemplate.templateId, "designer");
     assert.equal(result.session.currentTemplate.source, "ab_selected");
+    assert.equal(result.session.currentTemplate.confirmed, true);
     assert.deepEqual(result.session.currentResume.model, originalModel);
     assert.equal(events.some((event) => event.type === "template_comparison_ready"), true);
     assert.equal(events.some((event) => event.type === "template_selected"), true);

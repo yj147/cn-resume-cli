@@ -38,12 +38,26 @@ function normalizeLayoutStatus(input) {
   return status || "ready";
 }
 
+function normalizeTemplateId(input) {
+  return String(input || "").trim();
+}
+
+function projectBodyLines(project) {
+  const description = getFieldValue(project?.description).trim();
+  const bullets = normalizeBulletList(project?.bullets || []).filter((line) => line !== description);
+  return {
+    description,
+    bullets
+  };
+}
+
 export function normalizeLayoutResult(layoutResult) {
   if (!layoutResult || typeof layoutResult !== "object") {
     return null;
   }
 
   const status = normalizeLayoutStatus(layoutResult.status);
+  const templateId = normalizeTemplateId(layoutResult.templateId || layoutResult.template || layoutResult.selectedTemplateId);
   const selectedOption = String(layoutResult.selectedOption || "").trim();
   const isKnownOption = LAYOUT_DECISION_OPTION_IDS.has(selectedOption);
   const requiresDecision = status === "overflow";
@@ -57,12 +71,30 @@ export function normalizeLayoutResult(layoutResult) {
     status,
     pageCount: positiveNumber(layoutResult.pageCount, requiresDecision ? 2 : 1) || (requiresDecision ? 2 : 1),
     options: requiresDecision ? LAYOUT_DECISION_OPTIONS : [],
+    templateId,
     selectedOption: isKnownOption ? selectedOption : "",
     confirmed,
+    stable: layoutResult.stable === true,
     requiresDecision: requiresDecision && !isKnownOption,
     requiresFollowUp,
-    finding: layoutResult.finding && typeof layoutResult.finding === "object" ? layoutResult.finding : null
+    finding: layoutResult.finding && typeof layoutResult.finding === "object" ? layoutResult.finding : null,
+    invalidatedBy: String(layoutResult.invalidatedBy || "").trim(),
+    invalidatedAt: String(layoutResult.invalidatedAt || "").trim()
   };
+}
+
+export function invalidateLayoutResult(layoutResult, templateId, reason = "template_changed") {
+  const normalized = normalizeLayoutResult(layoutResult);
+  if (!normalized) {
+    return null;
+  }
+  return normalizeLayoutResult({
+    ...normalized,
+    templateId: normalizeTemplateId(templateId) || normalized.templateId,
+    stable: false,
+    invalidatedBy: reason,
+    invalidatedAt: new Date().toISOString()
+  });
 }
 
 export function recordLayoutDecision(layoutResult, selectedOption) {
@@ -150,11 +182,15 @@ export function modelToPlainText(model) {
   dump(
     "项目经历",
     (model.projects || [])
-      .flatMap((proj) => [
-        `- ${getFieldValue(proj.name) || ""}`.trim(),
-        formatDateRange(proj) ? `  ${formatDateRange(proj)}` : "",
-        ...normalizeBulletList(proj.bullets || []).map((b) => `  * ${b}`)
-      ])
+      .flatMap((proj) => {
+        const body = projectBodyLines(proj);
+        return [
+          `- ${getFieldValue(proj.name) || ""}`.trim(),
+          formatDateRange(proj) ? `  ${formatDateRange(proj)}` : "",
+          body.description ? `  ${body.description}` : "",
+          ...body.bullets.map((b) => `  * ${b}`)
+        ];
+      })
       .filter(Boolean)
   );
   dump(
@@ -259,8 +295,8 @@ export async function generateDocx(model, outputPath) {
     (model.projects || []).flatMap((proj) => {
       const header = getFieldValue(proj.name).trim();
       const dateLine = formatDateRange(proj);
-      const description = getFieldValue(proj.description).trim();
-      return [header, dateLine, description, ...normalizeBulletList(proj.bullets || []).map((x) => `• ${x}`)].filter(Boolean);
+      const body = projectBodyLines(proj);
+      return [header, dateLine, body.description, ...body.bullets.map((x) => `• ${x}`)].filter(Boolean);
     })
   );
   addSection(
