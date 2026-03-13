@@ -1,10 +1,10 @@
 function extractAssistantText(payload) {
   const content = payload?.choices?.[0]?.message?.content;
   if (typeof content === "string") {
-    return content;
+    return sanitizeAssistantText(content);
   }
   if (Array.isArray(content)) {
-    return content
+    return sanitizeAssistantText(content
       .map((item) => {
         if (typeof item === "string") {
           return item;
@@ -12,9 +12,18 @@ function extractAssistantText(payload) {
         return String(item?.text || item?.content || "");
       })
       .join("")
-      .trim();
+      .trim());
   }
   return "";
+}
+
+function sanitizeAssistantText(text) {
+  return String(text || "")
+    .replace(/<minimax:tool_call>[\s\S]*?<\/minimax:tool_call>/gi, "")
+    .replace(/<invoke[\s\S]*?<\/invoke>/gi, "")
+    .replace(/^\s*(assistant|tool)_(started|completed|finished)\s*$/gim, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 export async function streamChatAnswer(runtime, input, onChunk) {

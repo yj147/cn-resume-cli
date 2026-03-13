@@ -20,6 +20,7 @@ test("runChatTui prints splash once before the first frame and rerenders on runt
 
   const tui = await runModule.runChatTui({
     brandText: "SPLASH\nLOGO",
+    splashDurationMs: 0,
     write: (text) => {
       markers.push(`splash:${text}`);
       writes.push(text);
@@ -45,8 +46,9 @@ test("runChatTui prints splash once before the first frame and rerenders on runt
     }
   });
 
-  assert.equal(writes.length, 1);
+  assert.equal(writes.length, 2);
   assert.equal(markers[0].startsWith("splash:"), true);
+  assert.equal(writes[1], "\u001Bc");
   assert.match(tui.app.lastFrame() || "", /初始欢迎语/);
 
   await tui.submit("继续优化");

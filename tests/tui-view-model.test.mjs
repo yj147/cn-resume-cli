@@ -82,3 +82,17 @@ test("view model projects assistant user and tool transcript items with condense
   assert.equal(model.transcript[2].diff.lines.length, 7);
   assert.equal(model.transcript[2].diff.lines[4].text, "… 7 lines hidden");
 });
+
+test("view model drops provider noise markers from transcript projection", () => {
+  const session = createSession({
+    transcript: [
+      { type: "assistant_completed", content: "assistant_started" },
+      { type: "assistant_completed", content: "<minimax:tool_call><invoke/></minimax:tool_call>" },
+      { type: "assistant_completed", content: "正常回答" }
+    ]
+  });
+
+  const model = viewModelModule.buildTuiViewModel(session);
+
+  assert.deepEqual(model.transcript.map((item) => item.content), ["正常回答"]);
+});

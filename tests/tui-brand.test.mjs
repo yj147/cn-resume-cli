@@ -21,6 +21,6 @@ test("renderBrandSplash reads the approved splash file and returns multi-line ou
   const splash = brandModule.renderBrandSplash();
   assert.equal(typeof splash, "string");
   assert.equal(splash.length > 0, true);
-  assert.equal(splash.includes("▓▓"), true);
+  assert.equal(splash.includes("CN-RESUME"), true);
   assert.equal(splash.split("\n").length > 1, true);
 });

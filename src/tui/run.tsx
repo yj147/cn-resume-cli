@@ -30,10 +30,15 @@ export async function runChatTui(options: Record<string, any> = {}) {
   const submitInput = options.submitInput || submitChatInput;
   const renderApp = options.renderApp || ((tree) => renderInk(tree));
   const uiState = options.uiState || createUiState();
+  const splashDurationMs = Number(options.splashDurationMs ?? 300);
   let composerDraft = String(options.initialDraft || "");
   let runtime = loadRuntime(options.flags || {}, { homeDir: options.homeDir });
 
   write(`${brandText}\n`);
+  if (splashDurationMs > 0) {
+    await new Promise((resolve) => setTimeout(resolve, splashDurationMs));
+  }
+  write("\u001Bc");
 
   const renderTree = () => (
     <AppFrame session={runtime.session} composerDraft={composerDraft} uiState={uiState} />

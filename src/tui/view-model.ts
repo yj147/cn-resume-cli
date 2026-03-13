@@ -37,6 +37,17 @@ function resolvePreviewStatus(session) {
   return PREVIEW_STATUS.COMMITTED;
 }
 
+function isTranscriptNoiseText(text) {
+  const normalized = String(text || "").trim();
+  if (!normalized) {
+    return true;
+  }
+  if (/^(assistant|tool)_(started|completed|finished)$/i.test(normalized)) {
+    return true;
+  }
+  return /<minimax:tool_call>/i.test(normalized);
+}
+
 function projectTranscriptItem(item, index) {
   if (!item || typeof item !== "object") {
     return {
@@ -55,11 +66,15 @@ function projectTranscriptItem(item, index) {
   }
 
   if (item.type === "assistant_completed" || item.type === "assistant_delta" || item.role === "assistant") {
+    const content = String(item.content || "");
+    if (isTranscriptNoiseText(content)) {
+      return null;
+    }
     return {
       id: `transcript-${index}`,
       kind: "assistant",
       header: "● cn-resume",
-      content: String(item.content || "")
+      content
     };
   }
 
@@ -104,6 +119,9 @@ function projectTranscriptItem(item, index) {
     };
   }
 
+  if (isTranscriptNoiseText(item.content || item.summary || item.type || "")) {
+    return null;
+  }
   return {
     id: `transcript-${index}`,
     kind: "status",
@@ -120,7 +138,7 @@ export function buildTuiViewModel(session) {
       brand: "cn-resume",
       workflowState: String(session?.workflowState || "intake")
     },
-    transcript: transcriptRef(session).map(projectTranscriptItem),
+    transcript: transcriptRef(session).map(projectTranscriptItem).filter(Boolean),
     composer: {
       multiline: true,
       hints: ["Enter send", "Ctrl+J newline", "Tab complete", "Esc close overlay"]

@@ -1,4 +1,14 @@
+const FILE_PATH_PATTERN = /\.(?:pdf|json|txt|md|docx)$/i;
+
 function extractInputPath(input) {
+  const trimmed = String(input || "").trim().replace(/^["']|["']$/g, "");
+  if (FILE_PATH_PATTERN.test(trimmed) && /[\\/]/.test(trimmed)) {
+    return trimmed;
+  }
+  const quoted = String(input || "").match(/["']([^"']+\.(?:pdf|json|txt|md|docx))["']/i);
+  if (quoted?.[1]) {
+    return quoted[1];
+  }
   const match = String(input || "").match(/(?:^|\s)([^\s]+?\.(?:pdf|json|txt|md|docx))(?:\s|$)/i);
   return match?.[1] || "";
 }
