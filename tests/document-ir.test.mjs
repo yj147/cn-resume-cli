@@ -52,6 +52,32 @@ test("document IR keeps section order and block hierarchy stable", () => {
   assert.equal(documentIr.sections[0].children[0].children[0].type, documentIrModule.BLOCK_TYPES.LIST_ITEM);
 });
 
+test("section block preserves payload separately from pagination children", () => {
+  const section = documentIrModule.createSectionBlock({
+    id: "section-work",
+    sectionType: "work_experience",
+    title: "工作经历",
+    sortOrder: 1,
+    payload: {
+      items: [{ id: "work-1", company: "星海科技" }]
+    },
+    blocks: [
+      documentIrModule.createBlock({
+        id: "work-1-header",
+        type: documentIrModule.BLOCK_TYPES.GROUP,
+        content: {
+          text: "工程师 @ 星海科技"
+        }
+      })
+    ]
+  });
+
+  assert.deepEqual(section.content.payload, {
+    items: [{ id: "work-1", company: "星海科技" }]
+  });
+  assert.equal(section.children.length, 1);
+});
+
 test("document IR preserves emphasis metadata without embedding html", () => {
   const run = documentIrModule.createTextRun("核心成果", {
     bold: true,

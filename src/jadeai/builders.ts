@@ -176,7 +176,7 @@ function renderTreeToResume(renderTree, input): ResumeWithSections {
       title: section.title?.text || section.sectionType,
       sortOrder: Number(section.sortOrder || 0),
       visible: true,
-      content: structuredClone(section.body?.children?.[0]?.content || {}),
+      content: structuredClone(section.payload || section.body?.children?.[0]?.content || {}),
       createdAt: now,
       updatedAt: now
     }));

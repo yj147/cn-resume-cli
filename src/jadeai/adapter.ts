@@ -166,6 +166,55 @@ function normalizeList(input: Array<{ text?: string; description?: string } | st
     .filter(Boolean);
 }
 
+function estimateLineCount(text: string, charsPerLine = 28) {
+  const normalized = String(text || "").trim();
+  if (!normalized) {
+    return 0;
+  }
+  return Math.max(1, Math.ceil(normalized.length / charsPerLine));
+}
+
+function createTextBlock(id: string, text: string, constraints: Record<string, any> = {}) {
+  const normalized = String(text || "").trim();
+  if (!normalized) {
+    return null;
+  }
+  return createBlock({
+    id,
+    type: BLOCK_TYPES.GROUP,
+    content: {
+      text: normalized,
+      lineCount: estimateLineCount(normalized)
+    },
+    constraints
+  });
+}
+
+function createListBlock(id: string, items: string[], constraints: Record<string, any> = {}) {
+  const normalizedItems = items.map((item) => String(item || "").trim()).filter(Boolean);
+  if (!normalizedItems.length) {
+    return null;
+  }
+  return createBlock({
+    id,
+    type: BLOCK_TYPES.LIST,
+    content: {
+      lineCount: 0
+    },
+    children: normalizedItems.map((item, index) =>
+      createBlock({
+        id: `${id}-item-${index + 1}`,
+        type: BLOCK_TYPES.LIST_ITEM,
+        content: {
+          text: item,
+          lineCount: estimateLineCount(item)
+        }
+      })
+    ),
+    constraints
+  });
+}
+
 function resolveStartDate(item: { start?: BasicField; start_date?: BasicField }): string {
   return String(getFieldValue(item.start_date) || getFieldValue(item.start) || "").trim();
 }
@@ -241,19 +290,127 @@ function applyRenderConfig(documentIr, renderConfig?: ResumeModel["render_config
 }
 
 function sectionToIr(seed) {
+  const blocks = [];
+  const content = seed.content || {};
+
+  if (seed.type === "personal_info") {
+    blocks.push(
+      createTextBlock(
+        `${seed.id}-identity`,
+        [
+          content.fullName,
+          content.jobTitle,
+          [content.phone, content.email, content.location, content.website].filter(Boolean).join(" | ")
+        ]
+          .filter(Boolean)
+          .join("\n"),
+        { keepTogether: true }
+      )
+    );
+  }
+
+  if (seed.type === "summary") {
+    blocks.push(createTextBlock(`${seed.id}-summary`, String(content.text || "").trim(), { keepTogether: true }));
+  }
+
+  if (seed.type === "work_experience") {
+    for (const item of Array.isArray(content.items) ? content.items : []) {
+      const header = [item.position, item.company].filter(Boolean).join(" @ ");
+      const dateLine = [item.startDate, item.current ? "至今" : item.endDate].filter(Boolean).join(" - ");
+      blocks.push(createTextBlock(`${item.id}-header`, [header, dateLine].filter(Boolean).join("\n"), { keepTogether: true }));
+      blocks.push(
+        createListBlock(`${item.id}-highlights`, Array.isArray(item.highlights) ? item.highlights : [], {
+          allowSplit: true,
+          minLinesAtBottom: 2,
+          minLinesAtTop: 2,
+          splitPriority: 10
+        })
+      );
+    }
+  }
+
+  if (seed.type === "projects") {
+    for (const item of Array.isArray(content.items) ? content.items : []) {
+      const header = [item.name, item.url].filter(Boolean).join(" · ");
+      const dateLine = [item.startDate, item.endDate].filter(Boolean).join(" - ");
+      blocks.push(createTextBlock(`${item.id}-header`, [header, dateLine].filter(Boolean).join("\n"), { keepTogether: true }));
+      blocks.push(createTextBlock(`${item.id}-description`, String(item.description || "").trim()));
+      blocks.push(
+        createListBlock(`${item.id}-highlights`, Array.isArray(item.highlights) ? item.highlights : [], {
+          allowSplit: true,
+          minLinesAtBottom: 2,
+          minLinesAtTop: 2,
+          splitPriority: 10
+        })
+      );
+    }
+  }
+
+  if (seed.type === "education") {
+    for (const item of Array.isArray(content.items) ? content.items : []) {
+      const header = [item.institution, item.degree, item.field].filter(Boolean).join(" ");
+      const dateLine = [item.startDate, item.endDate].filter(Boolean).join(" - ");
+      blocks.push(createTextBlock(`${item.id}-header`, [header, dateLine].filter(Boolean).join("\n"), { keepTogether: true }));
+      blocks.push(
+        createListBlock(`${item.id}-highlights`, Array.isArray(item.highlights) ? item.highlights : [], {
+          allowSplit: true,
+          minLinesAtBottom: 2,
+          minLinesAtTop: 2,
+          splitPriority: 8
+        })
+      );
+    }
+  }
+
+  if (seed.type === "skills") {
+    for (const category of Array.isArray(content.categories) ? content.categories : []) {
+      blocks.push(
+        createTextBlock(
+          `${category.id}-skills`,
+          `${category.name || "技能"}: ${(Array.isArray(category.skills) ? category.skills : []).join("、")}`,
+          { keepTogether: true }
+        )
+      );
+    }
+  }
+
+  if (["certifications", "languages", "github", "custom", "qr_codes"].includes(seed.type)) {
+    for (const item of Array.isArray(content.items) ? content.items : []) {
+      blocks.push(
+        createTextBlock(
+          `${item.id}-item`,
+          [
+            item.name,
+            item.label,
+            item.language,
+            item.proficiency,
+            item.repoUrl,
+            item.url,
+            item.description
+          ]
+            .filter(Boolean)
+            .join(" ")
+        )
+      );
+    }
+  }
+
   return createSectionBlock({
     id: seed.id,
     sectionType: seed.type,
     title: seed.title,
     sortOrder: seed.sortOrder,
     visible: seed.visible,
-    blocks: [
-      createBlock({
-        id: `${seed.id}-content`,
-        type: BLOCK_TYPES.GROUP,
-        content: seed.content
-      })
-    ]
+    payload: seed.content,
+    blocks: blocks.filter(Boolean).length
+      ? blocks.filter(Boolean)
+      : [
+          createBlock({
+            id: `${seed.id}-content`,
+            type: BLOCK_TYPES.GROUP,
+            content: seed.content
+          })
+        ]
   });
 }
 
@@ -265,7 +422,7 @@ function irSectionToResumeSection(section, resumeId: string, now: Date): ResumeS
     title: section.content.title,
     sortOrder: section.content.sortOrder,
     visible: section.content.visible !== false,
-    content: section.children[0]?.content as any,
+    content: (section.content.payload || section.children[0]?.content) as any,
     createdAt: now,
     updatedAt: now
   };

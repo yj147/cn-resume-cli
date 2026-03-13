@@ -319,9 +319,10 @@ test("chat review flow writes paginateDocument-backed layout results for export 
   assert.equal(reviewed.layoutResult.source, "paginateDocument");
   assert.equal(reviewed.layoutResult.templateId, "elegant");
   assert.equal(reviewed.layoutResult.status, "overflow");
+  assert.equal(reviewed.layoutResult.pageCount > 1, true);
   assert.equal(Array.isArray(reviewed.layoutResult.pages), true);
   assert.equal(Array.isArray(reviewed.layoutResult.decisions), true);
-  assert.equal(reviewed.layoutResult.overflow.length > 0, true);
+  assert.equal(reviewed.layoutResult.requiresDecision, true);
 });
 
 test("0-1 authoring export path blocks pending facts, review blockers and unresolved multipage until explicit approvals complete", async () => {

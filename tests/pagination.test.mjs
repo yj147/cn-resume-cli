@@ -252,8 +252,10 @@ test("pagination consumes real document ir from resume model instead of syntheti
     charsPerLine: 30
   });
 
-  assert.equal(result.status, "overflow");
+  assert.equal(result.status, "multipage");
   assert.equal(result.pageCount >= 2, true);
-  assert.equal(result.overflow.length > 0, true);
-  assert.equal(result.decisions.some((decision) => decision.action === "overflow"), true);
+  assert.equal(result.overflow.length, 0);
+  assert.equal(result.decisions.some((decision) => decision.action === "push"), true);
+  const workSection = adapterModule.modelToDocumentIR(model, "elegant").sections.find((section) => section.content.sectionType === "work_experience");
+  assert.equal(workSection.children.length > 2, true);
 });

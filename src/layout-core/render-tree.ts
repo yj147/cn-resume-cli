@@ -45,6 +45,7 @@ function sectionToRenderSection(section, sidebarTypes: Set<string>) {
     id: String(section?.id || ""),
     sectionType: String(section?.content?.sectionType || ""),
     sortOrder: Number(section?.content?.sortOrder || 0),
+    payload: section?.content?.payload && typeof section.content.payload === "object" ? structuredClone(section.content.payload) : null,
     title: {
       type: RENDER_NODE_TYPES.TEXT,
       text: String(section?.content?.title || "")

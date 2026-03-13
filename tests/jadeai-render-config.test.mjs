@@ -76,6 +76,18 @@ test("adapter emits document IR seed before building Jade resume sections", () =
   );
 });
 
+test("adapter keeps section payload for rendering while exposing finer pagination blocks", () => {
+  const model = loadFixture("sample-resume.json");
+  const documentIr = adapterModule.modelToDocumentIR(model, "elegant");
+  const workSection = documentIr.sections.find((section) => section.content.sectionType === "work_experience");
+  const resume = adapterModule.modelToJadeResume(model, "elegant");
+  const workResumeSection = resume.sections.find((section) => section.type === "work_experience");
+
+  assert.equal(workSection.children.length > 1, true);
+  assert.equal(Array.isArray(workSection.content.payload.items), true);
+  assert.equal(Array.isArray(workResumeSection.content.items), true);
+});
+
 test("custom sections dedupe overlapping items and content lines", async () => {
   const model = loadFixture("sample-resume.json");
   model.custom_sections = [
