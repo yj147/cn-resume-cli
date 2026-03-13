@@ -179,6 +179,57 @@ function applyPatch(session, patch) {
   };
 }
 
+function formatDiffValue(value) {
+  if (value == null) {
+    return "(empty)";
+  }
+  const text = typeof value === "string" ? value : JSON.stringify(value);
+  const compact = String(text || "").replace(/\s+/g, " ").trim();
+  if (compact.length <= 120) {
+    return compact;
+  }
+  return `${compact.slice(0, 117)}...`;
+}
+
+function buildDiffPreview(patches) {
+  if (!Array.isArray(patches) || patches.length === 0) {
+    return [];
+  }
+  const diffPreview = [];
+  for (const patch of patches) {
+    diffPreview.push({
+      kind: "meta",
+      text: `${patch.module} · ${patch.source || "draft"}`
+    });
+    if (patch.previousValue != null) {
+      diffPreview.push({
+        kind: "remove",
+        text: `${patch.module}: ${formatDiffValue(patch.previousValue)}`
+      });
+    }
+    if (patch.nextValue != null) {
+      diffPreview.push({
+        kind: "add",
+        text: `${patch.module}: ${formatDiffValue(patch.nextValue)}`
+      });
+    }
+  }
+  return diffPreview;
+}
+
+function buildTaskFinishedPayload(actionType, status, result, fallbackSummary = "") {
+  const patches = Array.isArray(result?.resumeDraft?.patches) ? result.resumeDraft.patches : [];
+  return {
+    taskType: actionType,
+    status,
+    summary: String(result?.resumeDraft?.summary || fallbackSummary || ""),
+    patchCount: patches.length,
+    diffPreview: buildDiffPreview(patches),
+    defaultExpanded: true,
+    hideDiagnostics: true
+  };
+}
+
 function updateWorkflowAfterPatchDecision(session, event, remainingPatchCount) {
   if (session?.workflowState !== CHAT_STATES.PENDING_CONFIRMATION) {
     return;
@@ -373,10 +424,7 @@ export async function confirmPendingPlan(session, handlers) {
     updateTaskStatus(next, pendingPlan.taskId, result?.taskPatch?.status || "done");
     appendEvent(
       next,
-      createChatEvent("task_finished", {
-        taskType: pendingPlan.action.type,
-        status: "done"
-      })
+      createChatEvent("task_finished", buildTaskFinishedPayload(pendingPlan.action.type, "done", result, pendingPlan.summary))
     );
 
     if (result?.phaseB?.status === "awaiting_feedback") {
@@ -420,10 +468,7 @@ export async function confirmPendingPlan(session, handlers) {
     updateTaskStatus(next, pendingPlan.taskId, "error");
     appendEvent(
       next,
-      createChatEvent("task_finished", {
-        taskType: pendingPlan.action.type,
-        status: "error"
-      })
+      createChatEvent("task_finished", buildTaskFinishedPayload(pendingPlan.action.type, "error", null, pendingPlan.summary))
     );
     appendEvent(
       next,
@@ -473,10 +518,7 @@ export async function confirmPhaseB(session, feedbackText, handlers) {
     }
     appendEvent(
       next,
-      createChatEvent("task_finished", {
-        taskType: action.type,
-        status: "done"
-      })
+      createChatEvent("task_finished", buildTaskFinishedPayload(action.type, "done", result, "phase_b_confirm"))
     );
     if (next.phaseB?.prompt) {
       appendEvent(
@@ -494,10 +536,7 @@ export async function confirmPhaseB(session, feedbackText, handlers) {
     updateTaskStatus(next, taskId, "error");
     appendEvent(
       next,
-      createChatEvent("task_finished", {
-        taskType: action.type,
-        status: "error"
-      })
+      createChatEvent("task_finished", buildTaskFinishedPayload(action.type, "error", null, "phase_b_confirm"))
     );
     appendEvent(
       next,

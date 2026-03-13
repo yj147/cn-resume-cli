@@ -1,3 +1,10 @@
+export type ChatDiffPreviewLineKind = "add" | "remove" | "meta";
+
+export interface ChatDiffPreviewLine {
+  kind: ChatDiffPreviewLineKind;
+  text: string;
+}
+
 export interface ChatEvent {
   type:
     | "user_message"
