@@ -16,13 +16,16 @@
   - 自定义内容简历 E2E 与产物回归
   - 纯 CLI `prepare-export` 闭环
   - PDF/视觉截图回归与 smoke 稳定化
-- 仍未完成的设计对齐差距已补入 `issues.csv:36-40`
+- 最终设计对齐收口任务 `36-40` 已全部闭环：
   - `0-1 authoring` 真入口
   - patch 接受/拒绝用户入口 + controller 闭环
   - 单一状态真相 + stable checkpoint 自动写入
   - `paginateDocument` 接入 layout 主链
   - 架构师复审闭环
-- **当前状态不是 DoD 完成态**；只有 `36-40` 全部关闭后，才允许宣称设计与实现完全对齐
+- **当前状态已达到 DoD**：设计、实现、`issues.csv`、QA 文档与架构复审结论一致，可宣称“设计与实现完全对齐”
+- **最终验证命令**：
+  - `npm run build && node --test tests/pagination.test.mjs tests/chat-agent.test.mjs tests/chat-loop.test.mjs tests/resume-agent-e2e.test.mjs tests/prepare-export-cli.test.mjs`
+  - `npm run build && npm test`
 
 ---
 

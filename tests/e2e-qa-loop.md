@@ -121,6 +121,19 @@
   - smoke 可稳定跑通
   - 仍保留 live review 命令的联通性验证
 
+### 批次 H：真实分页主链与架构复审收口
+- 修复：
+  - `src/flows/render.ts` 改为基于 `paginateDocument` 生成统一 `layoutResult`
+  - chat review 与 `prepare-export` 共用同一份分页求解结果
+- 新增/补强回归：
+  - `node --test tests/pagination.test.mjs tests/chat-agent.test.mjs tests/chat-loop.test.mjs tests/resume-agent-e2e.test.mjs tests/prepare-export-cli.test.mjs`
+- 全量验证：
+  - `npm run build && npm test`
+- 结果：
+  - `layoutResult.source = paginateDocument`
+  - export gate 读取的就是主链分页结果，不再依赖 review heuristic
+  - 架构复审阻塞项 `36-40` 全部闭环
+
 ## 最终结果
 - 自动化测试：通过
 - 手工导出检查：通过
@@ -129,6 +142,8 @@
 - 自定义内容简历产物：已生成，位于 `tasks/e2e-custom-output/`
 - 纯 CLI export-ready 闭环：通过
 - PDF/视觉截图回归：通过
+- 真实分页主链：通过
+- 架构复审：Approved
 - 发现问题数：1
 - 已修复并复测通过：1
 - 本轮新增问题数：0

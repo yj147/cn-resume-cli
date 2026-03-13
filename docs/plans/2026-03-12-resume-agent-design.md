@@ -6,15 +6,18 @@
 
 ## Implementation Audit Status — 2026-03-13
 
-- **当前判定**：基础架构已落地，但设计与实现**尚未完全对齐**
-- **已对齐范围**：canonical model / provenance、review service、TemplateSpec、render tree、thumbnail、prepare-export/export gate、视觉回归
-- **未闭环范围**：
-  1. `0-1 authoring` 真入口尚未落地到 planner/tool 主链
-  2. patch 接受/拒绝还没有完整用户入口与 controller 事件闭环
-  3. chat 仍保留 `state.status + workflowState` 双轨，stable checkpoint 自动写入未落地
-  4. `paginateDocument` 尚未接入主 layout 求解主链
-- **任务登记**：以上差距已纳入 `issues.csv` 的 `36-40`
-- **架构评审状态**：在 `36-40` 全部完成前，**不得宣称通过架构师审核**
+- **当前判定**：设计、实现、任务台账已经对齐；剩余阻塞风险 = `0`
+- **已闭环范围**：
+  1. `0-1 authoring` 已进入 planner / tool / canonical patch 主链
+  2. patch 接受/拒绝已有明确用户入口，并闭环到 controller 事件
+  3. chat 已收敛为 `workflowState` 单一真相；`state.status` 仅保留派生 UI 视图，stable checkpoint 自动写入并可恢复
+  4. `paginateDocument` 已接入主 layout 求解路径，并由 chat review / `prepare-export` / export gate 共用同一份 `layoutResult`
+  5. 自定义内容导出、视觉回归、纯 CLI export-ready 闭环与 QA loop 已完成
+- **任务登记**：`issues.csv` 已覆盖并闭环 `1-40` 全部任务；其中 `36-40` 为最终设计对齐收口任务
+- **架构评审状态**：复审结论已更新为 **Approved**，见 `docs/plans/2026-03-13-resume-agent-architecture-review.md`
+- **验证证据**：
+  - `npm run build && node --test tests/pagination.test.mjs tests/chat-agent.test.mjs tests/chat-loop.test.mjs tests/resume-agent-e2e.test.mjs tests/prepare-export-cli.test.mjs`
+  - `npm run build && npm test`
 
 ---
 

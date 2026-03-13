@@ -2,11 +2,11 @@
 
 **Date:** 2026-03-13  
 **Reviewer:** architect review  
-**Status:** Changes Requested
+**Status:** Approved
 
 ## Conclusion
 
-当前仓库已经落下了大部分架构骨架，但**不能**判定为“设计与实现完全对齐”，因此**当前不通过架构师审核**。
+当前仓库已完成设计收口项 `36-40`，并通过真实代码与测试证据闭环；**现在可以判定为“设计与实现完全对齐”**，本次架构复审结论为 **Approved**。
 
 ## Aligned Areas
 
@@ -14,26 +14,30 @@
 - review service 已统一：`src/eval/review-service.ts`
 - TemplateSpec / render tree / thumbnail 主链已成型：`src/template/spec.ts`、`src/layout-core/render-tree.ts`、`src/template/thumbnail.ts`
 - export gate / prepare-export / smoke 已形成硬门禁：`src/export-gate.ts`、`src/commands.ts`、`scripts/smoke.sh`
+- `0-1 authoring` 已接入 planner / tool / patch 主链：`src/chat/planner.ts`、`src/chat/tools.ts`
+- patch 接受/拒绝已有用户入口，并接入 controller：`src/chat/slash.ts`、`src/chat/agent.ts`
+- chat 状态已收敛为单一 `workflowState` 真相，并自动写 stable checkpoints：`src/chat/session.ts`、`src/chat/runtime.ts`、`src/chat/agent.ts`
+- `paginateDocument` 已成为 layout 主链真相来源：`src/layout-core/pagination.ts`、`src/flows/render.ts`、`src/chat/tools.ts`、`src/commands.ts`
 
-## Blocking Gaps
+## Closure Evidence
 
-1. `0-1 authoring` 真入口缺失  
-   - 证据：`src/chat/planner.ts` 当前只规划 `parse-resume` / `optimize-resume` / `recommend-template`
-2. patch 接受/拒绝没有用户入口，也未闭环到 controller 事件  
-   - 证据：`src/chat/agent.ts` 有 `acceptPendingPatch/rejectPendingPatch`，但 `src/chat/slash.ts` 无对应命令
-3. chat 保留 `state.status + workflowState` 双轨  
-   - 证据：`src/chat/controller.ts`、`src/chat/session.ts`、`src/chat/runtime.ts`
-4. `paginateDocument` 未接入 layout 主链  
-   - 证据：`src/layout-core/pagination.ts` 已存在，但主 layout 仍由 `buildLayoutResultFromReview(...)` 驱动：`src/flows/render.ts`
+1. `0-1 authoring` 真入口  
+   - 已闭环到 `author-resume` 规划与执行路径，并产出统一 `ResumeDraft`：`src/chat/planner.ts`、`src/chat/tools.ts`
+2. patch 接受/拒绝用户入口  
+   - `/accept-patch`、`/reject-patch` 已进入 slash 层，并驱动 `PATCH_ACCEPTED/PATCH_REJECTED`：`src/chat/slash.ts`、`src/chat/agent.ts`
+3. 单一状态真相 + stable checkpoint  
+   - `workflowState` 成为唯一主状态；落盘时不再持久化 legacy `state`，checkpoint 自动写入并支持恢复：`src/chat/session.ts`、`src/chat/runtime.ts`
+4. 真实分页主链  
+   - `buildLayoutResult(...)` 已基于 `paginateDocument(...)` 生成 `layoutResult`，chat review 与 `prepare-export` 共用同一真相：`src/flows/render.ts`、`src/chat/tools.ts`、`src/commands.ts`
 
-## Required Closure
+## Verification
 
-以上阻塞项已经登记到：
+- `npm run build && node --test tests/pagination.test.mjs tests/chat-agent.test.mjs tests/chat-loop.test.mjs tests/resume-agent-e2e.test.mjs tests/prepare-export-cli.test.mjs`
+- `npm run build && npm test`
 
-- `issues.csv:36`
-- `issues.csv:37`
-- `issues.csv:38`
-- `issues.csv:39`
-- `issues.csv:40`
+## Final Assessment
 
-只有在 `36-40` 全部完成、验证通过、并回写设计/实施计划后，才能把本评审状态更新为 **Approved**。
+- `issues.csv` 已闭环 `36-40`
+- 设计文档、实施计划、QA 记录与实现口径一致
+- 未发现新的架构阻塞项
+- 结论：**Approved**
