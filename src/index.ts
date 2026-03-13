@@ -11,48 +11,80 @@ import {
   runTemplateCommand,
   runValidate
 } from "./commands.js";
+import { runChatTui } from "./tui/run.js";
 
-export async function main(argv) {
-  if (!argv.length || argv[0] === "--help" || argv[0] === "-h") {
-    process.stdout.write(`${usage()}\n`);
+const DEFAULT_MAIN_DEPS = {
+  loadLocalEnvFile,
+  parseFlags,
+  usage,
+  writeStdout: (text) => process.stdout.write(text),
+  runChatTui,
+  runAnalyzeJd,
+  runGenerate,
+  runGrammarCheck,
+  runOptimize,
+  runPrepareExport,
+  runParse,
+  runTemplateCommand,
+  runValidate
+};
+
+export async function main(argv, deps = {}) {
+  const resolvedDeps = {
+    ...DEFAULT_MAIN_DEPS,
+    ...deps
+  };
+  if (argv[0] === "--help" || argv[0] === "-h") {
+    resolvedDeps.writeStdout(`${resolvedDeps.usage()}\n`);
     return;
   }
 
-  loadLocalEnvFile();
+  resolvedDeps.loadLocalEnvFile();
+
+  if (!argv.length) {
+    await resolvedDeps.runChatTui({});
+    return;
+  }
 
   const [command, ...rest] = argv;
-  const { flags } = parseFlags(rest);
+  if (command === "chat") {
+    const { flags } = resolvedDeps.parseFlags(rest);
+    await resolvedDeps.runChatTui({ flags });
+    return;
+  }
+
+  const { flags } = resolvedDeps.parseFlags(rest);
 
   if (command === "parse") {
-    await runParse(flags);
+    await resolvedDeps.runParse(flags);
     return;
   }
   if (command === "optimize") {
-    await runOptimize(flags);
+    await resolvedDeps.runOptimize(flags);
     return;
   }
   if (command === "generate") {
-    await runGenerate(flags);
+    await resolvedDeps.runGenerate(flags);
     return;
   }
   if (command === "prepare-export") {
-    await runPrepareExport(flags);
+    await resolvedDeps.runPrepareExport(flags);
     return;
   }
   if (command === "validate") {
-    await runValidate(flags);
+    await resolvedDeps.runValidate(flags);
     return;
   }
   if (command === "analyze-jd") {
-    await runAnalyzeJd(flags);
+    await resolvedDeps.runAnalyzeJd(flags);
     return;
   }
   if (command === "grammar-check") {
-    await runGrammarCheck(flags);
+    await resolvedDeps.runGrammarCheck(flags);
     return;
   }
   if (command === "template") {
-    await runTemplateCommand(rest);
+    await resolvedDeps.runTemplateCommand(rest);
     return;
   }
 
