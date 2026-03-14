@@ -44,23 +44,98 @@
 
 ---
 
+## Final Hard-Cut Decisions
+
+### 最终 16 个公开模板名
+
+- `single-clean`
+- `single-formal`
+- `single-minimal`
+- `single-accent`
+- `single-ats`
+- `split-clean`
+- `split-formal`
+- `split-dark`
+- `split-ats`
+- `sidebar-clean`
+- `sidebar-dark`
+- `compact-clean`
+- `compact-ats`
+- `timeline-clean`
+- `timeline-accent`
+- `editorial-accent`
+
+### 默认模板
+
+- 默认模板固定为 `single-clean`
+
+### 删除规则
+
+- 当前对外的 50 个旧模板名全部删除
+- 其余未列入的旧模板全部删除
+- 不保留旧模板名 alias
+- 不做旧名到新名的运行时迁移
+
+### `src/render-engine/*` 最终目录树
+
+```text
+src/render-engine/
+├── adapter.ts
+├── builders.ts
+├── constants.ts
+├── generate-pdf.ts
+├── qrcode.ts
+├── types.ts
+├── utils.ts
+└── templates/
+    ├── single-clean.ts
+    ├── single-formal.ts
+    ├── single-minimal.ts
+    ├── single-accent.ts
+    ├── single-ats.ts
+    ├── split-clean.ts
+    ├── split-formal.ts
+    ├── split-dark.ts
+    ├── split-ats.ts
+    ├── sidebar-clean.ts
+    ├── sidebar-dark.ts
+    ├── compact-clean.ts
+    ├── compact-ats.ts
+    ├── timeline-clean.ts
+    ├── timeline-accent.ts
+    └── editorial-accent.ts
+```
+
+### Registry 一致性要求
+
+- `BUILTIN_TEMPLATE_NAMES`
+- `TEMPLATE_LIST`
+- `TEMPLATE_BUILDERS`
+- `src/render-engine/templates/*`
+
+这四处必须在最终 16 模板集合上完全一致。
+
+---
+
 ### Task 1: 冻结新的公开模板目录与硬切错误语义
 
 **Files:**
 - Modify: `src/template/spec.ts`
 - Modify: `src/constants.ts`
 - Modify: `src/template/custom-template.ts`
+- Modify: `tests/template-spec.test.mjs`
 - Test: `tests/template-spec.test.mjs`
 - Create: `tests/template-catalog-hard-cut.test.mjs`
 
 **Step 1: Write the failing test**
 
-新增测试，断言：
+新增/修改测试，断言：
 
-- 新公开模板目录只包含约 16 个功能/结构命名
-- 默认模板为新的功能型名字（候选：`single-clean`）
+- 新公开模板目录只包含最终 16 个功能/结构命名
+- 默认模板为 `single-clean`
 - 旧模板名如 `classic`、`modern`、`elegant` 直接报错
 - 错误信息包含“请使用 template list 查看新模板目录”
+- `tests/template-spec.test.mjs` 不再断言 50 模板，而是断言最终 16 模板
 
 **Step 2: Run test to verify it fails**
 
@@ -73,7 +148,8 @@ Expected: FAIL，因为当前主干仍暴露旧模板目录与旧错误语义。
 1. 在 `src/template/spec.ts` 冻结新的公开模板集合
 2. 在 `src/constants.ts` 重写 `TEMPLATE_LIST`、`TEMPLATE_ALIASES`、`TEMPLATE_GROUPS`
 3. 在 `src/template/custom-template.ts` 的模板解析路径中删除旧模板名兼容，并给出显式硬切错误
-4. 不改内部视觉实现，只先改模板注册表与解析契约
+4. 更新 `tests/template-spec.test.mjs` 的计数与默认模板断言
+5. 不改内部视觉实现，只先改模板注册表与解析契约
 
 **Step 4: Run test to verify it passes**
 
@@ -95,6 +171,7 @@ git commit -m "refactor: hard-cut public template catalog"
 - Modify: `tests/jadeai-render-config.test.mjs`
 - Modify: `tests/resume-visual-regression.test.mjs`
 - Modify: `tests/pagination.test.mjs`
+- Create: `tests/render-engine-registry.test.mjs`
 
 **Step 1: Write the failing test**
 
@@ -103,10 +180,12 @@ git commit -m "refactor: hard-cut public template catalog"
 - 关键实现入口从 `dist/render-engine/*` 导入成功
 - 测试中不再直接依赖 `dist/jadeai/*`
 - `jadeai-render-config` 相关测试改名或改引用后，仍验证相同渲染契约
+- `TEMPLATE_BUILDERS` 的 key 集合与 `BUILTIN_TEMPLATE_NAMES` 完全一致
+- 默认模板存在于 `BUILTIN_TEMPLATE_NAMES`
 
 **Step 2: Run test to verify it fails**
 
-Run: `npm run build && node --test tests/render-engine-paths.test.mjs tests/jadeai-render-config.test.mjs`
+Run: `npm run build && node --test tests/render-engine-paths.test.mjs tests/render-engine-registry.test.mjs tests/jadeai-render-config.test.mjs`
 
 Expected: FAIL，因为 `dist/render-engine/*` 还不存在。
 
@@ -114,11 +193,12 @@ Expected: FAIL，因为 `dist/render-engine/*` 还不存在。
 
 1. 先改测试导入路径，明确目标模块名是 `render-engine`
 2. 保留测试语义不变，只把实现命名从 `jadeai` 切换到中性目录
-3. 若测试文件名仍含 `jadeai`，在本任务中完成重命名并同步引用
+3. 增加 registry 一致性测试与默认模板存在性测试
+4. 若测试文件名仍含 `jadeai`，在本任务中完成重命名并同步引用
 
 **Step 4: Run test to verify it passes**
 
-Run: `npm run build && node --test tests/render-engine-paths.test.mjs tests/jadeai-render-config.test.mjs`
+Run: `npm run build && node --test tests/render-engine-paths.test.mjs tests/render-engine-registry.test.mjs tests/jadeai-render-config.test.mjs`
 
 Expected: PASS
 
@@ -150,7 +230,9 @@ git commit -m "test: freeze render-engine entrypoints before module rename"
 - Delete: `src/jadeai/qrcode.ts`
 - Delete: `src/jadeai/types.ts`
 - Delete: `src/jadeai/utils.ts`
+- Delete: `src/jadeai/templates/*.ts` (未保留模板)
 - Test: `tests/render-engine-paths.test.mjs`
+- Test: `tests/render-engine-registry.test.mjs`
 
 **Step 1: Write the failing test**
 
@@ -169,12 +251,14 @@ Expected: FAIL，因为主代码还在导入 `src/jadeai/*`。
 
 1. 物理迁移文件到 `src/render-engine/*`
 2. 更新所有直接 import
-3. 保持函数签名与行为不变，不在本任务中顺手重构 builder 逻辑
-4. 删除旧目录中的实现文件
+3. 在 `src/render-engine/builders.ts` 中把 builder imports 与 registry 收口到最终 16 模板
+4. 删除未保留模板的旧 builder 文件
+5. 保持函数签名与行为不变，不在本任务中顺手重构 builder 逻辑
+6. 删除旧目录中的实现文件
 
 **Step 4: Run test to verify it passes**
 
-Run: `npm run build && node --test tests/render-engine-paths.test.mjs tests/jadeai-render-config.test.mjs tests/pagination.test.mjs`
+Run: `npm run build && npm run typecheck && node --test tests/render-engine-paths.test.mjs tests/render-engine-registry.test.mjs tests/jadeai-render-config.test.mjs tests/pagination.test.mjs`
 
 Expected: PASS
 
@@ -218,7 +302,7 @@ Expected: FAIL，因为当前文案仍含 `JadeAI`。
 
 **Step 4: Run test to verify it passes**
 
-Run: `npm run build && node --test tests/render-engine-branding.test.mjs`
+Run: `npm run build && npm run typecheck && node --test tests/render-engine-branding.test.mjs`
 
 Expected: PASS
 
@@ -247,6 +331,7 @@ git commit -m "docs: remove JadeAI branding from public surfaces"
 - `template list` 只输出新的 16 个模板
 - 默认模板固定为 `single-clean`
 - recommendation / preview / prepare-export 不再产出已删除的旧模板名
+- 所有原先硬编码 `"elegant"` 的默认路径均改为 `single-clean`
 
 **Step 2: Run test to verify it fails**
 
@@ -259,11 +344,11 @@ Expected: FAIL，因为当前推荐与默认值仍可能返回旧模板。
 1. 在 `src/template/spec.ts` 选定最终 16 模板
 2. 在 `src/constants.ts` 同步模板列表与分组
 3. 在 `src/template/recommend.ts` 收口推荐候选空间
-4. 在 `src/commands.ts` 更新默认模板与 preview/generate/validate 入口默认值
+4. 在 `src/commands.ts`、`src/template/custom-template.ts`、`src/flows/parse-optimize.ts` 更新默认模板与入口默认值
 
 **Step 4: Run test to verify it passes**
 
-Run: `npm run build && node --test tests/template-spec.test.mjs tests/template-recommend.test.mjs tests/prepare-export-cli.test.mjs`
+Run: `npm run build && npm run typecheck && node --test tests/template-spec.test.mjs tests/template-recommend.test.mjs tests/prepare-export-cli.test.mjs`
 
 Expected: PASS
 
@@ -304,7 +389,7 @@ Expected: FAIL，直到所有路径、默认模板与输出契约更新一致。
 
 **Step 4: Run test to verify it passes**
 
-Run: `npm run build && node --test tests/document-ir.test.mjs tests/render-tree.test.mjs tests/resume-agent-e2e.test.mjs tests/resume-visual-regression.test.mjs`
+Run: `npm run build && npm run typecheck && node --test tests/document-ir.test.mjs tests/render-tree.test.mjs tests/resume-agent-e2e.test.mjs tests/resume-visual-regression.test.mjs`
 
 Expected: PASS
 

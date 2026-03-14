@@ -126,6 +126,44 @@
 - `src/flows/render.ts`
 - 所有直接引用 `dist/jadeai/*` 的测试文件
 
+### 6.4 `src/render-engine/*` 最终目录树
+
+最终目录树在开工前冻结如下：
+
+```text
+src/render-engine/
+├── adapter.ts
+├── builders.ts
+├── constants.ts
+├── generate-pdf.ts
+├── qrcode.ts
+├── types.ts
+├── utils.ts
+└── templates/
+    ├── single-clean.ts
+    ├── single-formal.ts
+    ├── single-minimal.ts
+    ├── single-accent.ts
+    ├── single-ats.ts
+    ├── split-clean.ts
+    ├── split-formal.ts
+    ├── split-dark.ts
+    ├── split-ats.ts
+    ├── sidebar-clean.ts
+    ├── sidebar-dark.ts
+    ├── compact-clean.ts
+    ├── compact-ats.ts
+    ├── timeline-clean.ts
+    ├── timeline-accent.ts
+    └── editorial-accent.ts
+```
+
+规则：
+
+- 不把模板实现文件继续保留为 50 个旧名字
+- `builders.ts` 的 registry key 必须与最终 16 个公开模板名完全一致
+- `tests` 中不允许再直接依赖 `dist/jadeai/*`
+
 ## 7. Public Template Hard-Cut
 
 ### 7.1 命名原则
@@ -141,13 +179,13 @@
 - `timeline-*`
 - `editorial-*`
 
-### 7.2 目标数量
+### 7.2 最终模板数量
 
-公开模板集合收缩到 **16 个左右**。目标范围已由用户批准为 **12–20 个**，默认收口为 16 个。
+公开模板集合已冻结为 **16 个**。
 
-### 7.3 候选命名集合
+### 7.3 最终公开模板名
 
-候选集合如下，实施时允许在同一命名语法下做一次最终审定：
+最终公开模板名固定为：
 
 - `single-clean`
 - `single-formal`
@@ -155,23 +193,31 @@
 - `single-accent`
 - `single-ats`
 - `split-clean`
+- `split-formal`
 - `split-dark`
 - `split-ats`
 - `sidebar-clean`
 - `sidebar-dark`
+- `compact-clean`
 - `compact-ats`
-- `compact-formal`
 - `timeline-clean`
 - `timeline-accent`
-- `editorial-clean`
 - `editorial-accent`
 
-### 7.4 用户契约规则
+### 7.4 删除策略
+
+- 当前对外的 50 个旧模板名全部删除
+- 未进入最终 16 个集合的其余旧模板，全部删除
+- 本轮不保留“旧名 -> 新名”的 userspace 映射
+- 允许在内部实现层做“视觉来源借鉴”，但不能暴露为外部兼容路径
+- `src/render-engine/builders.ts` 与 `src/render-engine/templates/*` 只保留最终 16 个模板实现
+
+### 7.5 用户契约规则
 
 - 旧模板名直接报错
 - 不保留 alias
 - 错误信息明确提示：使用 `template list` 查看新模板目录
-- 默认模板改为功能型命名，候选为 `single-clean`
+- 默认模板固定为 `single-clean`
 
 ## 8. Branding vs Copyright
 
