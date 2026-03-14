@@ -44,6 +44,59 @@
 
 ---
 
+### Task 0: 先封存并冻结 `issue-loop` 脏分支
+
+**Files:**
+- No code changes in `main`
+- Affects worktree: `.worktrees/feature/issue-loop-20260312-152941`
+
+**Step 1: Verify dirty worktree state**
+
+Run:
+
+```bash
+git -C .worktrees/feature/issue-loop-20260312-152941 status --short --branch
+```
+
+Expected: 显示大量未提交改动；确认该 worktree 仍是脏状态。
+
+**Step 2: Create snapshot branch in the dirty worktree**
+
+Run:
+
+```bash
+git -C .worktrees/feature/issue-loop-20260312-152941 switch -c snapshot/issue-loop-pre-render-engine-hard-cut-20260314
+```
+
+Expected: 成功切到新的 snapshot 分支，不影响 `main`。
+
+**Step 3: Commit the dirty snapshot as-is**
+
+Run:
+
+```bash
+git -C .worktrees/feature/issue-loop-20260312-152941 add -A
+git -C .worktrees/feature/issue-loop-20260312-152941 commit -m "chore: snapshot issue-loop dirty worktree before render-engine hard-cut"
+```
+
+Expected: 脏 worktree 被固化为可回溯快照提交。
+
+**Step 4: Freeze the original branch for the duration of this effort**
+
+Run:
+
+```bash
+git worktree list
+```
+
+Expected: snapshot 已存在；后续 render-engine hard-cut 只在 `main` 上推进，不再向原 `feature/issue-loop-20260312-152941` 写入任何新改动。
+
+**Step 5: Commit the plan state**
+
+无需额外修改 `main` 代码；本任务的完成信号是 snapshot 分支与提交已存在。
+
+---
+
 ## Final Hard-Cut Decisions
 
 ### 最终 16 个公开模板名
