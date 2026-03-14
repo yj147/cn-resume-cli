@@ -61,7 +61,7 @@ test("visual regression renders HTML screenshot and PDF first-page PNG for custo
     await commandsModule.runPrepareExport({
       input: optimizedPath,
       jd: path.resolve("fixtures/sample-jd.txt"),
-      template: "elegant",
+      template: "single-clean",
       "accept-multipage": true,
       engine: "rule",
       output: preparedPath

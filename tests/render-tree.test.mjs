@@ -58,7 +58,7 @@ function buildDocumentIR() {
 
 test("render tree groups sections into layout regions and preserves title/body nodes", () => {
   const documentIR = buildDocumentIR();
-  const templateSpec = templateSpecModule.resolveTemplateSpec("sidebar");
+  const templateSpec = templateSpecModule.resolveTemplateSpec("sidebar-clean");
   const renderTree = renderTreeModule.buildRenderTree({
     document: documentIR,
     templateSpec,
@@ -82,7 +82,7 @@ test("render tree groups sections into layout regions and preserves title/body n
 test("render tree carries decoration tokens and pagination anchors", () => {
   const renderTree = renderTreeModule.buildRenderTree({
     document: buildDocumentIR(),
-    templateSpec: templateSpecModule.resolveTemplateSpec("elegant"),
+    templateSpec: templateSpecModule.resolveTemplateSpec("single-clean"),
     title: "张三-简历"
   });
 

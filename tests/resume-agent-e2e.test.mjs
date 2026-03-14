@@ -113,7 +113,7 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
       ...confirmedModel,
       render_config: {
         ...(confirmedModel.render_config || {}),
-        template: "elegant"
+        template: "single-clean"
       },
       meta: {
         ...(confirmedModel.meta || {}),
@@ -166,11 +166,11 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
       ...confirmedModel,
       render_config: {
         ...(confirmedModel.render_config || {}),
-        template: "elegant"
+        template: "single-clean"
       },
       meta: {
         ...(confirmedModel.meta || {}),
-        template: "elegant",
+        template: "single-clean",
         templateConfirmed: false,
         reviewResult: {
           summary: {
@@ -182,7 +182,7 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
           pageCount: 1,
           confirmed: true,
           stable: true,
-          templateId: "elegant"
+          templateId: "single-clean"
         }
       }
     });
@@ -196,11 +196,11 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
       ...confirmedModel,
       render_config: {
         ...(confirmedModel.render_config || {}),
-        template: "elegant"
+        template: "single-clean"
       },
       meta: {
         ...(confirmedModel.meta || {}),
-        template: "elegant",
+        template: "single-clean",
         templateConfirmed: true,
         reviewResult: {
           summary: {
@@ -220,11 +220,11 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
       ...confirmedModel,
       render_config: {
         ...(confirmedModel.render_config || {}),
-        template: "elegant"
+        template: "single-clean"
       },
       meta: {
         ...(confirmedModel.meta || {}),
-        template: "elegant",
+        template: "single-clean",
         templateConfirmed: true,
         reviewResult: {
           summary: {
@@ -236,7 +236,7 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
           pageCount: 1,
           confirmed: true,
           stable: false,
-          templateId: "elegant"
+          templateId: "single-clean"
         }
       }
     });
@@ -250,11 +250,11 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
       ...confirmedModel,
       render_config: {
         ...(confirmedModel.render_config || {}),
-        template: "elegant"
+        template: "single-clean"
       },
       meta: {
         ...(confirmedModel.meta || {}),
-        template: "elegant",
+        template: "single-clean",
         templateConfirmed: true,
         reviewResult: {
           summary: {
@@ -266,7 +266,7 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
           pageCount: 1,
           confirmed: true,
           stable: true,
-          templateId: "elegant"
+          templateId: "single-clean"
         }
       }
     });
@@ -298,7 +298,7 @@ test("chat review flow writes paginateDocument-backed layout results for export 
     model: createOverflowModel()
   };
   session.currentTemplate = {
-    templateId: "elegant",
+    templateId: "single-clean",
     confirmed: true
   };
   session.currentJd = {
@@ -317,7 +317,7 @@ test("chat review flow writes paginateDocument-backed layout results for export 
   });
 
   assert.equal(reviewed.layoutResult.source, "paginateDocument");
-  assert.equal(reviewed.layoutResult.templateId, "elegant");
+  assert.equal(reviewed.layoutResult.templateId, "single-clean");
   assert.equal(reviewed.layoutResult.status, "overflow");
   assert.equal(reviewed.layoutResult.pageCount > 1, true);
   assert.equal(Array.isArray(reviewed.layoutResult.pages), true);
@@ -367,7 +367,7 @@ test("0-1 authoring export path blocks pending facts, review blockers and unreso
       }
     };
 
-    const lines = ["推荐模板对比预览", "/go", "/choose-template designer", "/quit"];
+    const lines = ["推荐模板对比预览", "/go", "/choose-template editorial-accent", "/quit"];
     const result = await chatCommandModule.runChatLoop(
       {
         ...runtime,
@@ -415,7 +415,7 @@ test("0-1 authoring export path blocks pending facts, review blockers and unreso
       selectedOption: "accept_multipage",
       confirmed: true,
       stable: true,
-      templateId: "designer",
+      templateId: "editorial-accent",
       finding: {
         message: "当前内容密度较高，排版存在超页风险。"
       }
@@ -423,7 +423,7 @@ test("0-1 authoring export path blocks pending facts, review blockers and unreso
     const ready = chatCommandModule.advanceExportWorkflow(approved);
 
     assert.equal(ready.workflowState, controllerModule.CHAT_STATES.READY_TO_EXPORT);
-    assert.equal(ready.currentTemplate.templateId, "designer");
+    assert.equal(ready.currentTemplate.templateId, "editorial-accent");
     assert.match(ready.currentResume.model.basic.title.value, /资深 UI 设计师/);
   });
 });
