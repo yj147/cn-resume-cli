@@ -437,8 +437,47 @@
         }
       ],
       "completed_at": "2026-03-13T09:51:21Z"
+    },
+    {
+      "id": "task-014",
+      "title": "执行 tests/functional-e2e-test-cases.md 全量回归并验证功能/UI/UX/交互完整性",
+      "status": "completed",
+      "priority": "P0",
+      "depends_on": [],
+      "attempts": 0,
+      "max_attempts": 3,
+      "started_at_commit": "a66ab39",
+      "validation": {
+        "command": "npm run typecheck && npm run build && node --test tests/resume-agent-e2e.test.mjs tests/chat-loop.test.mjs tests/chat-runtime.test.mjs tests/template-recommend.test.mjs tests/pagination.test.mjs tests/review-service.test.mjs tests/template-spec.test.mjs tests/template-thumbnail.test.mjs tests/render-tree.test.mjs tests/document-ir.test.mjs tests/tui-view-model.test.mjs tests/tui-brand.test.mjs tests/tui-transcript-render.test.mjs tests/tui-composer.test.mjs tests/tui-preview-drawer.test.mjs tests/tui-run.test.mjs tests/chat-slash-registry.test.mjs tests/resume-custom-content-e2e.test.mjs tests/prepare-export-cli.test.mjs tests/resume-visual-regression.test.mjs && npm test && npm run test:ai-mock && bash ./scripts/smoke.sh",
+        "timeout_seconds": 5400
+      },
+      "on_failure": {
+        "cleanup": null
+      },
+      "error_log": [],
+      "checkpoints": [
+        {
+          "step": 1,
+          "total": 3,
+          "description": "L0 typecheck/build plus L1 core workflow, render/template truth, TUI interaction, custom-content/export/visual targeted suites all passed",
+          "timestamp": "2026-03-14T09:11:55Z"
+        },
+        {
+          "step": 2,
+          "total": 3,
+          "description": "found stale ai-mock assertions expecting raw basic fields, updated script to unwrap provenance envelopes, and revalidated npm run test:ai-mock",
+          "timestamp": "2026-03-14T09:26:22Z"
+        },
+        {
+          "step": 3,
+          "total": 3,
+          "description": "manual CLI sanity plus template import/clone conflict-cycle checks passed; Playwright HTML review confirmed readable layout and noted known Tailwind CDN warning",
+          "timestamp": "2026-03-14T09:26:22Z"
+        }
+      ],
+      "completed_at": "2026-03-14T09:26:22Z"
     }
   ],
-  "session_count": 6,
-  "last_session": "2026-03-13T09:51:56Z"
+  "session_count": 7,
+  "last_session": "2026-03-14T09:26:22Z"
 }

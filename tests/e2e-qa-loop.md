@@ -13,7 +13,7 @@
 - `npm test`
 - 手工链路：
   - `cn-resume template list`
-  - `cn-resume template preview --name single-clean`
+  - `cn-resume template preview --name single-clean --output <preview.html>`
   - `cn-resume parse`
   - `cn-resume optimize`
   - `cn-resume validate`
@@ -36,6 +36,17 @@
   2. 渲染阶段又同时输出 `description` 与 `bullets`。
   3. HTML adapter 未过滤与 description 相同的 bullet。
 
+### ISSUE-QA-002：ai-mock 回归脚本仍按裸字段断言 parse AI 输出
+- **现象**：
+  - `npm run test:ai-mock` 失败：`parse ai should use mock output basic.name`
+- **复现条件**：
+  - `npm run test:ai-mock`
+  - parse AI / PDF AI mock 返回 canonical model，`basic.name/email/phone` 已是 provenance envelope
+- **根因**：
+  1. `runParse` 会把 AI parse 结果按 canonical/provenance 结构写出。
+  2. `parseInputByAI` 统一走 `normalizeReactiveJson`，不再返回裸 `basic` 字段。
+  3. `scripts/test-ai-mock.sh` 仍直接断言 `parsed.basic.name === "Mock User"`，与当前输出 shape 脱节。
+
 ## 修复
 - `src/flows/parse-optimize.ts`
   - 去掉 optimize 阶段把 `project.description` 追加回 `project.bullets` 的逻辑。
@@ -46,6 +57,9 @@
   - HTML 渲染前过滤与 description 完全重复的 project highlight。
 - `tests/resume-agent-e2e.test.mjs`
   - 新增回归断言：项目描述在 `resume.txt`、`resume.html` 中各只出现一次。
+- `scripts/test-ai-mock.sh`
+  - 新增 `fieldValue()`，统一按 canonical envelope 的 `.value` 读取 `basic.name/email/phone`。
+  - PDF parse AI mock 断言同步切到 canonical shape。
 
 ## 复测
 
@@ -134,6 +148,30 @@
   - export gate 读取的就是主链分页结果，不再依赖 review heuristic
   - 架构复审阻塞项 `36-40` 全部闭环
 
+### 批次 I：全量回归收口、AI mock 修复与旧文档合并
+- 自动化回归：
+  - `npm run typecheck`
+  - `npm run build`
+  - `node --test tests/resume-agent-e2e.test.mjs tests/chat-loop.test.mjs tests/chat-runtime.test.mjs tests/template-recommend.test.mjs tests/pagination.test.mjs tests/review-service.test.mjs`
+  - `node --test tests/template-spec.test.mjs tests/template-thumbnail.test.mjs tests/render-tree.test.mjs tests/document-ir.test.mjs`
+  - `node --test tests/tui-view-model.test.mjs tests/tui-brand.test.mjs tests/tui-transcript-render.test.mjs tests/tui-composer.test.mjs tests/tui-preview-drawer.test.mjs tests/tui-run.test.mjs tests/chat-slash-registry.test.mjs`
+  - `node --test tests/resume-custom-content-e2e.test.mjs tests/prepare-export-cli.test.mjs tests/resume-visual-regression.test.mjs`
+  - `npm test`
+  - `npm run test:ai-mock`
+  - `npm run smoke`
+- 手工链路补测：
+  - `cn-resume template list`
+  - `cn-resume template preview --name single-clean --output <preview.html>`
+  - `cn-resume parse -> optimize -> generate(blocked) -> optimize --confirm -> validate/analyze-jd/grammar-check -> prepare-export -> generate txt/html/docx/pdf`
+  - `cn-resume template import/clone`
+  - 保留名冲突与 alias cycle 显式失败
+- 结果：
+  - 全量回归通过
+  - `ai-mock` 脚本已与 canonical model 对齐
+  - template import/clone、冲突与循环补测通过
+  - HTML 人工视觉复核通过，页面可读、主要 section 完整
+  - 浏览器仍有 Tailwind CDN warning 与 `favicon.ico` 404，均为非阻断项
+
 ## 最终结果
 - 自动化测试：通过
 - 手工导出检查：通过
@@ -142,12 +180,16 @@
 - 自定义内容简历产物：已生成，位于 `tasks/e2e-custom-output/`
 - 纯 CLI export-ready 闭环：通过
 - PDF/视觉截图回归：通过
+- AI mock 回归：通过
+- template import/clone 边界：通过
+- HTML 人工视觉复核：通过
 - 真实分页主链：通过
 - 架构复审：Approved
-- 发现问题数：1
-- 已修复并复测通过：1
+- 发现问题数：2
+- 已修复并复测通过：2
 - 本轮新增问题数：0
 
 ## 备注
 - 生成的 HTML 预览仍会输出 Tailwind CDN 的浏览器告警；这不影响当前功能测试与导出结果，但它说明 HTML 预览不是完全离线自包含页面。
 - 当前纯 CLI 最短可工作导出链已更新为：`parse -> optimize --confirm -> prepare-export -> generate`。
+- 当前全量回归基线除 `npm test` 外，还显式包含 `npm run test:ai-mock`、`npm run smoke` 以及 `template import/clone` 边界补测。

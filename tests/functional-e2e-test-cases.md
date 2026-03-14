@@ -4,7 +4,7 @@
 - **Feature**: 基于 `issues.csv` 的简历 agent / CLI 全链路功能
 - **Requirements Source**: `issues.csv`、`docs/plans/2026-03-12-resume-agent-design.md`、现有 CLI / chat 工作流
 - **Test Coverage**: parse-first、0-1 authoring、patch 确认、控制器状态机、session 恢复、统一 review、模板解析/推荐/预览/thumbnail、分页决策、模板确认与稳定性 gate、最终产物质量、自定义内容简历产物
-- **Last Updated**: 2026-03-13
+- **Last Updated**: 2026-03-14
 
 ## Test Case Categories
 
@@ -104,7 +104,7 @@
   4. 验证 alias / import 模板也能解析到统一协议
 - **Expected Results**:
   - 导出主链只经过单一文档真相层
-  - 50 个 builtin 模板解析成功
+  - 16 个 builtin 模板解析成功
   - alias / import 不再走第二套协议
 - **Postconditions**: 获得稳定 HTML 预览或导出结果
 

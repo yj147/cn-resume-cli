@@ -85,17 +85,24 @@ function assert(condition, message) {
   }
 }
 
+function fieldValue(field) {
+  if (field && typeof field === "object" && !Array.isArray(field)) {
+    return field.value;
+  }
+  return field;
+}
+
 const parsed = load("parse.ai.json");
-assert(parsed?.basic?.name === "Mock User", "parse ai should use mock output basic.name");
-assert(parsed?.basic?.email, "parse ai should include email");
-assert(parsed?.basic?.phone, "parse ai should include phone");
+assert(fieldValue(parsed?.basic?.name) === "Mock User", "parse ai should use mock output basic.name");
+assert(fieldValue(parsed?.basic?.email) === "mock@example.com", "parse ai should include email");
+assert(fieldValue(parsed?.basic?.phone) === "13800000000", "parse ai should include phone");
 assert(Array.isArray(parsed?.skills), "parse ai should include skills array");
 
 const pdfText = load("parse.pdf.text.json");
-assert(pdfText?.basic?.name === "Mock User", "parse pdf (text) should return mock output basic.name");
+assert(fieldValue(pdfText?.basic?.name) === "Mock User", "parse pdf (text) should return mock output basic.name");
 
 const pdfScan = load("parse.pdf.scan.json");
-assert(pdfScan?.basic?.name === "Mock User", "parse pdf (scan) should return mock output basic.name");
+assert(fieldValue(pdfScan?.basic?.name) === "Mock User", "parse pdf (scan) should return mock output basic.name");
 
 const optimized = load("optimize.ai.json");
 assert(optimized?.meta?.phase_b?.confirmed === true, "optimize ai should preserve phase_b confirmation");
