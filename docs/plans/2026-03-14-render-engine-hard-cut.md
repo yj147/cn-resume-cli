@@ -10,6 +10,23 @@
 
 ---
 
+## Execution Branch Policy
+
+- `main` 只保留稳定基线、计划文档与回归参考，不直接承载本轮 render-engine hard-cut 的实现改动。
+- 本轮实现必须在新的干净功能分支中推进，默认分支名为：
+
+```text
+feature/render-engine-hard-cut
+```
+
+- `feature/issue-loop-20260312-152941` 仅作为材料来源，不得作为实现主线继续开发。
+- 本轮执行顺序固定为：
+  1. 先在 `main` 上完成 Task 0，对脏分支做 snapshot 封存
+  2. 再从 `main` 创建 `feature/render-engine-hard-cut`
+  3. 最后在该新分支上执行 Task 1-7
+
+---
+
 ## Dirty Branch Extraction Ledger
 
 本计划不直接 merge `feature/issue-loop-20260312-152941`，只抽离其中可验证、与本轮目标一致的资产。

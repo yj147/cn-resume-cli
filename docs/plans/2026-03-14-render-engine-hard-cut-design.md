@@ -34,6 +34,10 @@
   - `tests/template-spec.test.mjs`、`tests/jadeai-render-config.test.mjs`、`tests/resume-visual-regression.test.mjs`、`npm test` 任一失败即停止推进。
 - **Boundary**
   - 仅涉及：`src/jadeai/*`、`src/template/*`、`src/constants.ts`、`src/commands.ts`、`src/cli/args.ts`、`src/flows/*`、相关测试与设计文档。
+- **Execution Branch Policy**
+  - `main` 只保留稳定参考基线与已批准计划，不直接承载本轮实现改动。
+  - 本轮实现必须在新的干净功能分支中推进，默认分支名为 `feature/render-engine-hard-cut`。
+  - `feature/issue-loop-20260312-152941` 只作为待抽离材料来源，不参与实现主线。
 - **Risks**
   1. 公开模板名硬切导致 userspace breakage
   2. 渲染路径重命名后 HTML/PDF 细节回归
