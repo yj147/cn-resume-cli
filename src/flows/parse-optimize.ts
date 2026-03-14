@@ -11,7 +11,7 @@ import {
 } from "../core/model.js";
 import { FIELD_SOURCES, getFieldValue } from "../core/provenance.js";
 import { loadPdfForAiParsing, parsePdfToText } from "../pdf.js";
-import { modelToJadeResume } from "../jadeai/adapter.js";
+import { modelToJadeResume } from "../render-engine/adapter.js";
 
 export const PHASE_B_PROMPT = "哪里需要修改？请指出具体模块与条目。";
 const PARSE_EVIDENCE_VERSION = "section-first-v1";

@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 const documentIrModule = await import("../dist/layout-core/document-ir.js");
 const paginationModule = await import("../dist/layout-core/pagination.js");
 const templateSpecModule = await import("../dist/template/spec.js");
-const adapterModule = await import("../dist/jadeai/adapter.js");
+const adapterModule = await import("../dist/render-engine/adapter.js");
 const customTemplateModule = await import("../dist/template/custom-template.js");
 
 function createLineBlock(id, lineCount, constraints = {}, type = documentIrModule.BLOCK_TYPES.PARAGRAPH) {

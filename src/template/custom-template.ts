@@ -5,8 +5,8 @@ import { TEMPLATE_ALIASES, TEMPLATE_GROUPS, TEMPLATE_LIST } from "../constants.j
 import { readJson, writeJson } from "../core/io.js";
 import { buildEmptyField, buildEmptyModel, collectCustomSectionLines, normalizeBulletList } from "../core/model.js";
 import { FIELD_SOURCES, FIELD_STATUSES, getFieldValue } from "../core/provenance.js";
-import { modelToDocumentIR, modelToThemeConfig } from "../jadeai/adapter.js";
-import { generateHtml as buildTemplateHtml } from "../jadeai/builders.js";
+import { modelToDocumentIR, modelToThemeConfig } from "../render-engine/adapter.js";
+import { generateHtml as buildTemplateHtml } from "../render-engine/builders.js";
 import { buildRenderTree } from "../layout-core/render-tree.js";
 import { modelToPlainText } from "../flows/render.js";
 import { resolveTemplateSpec } from "./spec.js";

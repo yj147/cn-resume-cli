@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import { collectCustomSectionLines, normalizeBulletList } from "../core/model.js";
 import { getFieldValue } from "../core/provenance.js";
-import { modelToDocumentIR } from "../jadeai/adapter.js";
+import { modelToDocumentIR } from "../render-engine/adapter.js";
 import { paginateDocument } from "../layout-core/pagination.js";
 import { resolveTemplateSpec } from "../template/spec.js";
 

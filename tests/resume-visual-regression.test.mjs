@@ -6,7 +6,7 @@ import path from "node:path";
 
 const commandsModule = await import("../dist/commands.js");
 const pdfModule = await import("../dist/pdf.js");
-const screenshotModule = await import("../dist/jadeai/generate-pdf.js");
+const screenshotModule = await import("../dist/render-engine/generate-pdf.js");
 
 async function withTempDir(run) {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "cn-resume-visual-e2e-"));

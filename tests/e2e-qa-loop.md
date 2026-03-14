@@ -42,7 +42,7 @@
 - `src/flows/render.ts`
   - 项目导出统一先输出 description，再输出去重后的 bullets。
   - plain text 与 docx 走同一去重规则。
-- `src/jadeai/adapter.ts`
+- `src/render-engine/adapter.ts`
   - HTML 渲染前过滤与 description 完全重复的 project highlight。
 - `tests/resume-agent-e2e.test.mjs`
   - 新增回归断言：项目描述在 `resume.txt`、`resume.html` 中各只出现一次。

@@ -21,7 +21,7 @@ import {
 import { buildLayoutResult, generateDocx, modelToPlainText, recordLayoutDecision } from "./flows/render.js";
 import { assertModelExportReady } from "./export-gate.js";
 import { parsePdfToText } from "./pdf.js";
-import { generatePdf as renderPdfBuffer } from "./jadeai/generate-pdf.js";
+import { generatePdf as renderPdfBuffer } from "./render-engine/generate-pdf.js";
 import {
   createTemplatePreviewSample,
   loadCustomTemplateConfig,
