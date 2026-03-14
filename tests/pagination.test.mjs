@@ -66,7 +66,7 @@ test("pagination keeps single-column content on one page when capacity is suffic
         createLineBlock("block-work", 4)
       ])
     ]),
-    templateSpec: templateSpecModule.resolveTemplateSpec("elegant"),
+    templateSpec: templateSpecModule.resolveTemplateSpec("single-clean"),
     pageBox: {
       linesPerPage: 10
     }
@@ -101,7 +101,7 @@ test("pagination pushes keepTogether blocks to the next page without mutating co
 
   const result = paginationModule.paginateDocument({
     document: buildDocument([createSection("section-summary", "summary", 1, [intro, locked])]),
-    templateSpec: templateSpecModule.resolveTemplateSpec("elegant"),
+    templateSpec: templateSpecModule.resolveTemplateSpec("single-clean"),
     pageBox: {
       linesPerPage: 6
     }
@@ -138,7 +138,7 @@ test("pagination uses allowSplit, min line guards and splitPriority to choose sp
         })
       ])
     ]),
-    templateSpec: templateSpecModule.resolveTemplateSpec("elegant"),
+    templateSpec: templateSpecModule.resolveTemplateSpec("single-clean"),
     pageBox: {
       linesPerPage: 6
     }
@@ -169,7 +169,7 @@ test("pagination keeps unsplittable overflow explicit and never drops content", 
         })
       ])
     ]),
-    templateSpec: templateSpecModule.resolveTemplateSpec("elegant"),
+    templateSpec: templateSpecModule.resolveTemplateSpec("single-clean"),
     pageBox: {
       linesPerPage: 6
     }
@@ -203,7 +203,7 @@ test("pagination paginates sidebar and main regions independently for two-column
         })
       ])
     ]),
-    templateSpec: templateSpecModule.resolveTemplateSpec("sidebar"),
+    templateSpec: templateSpecModule.resolveTemplateSpec("sidebar-clean"),
     pageBox: {
       linesPerPage: 6,
       regions: {
@@ -244,8 +244,8 @@ test("pagination consumes real document ir from resume model instead of syntheti
   }));
 
   const result = paginationModule.paginateDocument({
-    document: adapterModule.modelToDocumentIR(model, "elegant"),
-    templateSpec: templateSpecModule.resolveTemplateSpec("elegant"),
+    document: adapterModule.modelToDocumentIR(model, "single-clean"),
+    templateSpec: templateSpecModule.resolveTemplateSpec("single-clean"),
     pageBox: {
       linesPerPage: 40
     },
@@ -256,6 +256,6 @@ test("pagination consumes real document ir from resume model instead of syntheti
   assert.equal(result.pageCount >= 2, true);
   assert.equal(result.overflow.length, 0);
   assert.equal(result.decisions.some((decision) => decision.action === "push"), true);
-  const workSection = adapterModule.modelToDocumentIR(model, "elegant").sections.find((section) => section.content.sectionType === "work_experience");
+  const workSection = adapterModule.modelToDocumentIR(model, "single-clean").sections.find((section) => section.content.sectionType === "work_experience");
   assert.equal(workSection.children.length > 2, true);
 });

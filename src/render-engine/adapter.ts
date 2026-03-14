@@ -116,7 +116,8 @@ function isCurrent(end: string): boolean {
 }
 
 function normalizeTheme(templateName: string, model?: ResumeModel): ThemeConfig {
-  const style = (TEMPLATE_STYLES as Record<string, any>)[templateName] || (TEMPLATE_STYLES as Record<string, any>).elegant;
+  const style =
+    (TEMPLATE_STYLES as Record<string, any>)[templateName] || (TEMPLATE_STYLES as Record<string, any>)["single-clean"];
   const renderConfig = model?.render_config || {};
   const configuredFontSize = String(renderConfig.font_size || "").trim();
   return {

@@ -2,136 +2,53 @@ import { esc, buildExportThemeCSS, DEFAULT_THEME, type ResumeWithSections } from
 import { BACKGROUND_TEMPLATES } from './constants.js';
 import { generateQrSvg } from './qrcode.js';
 import { buildRenderTree } from '../layout-core/render-tree.js';
-import { buildClassicHtml } from './templates/classic.js';
-import { buildModernHtml } from './templates/modern.js';
-import { buildMinimalHtml } from './templates/minimal.js';
-import { buildProfessionalHtml } from './templates/professional.js';
-import { buildTwoColumnHtml } from './templates/two-column.js';
-import { buildCreativeHtml } from './templates/creative.js';
-import { buildAtsHtml } from './templates/ats.js';
-import { buildAcademicHtml } from './templates/academic.js';
-import { buildElegantHtml } from './templates/elegant.js';
-import { buildExecutiveHtml } from './templates/executive.js';
-import { buildDeveloperHtml } from './templates/developer.js';
-import { buildDesignerHtml } from './templates/designer.js';
-import { buildStartupHtml } from './templates/startup.js';
-import { buildFormalHtml } from './templates/formal.js';
-import { buildInfographicHtml } from './templates/infographic.js';
-import { buildCompactHtml } from './templates/compact.js';
-import { buildEuroHtml } from './templates/euro.js';
-import { buildCleanHtml } from './templates/clean.js';
-import { buildBoldHtml } from './templates/bold.js';
-import { buildTimelineHtml } from './templates/timeline.js';
-// Batch 1
-import { buildNordicHtml } from './templates/nordic.js';
-import { buildCorporateHtml } from './templates/corporate.js';
-import { buildConsultantHtml } from './templates/consultant.js';
-import { buildFinanceHtml } from './templates/finance.js';
-import { buildMedicalHtml } from './templates/medical.js';
-// Batch 2
-import { buildGradientHtml } from './templates/gradient.js';
-import { buildMetroHtml } from './templates/metro.js';
-import { buildMaterialHtml } from './templates/material.js';
-import { buildCoderHtml } from './templates/coder.js';
-import { buildBlocksHtml } from './templates/blocks.js';
-// Batch 3
-import { buildMagazineHtml } from './templates/magazine.js';
-import { buildArtisticHtml } from './templates/artistic.js';
-import { buildRetroHtml } from './templates/retro.js';
-import { buildNeonHtml } from './templates/neon.js';
-import { buildWatercolorHtml } from './templates/watercolor.js';
-// Batch 4
-import { buildSwissHtml } from './templates/swiss.js';
-import { buildJapaneseHtml } from './templates/japanese.js';
-import { buildBerlinHtml } from './templates/berlin.js';
-import { buildLuxeHtml } from './templates/luxe.js';
-import { buildRoseHtml } from './templates/rose.js';
-// Batch 5
-import { buildArchitectHtml } from './templates/architect.js';
-import { buildLegalHtml } from './templates/legal.js';
-import { buildTeacherHtml } from './templates/teacher.js';
-import { buildScientistHtml } from './templates/scientist.js';
-import { buildEngineerHtml } from './templates/engineer.js';
-// Batch 6
-import { buildSidebarHtml } from './templates/sidebar.js';
-import { buildCardHtml } from './templates/card.js';
-import { buildZigzagHtml } from './templates/zigzag.js';
-import { buildRibbonHtml } from './templates/ribbon.js';
-import { buildMosaicHtml } from './templates/mosaic.js';
+import { buildCleanHtml as buildSingleCleanHtml } from './templates/single-clean.js';
+import { buildFormalHtml as buildSingleFormalHtml } from './templates/single-formal.js';
+import { buildMinimalHtml as buildSingleMinimalHtml } from './templates/single-minimal.js';
+import { buildModernHtml as buildSingleAccentHtml } from './templates/single-accent.js';
+import { buildAtsHtml as buildSingleAtsHtml } from './templates/single-ats.js';
+import { buildTwoColumnHtml as buildSplitCleanHtml } from './templates/split-clean.js';
+import { buildSplitFormalHtml } from './templates/split-formal.js';
+import { buildCoderHtml as buildSplitDarkHtml } from './templates/split-dark.js';
+import { buildSplitAtsHtml } from './templates/split-ats.js';
+import { buildSidebarHtml as buildSidebarCleanHtml } from './templates/sidebar-clean.js';
+import { buildSidebarDarkHtml } from './templates/sidebar-dark.js';
+import { buildCompactHtml as buildCompactCleanHtml } from './templates/compact-clean.js';
+import { buildCompactAtsHtml } from './templates/compact-ats.js';
+import { buildTimelineHtml as buildTimelineCleanHtml } from './templates/timeline-clean.js';
+import { buildTimelineAccentHtml } from './templates/timeline-accent.js';
+import { buildMagazineHtml as buildEditorialAccentHtml } from './templates/editorial-accent.js';
 
 // Templates whose ENTIRE page is dark (not just header/sidebar).
 // Body background must match so the PDF page doesn't show white gaps.
-const FULL_DARK_TEMPLATES: Record<string, string> = {
-  neon: '#111827',
-};
+const FULL_DARK_TEMPLATES: Record<string, string> = {};
 
 // Templates with a dark sidebar — body uses a horizontal gradient so the
 // sidebar colour fills every page edge-to-edge, even when the sidebar div
 // has no more content on later pages.  @page margin is 0 so there are no
 // white gaps between pages; text padding comes from the template's own p-*.
 const SIDEBAR_DARK_TEMPLATES: Record<string, { bg: string; width: string }> = {
-  'two-column': { bg: '#16213e', width: '35%' },
-  sidebar:      { bg: '#1e40af', width: '35%' },
-  coder:        { bg: '#0d1117', width: '32%' },
+  'sidebar-dark': { bg: '#1e40af', width: '35%' },
+  'split-dark': { bg: '#0d1117', width: '32%' },
 };
 
-const TEMPLATE_BUILDERS: Record<string, (r: ResumeWithSections) => string> = {
-  classic: buildClassicHtml,
-  modern: buildModernHtml,
-  minimal: buildMinimalHtml,
-  professional: buildProfessionalHtml,
-  'two-column': buildTwoColumnHtml,
-  creative: buildCreativeHtml,
-  ats: buildAtsHtml,
-  academic: buildAcademicHtml,
-  elegant: buildElegantHtml,
-  executive: buildExecutiveHtml,
-  developer: buildDeveloperHtml,
-  designer: buildDesignerHtml,
-  startup: buildStartupHtml,
-  formal: buildFormalHtml,
-  infographic: buildInfographicHtml,
-  compact: buildCompactHtml,
-  euro: buildEuroHtml,
-  clean: buildCleanHtml,
-  bold: buildBoldHtml,
-  timeline: buildTimelineHtml,
-  // Batch 1
-  nordic: buildNordicHtml,
-  corporate: buildCorporateHtml,
-  consultant: buildConsultantHtml,
-  finance: buildFinanceHtml,
-  medical: buildMedicalHtml,
-  // Batch 2
-  gradient: buildGradientHtml,
-  metro: buildMetroHtml,
-  material: buildMaterialHtml,
-  coder: buildCoderHtml,
-  blocks: buildBlocksHtml,
-  // Batch 3
-  magazine: buildMagazineHtml,
-  artistic: buildArtisticHtml,
-  retro: buildRetroHtml,
-  neon: buildNeonHtml,
-  watercolor: buildWatercolorHtml,
-  // Batch 4
-  swiss: buildSwissHtml,
-  japanese: buildJapaneseHtml,
-  berlin: buildBerlinHtml,
-  luxe: buildLuxeHtml,
-  rose: buildRoseHtml,
-  // Batch 5
-  architect: buildArchitectHtml,
-  legal: buildLegalHtml,
-  teacher: buildTeacherHtml,
-  scientist: buildScientistHtml,
-  engineer: buildEngineerHtml,
-  // Batch 6
-  sidebar: buildSidebarHtml,
-  card: buildCardHtml,
-  zigzag: buildZigzagHtml,
-  ribbon: buildRibbonHtml,
-  mosaic: buildMosaicHtml,
+export const TEMPLATE_BUILDERS: Record<string, (r: ResumeWithSections) => string> = {
+  'single-clean': buildSingleCleanHtml,
+  'single-formal': buildSingleFormalHtml,
+  'single-minimal': buildSingleMinimalHtml,
+  'single-accent': buildSingleAccentHtml,
+  'single-ats': buildSingleAtsHtml,
+  'split-clean': buildSplitCleanHtml,
+  'split-formal': buildSplitFormalHtml,
+  'split-dark': buildSplitDarkHtml,
+  'split-ats': buildSplitAtsHtml,
+  'sidebar-clean': buildSidebarCleanHtml,
+  'sidebar-dark': buildSidebarDarkHtml,
+  'compact-clean': buildCompactCleanHtml,
+  'compact-ats': buildCompactAtsHtml,
+  'timeline-clean': buildTimelineCleanHtml,
+  'timeline-accent': buildTimelineAccentHtml,
+  'editorial-accent': buildEditorialAccentHtml,
 };
 
 function isValidQrUrl(str: string): boolean {
@@ -184,7 +101,7 @@ function renderTreeToResume(renderTree, input): ResumeWithSections {
     id: String(input?.document?.id || "resume"),
     userId: "cli",
     title: String(input?.title || "resume"),
-    template: String(input?.templateSpec?.name || "classic"),
+    template: String(input?.templateSpec?.name || "single-clean"),
     themeConfig: input?.themeConfig || DEFAULT_THEME,
     isDefault: false,
     language: String(input?.language || "zh"),
@@ -202,7 +119,7 @@ export async function generateHtml(input, forPdf = false, renderTreeOverride = n
   const resume = renderTreeToResume(renderTree, input);
   // Pre-generate QR SVGs so sync template builders can use them
   await preGenerateQrSvgs(resume);
-  const builder = TEMPLATE_BUILDERS[resume.template] || buildClassicHtml;
+  const builder = TEMPLATE_BUILDERS[resume.template] || TEMPLATE_BUILDERS["single-clean"];
   const bodyHtml = builder(resume);
   const theme = { ...DEFAULT_THEME, ...((resume as any).themeConfig || {}) };
   const themeCSS = buildExportThemeCSS(theme, resume.template);
