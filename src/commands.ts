@@ -138,7 +138,7 @@ export async function runPrepareExport(flags) {
   const model = normalizeReactiveJson(readJson(inputPath));
   assertPhaseBConfirmedOrThrow(model, "prepare-export");
   const jdText = flags.jd ? readText(flags.jd) : "";
-  const templateInput = flags.template || model?.render_config?.template || model?.meta?.template || "elegant";
+  const templateInput = flags.template || model?.render_config?.template || model?.meta?.template || "single-clean";
   const template = resolveTemplate(templateInput).resolved;
   const reviewResult = await runReviewService({
     model,
@@ -246,7 +246,7 @@ export async function runValidate(flags) {
     assertPhaseBConfirmedOrThrow(model, "validate");
   }
   const jdText = flags.jd ? readText(flags.jd) : "";
-  const templateInput = flags.template || model?.render_config?.template || model?.meta?.template || "elegant";
+  const templateInput = flags.template || model?.render_config?.template || model?.meta?.template || "single-clean";
   const template = resolveTemplate(templateInput).resolved;
   const report = (await runReviewService({
     model,
@@ -298,7 +298,7 @@ function runTemplateList() {
 }
 
 export async function runTemplatePreview(flags) {
-  const name = flags.name || flags.template || "elegant";
+  const name = flags.name || flags.template || "single-clean";
   const previewModel = flags.input
     ? normalizeReactiveJson(readJson(flags.input))
     : createTemplatePreviewSample();

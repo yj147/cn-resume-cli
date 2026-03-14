@@ -257,7 +257,8 @@ function buildSectionParseEvidence(section) {
 }
 
 export function buildSectionFirstParseEvidence(model) {
-  const templateName = String(model?.render_config?.template || model?.meta?.template || "elegant").trim() || "elegant";
+  const templateName =
+    String(model?.render_config?.template || model?.meta?.template || "single-clean").trim() || "single-clean";
   const resume = modelToJadeResume(model, templateName);
   const sections = (resume.sections || []).map((section) => buildSectionParseEvidence(section));
   const weightedSections = sections.filter(

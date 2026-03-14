@@ -42,16 +42,16 @@ test("prepare-export creates export-ready model for pure CLI generate flow witho
     await commandsModule.runPrepareExport({
       input: optimizedPath,
       jd: path.resolve("fixtures/sample-jd.txt"),
-      template: "elegant",
+      template: "single-clean",
       "accept-multipage": true,
       engine: "rule",
       output: preparedPath
     });
 
     const prepared = readJson(preparedPath);
-    assert.equal(prepared.meta.template, "elegant");
+    assert.equal(prepared.meta.template, "single-clean");
     assert.equal(prepared.meta.templateConfirmed, true);
-    assert.equal(prepared.render_config.template, "elegant");
+    assert.equal(prepared.render_config.template, "single-clean");
     assert.equal(prepared.render_config.templateConfirmed, true);
     assert.equal(prepared.meta.reviewResult.summary.blocked, false);
     assert.equal(prepared.meta.layoutResult.source, "paginateDocument");
@@ -59,7 +59,7 @@ test("prepare-export creates export-ready model for pure CLI generate flow witho
     assert.equal(prepared.meta.layoutResult.pageCount, 1);
     assert.equal(Array.isArray(prepared.meta.layoutResult.pages), true);
     assert.equal(Array.isArray(prepared.meta.layoutResult.decisions), true);
-    assert.equal(prepared.meta.layoutResult.templateId, "elegant");
+    assert.equal(prepared.meta.layoutResult.templateId, "single-clean");
     assert.equal(prepared.meta.layoutResult.selectedOption, "");
     assert.equal(prepared.meta.layoutResult.confirmed, true);
     assert.equal(prepared.meta.layoutResult.stable, true);

@@ -7,7 +7,7 @@ const recommendModule = await import("../dist/template/recommend.js");
 function buildBaseModel() {
   const model = customTemplateModule.createTemplatePreviewSample();
   model.render_config = {
-    template: "elegant",
+    template: "single-clean",
     pages: 1
   };
   return model;
@@ -63,7 +63,7 @@ test("template recommendation reads review overflow and ats preference to priori
   assert.equal(result.signals.contentDensity.level, "high");
   assert.deepEqual(
     result.candidates.map((candidate) => candidate.templateId),
-    ["compact", "ats", "elegant"]
+    ["compact-ats", "single-ats", "compact-clean"]
   );
   assert.equal(result.candidates[0].reasons.some((reason) => /超页|ATS|一页/.test(reason)), true);
 });
@@ -86,8 +86,8 @@ test("template recommendation uses target role and preference keywords without f
   assert.equal(result.signals.atsPreferred, false);
   assert.deepEqual(
     result.candidates.map((candidate) => candidate.templateId),
-    ["designer", "creative", "minimal"]
+    ["editorial-accent", "timeline-accent", "single-accent"]
   );
   assert.equal(result.candidates[0].reasons.some((reason) => /设计|视觉|创意/.test(reason)), true);
-  assert.equal(result.candidates[2].reasons.some((reason) => /页数目标/.test(reason)), true);
+  assert.equal(result.signals.pageGoal, 2);
 });
