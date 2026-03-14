@@ -86,7 +86,7 @@ export function validateImportedTemplateSource(filePath) {
 }
 
 export function resolveTemplate(templateName, customConfig = loadCustomTemplateConfig()): ResolvedTemplate {
-  const requested = normalizeTemplateKey(templateName || "elegant");
+  const requested = normalizeTemplateKey(templateName || "single-clean");
   if (!requested) {
     throw new Error("Template name cannot be empty.");
   }
@@ -113,7 +113,7 @@ export function resolveTemplate(templateName, customConfig = loadCustomTemplateC
     return { requested, resolved: cursor, kind: "imported", sourcePath, spec: null };
   }
 
-  const builtin = TEMPLATE_ALIASES[cursor] || cursor;
+  const builtin = cursor;
   try {
     const spec = resolveTemplateSpec(builtin);
     return { requested, resolved: builtin, kind: "builtin", spec };

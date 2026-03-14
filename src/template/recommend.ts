@@ -2,10 +2,10 @@ import { normalizeBulletList } from "../core/model.js";
 import { getFieldValue } from "../core/provenance.js";
 import { BUILTIN_TEMPLATE_NAMES, resolveTemplateSpec } from "./spec.js";
 
-const ATS_SAFE_TEMPLATES = new Set(["ats", "compact", "classic", "minimal", "elegant"]);
-const DENSE_SAFE_TEMPLATES = new Set(["compact", "ats", "elegant", "minimal", "classic"]);
-const DESIGN_TEMPLATES = new Set(["designer", "creative", "artistic", "gradient", "watercolor", "mosaic"]);
-const ENGINEERING_TEMPLATES = new Set(["developer", "engineer", "modern", "elegant", "compact"]);
+const ATS_SAFE_TEMPLATES = new Set(["single-ats", "split-ats", "compact-ats"]);
+const DENSE_SAFE_TEMPLATES = new Set(["compact-clean", "compact-ats", "single-minimal", "single-ats"]);
+const DESIGN_TEMPLATES = new Set(["single-accent", "timeline-accent", "editorial-accent"]);
+const ENGINEERING_TEMPLATES = new Set(["single-clean", "split-clean", "split-dark", "sidebar-clean", "sidebar-dark"]);
 
 function positiveInt(value, fallback = 1) {
   const normalized = Number(value);
@@ -99,43 +99,43 @@ function scoreTemplate(templateId, signals) {
   const spec = resolveTemplateSpec(templateId);
 
   if (signals.pageGoal === 1 && DENSE_SAFE_TEMPLATES.has(templateId)) {
-    score += templateId === "compact" ? 6 : templateId === "ats" ? 5 : 3;
+    score += templateId.startsWith("compact-") ? 6 : templateId.endsWith("-ats") ? 5 : 3;
   }
   if (signals.contentDensity.level === "high" && DENSE_SAFE_TEMPLATES.has(templateId)) {
-    score += templateId === "compact" ? 5 : templateId === "ats" ? 4 : templateId === "elegant" ? 3 : 2;
+    score += templateId.startsWith("compact-") ? 5 : templateId.endsWith("-ats") ? 4 : 2;
   }
   if (signals.overflowRisk && DENSE_SAFE_TEMPLATES.has(templateId)) {
-    score += templateId === "compact" ? 5 : templateId === "ats" ? 4 : templateId === "elegant" ? 3 : 1;
+    score += templateId.startsWith("compact-") ? 5 : templateId.endsWith("-ats") ? 4 : 1;
   }
   if (signals.atsPreferred && ATS_SAFE_TEMPLATES.has(templateId)) {
-    score += templateId === "ats" ? 6 : templateId === "compact" ? 5 : templateId === "elegant" ? 4 : 3;
+    score += templateId === "compact-ats" ? 6 : templateId === "split-ats" ? 5 : 4;
   }
   if (signals.designFocus) {
-    if (templateId === "designer") score += 12;
-    else if (templateId === "creative") score += 10;
-    else if (templateId === "minimal") score += 5;
-    else if (DESIGN_TEMPLATES.has(templateId)) score += 3;
+    if (templateId === "editorial-accent") score += 12;
+    else if (templateId === "timeline-accent") score += 10;
+    else if (templateId === "single-accent") score += 8;
+    else if (DESIGN_TEMPLATES.has(templateId)) score += 4;
   }
   if (signals.engineeringFocus && ENGINEERING_TEMPLATES.has(templateId)) {
-    score += templateId === "developer" || templateId === "engineer" ? 6 : templateId === "modern" ? 5 : 4;
+    score += templateId.startsWith("split-") ? 6 : 4;
   }
   if (signals.pageGoal >= 2) {
-    if (templateId === "minimal") score += 4;
-    if (templateId === "designer" || templateId === "creative") score += 1;
+    if (templateId === "single-minimal") score += 4;
+    if (templateId === "single-clean") score += 1;
     if (spec.layoutFamily === "two-column" && !signals.atsPreferred) score += 1;
   }
   if (signals.preferenceKeywords.some((keyword) => /创意|视觉|作品/.test(keyword))) {
-    if (templateId === "designer") score += 3;
-    if (templateId === "creative") score += 2;
+    if (templateId === "editorial-accent") score += 3;
+    if (templateId === "timeline-accent") score += 2;
   }
   if (signals.preferenceKeywords.some((keyword) => /稳重|简洁|保守|ats/i.test(keyword))) {
-    if (ATS_SAFE_TEMPLATES.has(templateId)) score += 2;
+    if (templateId.endsWith("-ats") || templateId.endsWith("-clean") || templateId.endsWith("-formal")) score += 2;
   }
 
   if (score === 0) {
-    if (templateId === "elegant") score = 3;
-    else if (templateId === "modern") score = 2;
-    else if (templateId === "classic") score = 1;
+    if (templateId === "single-clean") score = 3;
+    else if (templateId === "single-formal") score = 2;
+    else if (templateId === "split-clean") score = 1;
   }
 
   return score;
@@ -154,16 +154,16 @@ function buildReasons(templateId, signals) {
   if (signals.atsPreferred && ATS_SAFE_TEMPLATES.has(templateId)) {
     reasons.push("你偏向 ATS 友好输出，这个模板结构更保守。");
   }
-  if (signals.designFocus && templateId === "designer") {
-    reasons.push("岗位目标偏设计/视觉表达，designer 更贴近作品化展示。");
+  if (signals.designFocus && templateId === "editorial-accent") {
+    reasons.push("偏好词强调视觉表达，editorial 风格更适合做作品化展示。");
   }
-  if (signals.designFocus && templateId === "creative") {
-    reasons.push("偏好词强调创意与视觉层次，creative 的风格更匹配。");
+  if (signals.designFocus && templateId === "timeline-accent") {
+    reasons.push("你更关注时间线叙事，这个模板更适合突出履历节奏。");
   }
-  if (signals.engineeringFocus && (templateId === "developer" || templateId === "engineer")) {
+  if (signals.engineeringFocus && templateId.startsWith("split-")) {
     reasons.push("岗位目标偏工程交付，这个模板更接近技术岗位语境。");
   }
-  if (signals.pageGoal >= 2 && templateId === "minimal") {
+  if (signals.pageGoal >= 2 && templateId === "single-minimal") {
     reasons.push("页数目标放宽后，minimal 更容易稳住长文案可读性。");
   }
   if (!reasons.length) {
@@ -180,7 +180,7 @@ function buildReasons(templateId, signals) {
 function buildRisks(templateId, signals) {
   const spec = resolveTemplateSpec(templateId);
 
-  if (DESIGN_TEMPLATES.has(templateId) || templateId === "designer" || templateId === "creative") {
+  if (DESIGN_TEMPLATES.has(templateId)) {
     return ["设计感更强，正式/ATS 场景下会比经典模板更激进。"] as string[];
   }
   if (ATS_SAFE_TEMPLATES.has(templateId)) {

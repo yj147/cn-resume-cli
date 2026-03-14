@@ -1,94 +1,47 @@
-const LIGHT = {
+const SINGLE = {
   layout: "single",
   bg: "#ffffff",
   text: "#111111",
-  accent: "#2563eb",
   muted: "#4b5563",
   sidebarBg: "#f8fafc",
   sidebarText: "#0f172a"
 };
 
-const DARK = {
-  layout: "single",
-  bg: "#111827",
-  text: "#f9fafb",
-  accent: "#22d3ee",
-  muted: "#cbd5e1",
-  sidebarBg: "#1f2937",
-  sidebarText: "#e5e7eb"
-};
-
-const TWO_COLUMN_DARK = {
+const TWO_COLUMN = {
   layout: "two-column",
   bg: "#ffffff",
   text: "#111111",
-  accent: "#2563eb",
   muted: "#4b5563",
   sidebarBg: "#1e3a8a",
   sidebarText: "#f8fafc"
 };
 
-const TWO_COLUMN_CODER = {
+const TWO_COLUMN_DARK = {
   layout: "two-column",
-  bg: "#ffffff",
-  text: "#111111",
-  accent: "#0ea5e9",
-  muted: "#4b5563",
+  bg: "#111827",
+  text: "#f9fafb",
+  muted: "#cbd5e1",
   sidebarBg: "#0f172a",
-  sidebarText: "#e2e8f0"
+  sidebarText: "#e5e7eb"
 };
 
 const TEMPLATE_STYLE_REGISTRY = {
-  classic: { ...LIGHT, accent: "#1f2937" },
-  modern: { ...LIGHT, accent: "#0ea5e9" },
-  minimal: { ...LIGHT, accent: "#6b7280" },
-  professional: { ...LIGHT, accent: "#334155" },
-  "two-column": TWO_COLUMN_DARK,
-  creative: { ...LIGHT, accent: "#c026d3" },
-  ats: { ...LIGHT, accent: "#111827" },
-  academic: { ...LIGHT, accent: "#4338ca" },
-  elegant: { ...LIGHT, accent: "#1d4ed8" },
-  executive: { ...LIGHT, accent: "#0f172a" },
-  developer: { ...LIGHT, accent: "#0284c7" },
-  designer: { ...LIGHT, accent: "#db2777" },
-  startup: { ...LIGHT, accent: "#16a34a" },
-  formal: { ...LIGHT, accent: "#1f2937" },
-  infographic: { ...LIGHT, accent: "#7c3aed" },
-  compact: { ...LIGHT, accent: "#111827" },
-  euro: { ...LIGHT, accent: "#1d4ed8" },
-  clean: { ...LIGHT, accent: "#64748b" },
-  bold: { ...LIGHT, accent: "#dc2626" },
-  timeline: { ...LIGHT, accent: "#2563eb" },
-  nordic: { ...LIGHT, accent: "#0ea5e9" },
-  corporate: { ...LIGHT, accent: "#1f2937" },
-  consultant: { ...LIGHT, accent: "#334155" },
-  finance: { ...LIGHT, accent: "#0f766e" },
-  medical: { ...LIGHT, accent: "#059669" },
-  gradient: { ...LIGHT, accent: "#7c3aed" },
-  metro: { ...LIGHT, accent: "#0369a1" },
-  material: { ...LIGHT, accent: "#2563eb" },
-  coder: TWO_COLUMN_CODER,
-  blocks: { ...LIGHT, accent: "#ea580c" },
-  magazine: { ...LIGHT, accent: "#be123c" },
-  artistic: { ...LIGHT, accent: "#9333ea" },
-  retro: { ...LIGHT, accent: "#b45309" },
-  neon: DARK,
-  watercolor: { ...LIGHT, accent: "#0891b2" },
-  swiss: { ...LIGHT, accent: "#dc2626" },
-  japanese: { ...LIGHT, accent: "#991b1b" },
-  berlin: { ...LIGHT, accent: "#111827" },
-  luxe: { ...LIGHT, accent: "#7c2d12" },
-  rose: { ...LIGHT, accent: "#e11d48" },
-  architect: { ...LIGHT, accent: "#374151" },
-  legal: { ...LIGHT, accent: "#1e3a8a" },
-  teacher: { ...LIGHT, accent: "#16a34a" },
-  scientist: { ...LIGHT, accent: "#0e7490" },
-  engineer: { ...LIGHT, accent: "#0369a1" },
-  sidebar: TWO_COLUMN_DARK,
-  card: { ...LIGHT, accent: "#0284c7" },
-  zigzag: { ...LIGHT, accent: "#d946ef" },
-  ribbon: { ...LIGHT, accent: "#ef4444" },
-  mosaic: { ...LIGHT, accent: "#0ea5e9" }
+  "single-clean": { ...SINGLE, accent: "#2563eb" },
+  "single-formal": { ...SINGLE, accent: "#1f2937" },
+  "single-minimal": { ...SINGLE, accent: "#6b7280" },
+  "single-accent": { ...SINGLE, accent: "#0ea5e9" },
+  "single-ats": { ...SINGLE, accent: "#111827" },
+  "split-clean": { ...TWO_COLUMN, accent: "#2563eb" },
+  "split-formal": { ...TWO_COLUMN, accent: "#1f2937" },
+  "split-dark": { ...TWO_COLUMN_DARK, accent: "#22d3ee" },
+  "split-ats": { ...TWO_COLUMN, accent: "#111827" },
+  "sidebar-clean": { ...TWO_COLUMN, accent: "#2563eb" },
+  "sidebar-dark": { ...TWO_COLUMN_DARK, accent: "#22d3ee" },
+  "compact-clean": { ...SINGLE, accent: "#2563eb" },
+  "compact-ats": { ...SINGLE, accent: "#111827" },
+  "timeline-clean": { ...SINGLE, accent: "#2563eb" },
+  "timeline-accent": { ...SINGLE, accent: "#0ea5e9" },
+  "editorial-accent": { ...SINGLE, accent: "#be123c" }
 } as const;
 
 const DEFAULT_SECTION_ORDER = [
@@ -112,7 +65,7 @@ function createTemplateSpec(name, visualTokens) {
   const layoutFamily = layoutFamilyFor(visualTokens);
   return {
     name,
-    templateIntent: layoutFamily === "two-column" ? "structured-contrast" : "balanced-classic",
+    templateIntent: layoutFamily === "two-column" ? "structured-contrast" : "balanced-default",
     layoutFamily,
     sectionRecipes: {
       order: DEFAULT_SECTION_ORDER,
