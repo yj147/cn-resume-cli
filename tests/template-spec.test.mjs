@@ -8,14 +8,33 @@ const constantsModule = await import("../dist/constants.js");
 const customTemplateModule = await import("../dist/template/custom-template.js");
 const specModule = await import("../dist/template/spec.js");
 
+const PUBLIC_TEMPLATE_LIST = [
+  "single-clean",
+  "single-formal",
+  "single-minimal",
+  "single-accent",
+  "single-ats",
+  "split-clean",
+  "split-formal",
+  "split-dark",
+  "split-ats",
+  "sidebar-clean",
+  "sidebar-dark",
+  "compact-clean",
+  "compact-ats",
+  "timeline-clean",
+  "timeline-accent",
+  "editorial-accent"
+];
+
 function readSource(relativePath) {
   return fs.readFileSync(new URL(relativePath, import.meta.url), "utf8");
 }
 
-test("template spec registry resolves every builtin template with required fields", () => {
-  assert.equal(constantsModule.TEMPLATE_LIST.length, 50);
+test("template spec registry resolves every public template with required fields", () => {
+  assert.deepEqual(constantsModule.TEMPLATE_LIST, PUBLIC_TEMPLATE_LIST);
 
-  for (const name of constantsModule.TEMPLATE_LIST) {
+  for (const name of PUBLIC_TEMPLATE_LIST) {
     const spec = specModule.resolveTemplateSpec(name);
     assert.equal(spec.name, name);
     assert.equal(typeof spec.layoutFamily, "string");
@@ -38,12 +57,8 @@ test("constants derive builtin template exports from template spec registry", ()
   assert.doesNotMatch(constantsSource, /export const TEMPLATE_LIST = \[\s*\n/);
 });
 
-test("resolveTemplate uses template spec for builtin and alias paths and keeps imported path in one protocol", () => {
-  const builtin = customTemplateModule.resolveTemplate("elegant", {
-    aliases: {},
-    imports: {}
-  });
-  const alias = customTemplateModule.resolveTemplate("magic", {
+test("resolveTemplate defaults to single-clean and blocks legacy aliases explicitly", () => {
+  const builtin = customTemplateModule.resolveTemplate(undefined, {
     aliases: {},
     imports: {}
   });
@@ -59,9 +74,15 @@ test("resolveTemplate uses template spec for builtin and alias paths and keeps i
       }
     });
 
-    assert.equal(builtin.spec.name, "elegant");
-    assert.equal(alias.resolved, "modern");
-    assert.equal(alias.spec.name, "modern");
+    assert.equal(builtin.spec.name, "single-clean");
+    assert.throws(
+      () =>
+        customTemplateModule.resolveTemplate("magic", {
+          aliases: {},
+          imports: {}
+        }),
+      /template list/
+    );
     assert.equal(imported.kind, "imported");
     assert.equal(imported.spec, null);
     assert.equal(typeof imported.sourcePath, "string");
