@@ -6,7 +6,7 @@
 
 **Architecture:** 先冻结单一内容真相层，再接控制器状态机与审核链，最后把模板/分页/导出收口到统一 `ResumeDocument IR + TemplateSpec`。全程采用硬切，不保留内部兼容层，不新增双路径。
 
-**Tech Stack:** TypeScript、现有 CLI 命令体系、现有 JadeAI 渲染器、node:test、Playwright/PDF 渲染链
+**Tech Stack:** TypeScript、现有 CLI 命令体系、现有 render-engine 渲染器、node:test、Playwright/PDF 渲染链
 
 ## Status Update — 2026-03-13
 
@@ -306,10 +306,10 @@ git add src/template/spec.ts src/constants.ts src/template/custom-template.ts te
 git commit -m "refactor: add template spec registry"
 ```
 
-### Task 7: 把 JadeAI preview / PDF builder 收口到统一模板真相
+### Task 7: 把 render-engine preview / PDF builder 收口到统一模板真相
 
 **Files:**
-- Modify: `src/jadeai/builders.ts`
+- Modify: `src/render-engine/builders.ts`
 - Create: `src/layout-core/render-tree.ts`
 - Test: `tests/jadeai-render-config.test.mjs`
 - Test: `tests/render-tree.test.mjs`
@@ -322,12 +322,12 @@ git commit -m "refactor: add template spec registry"
 
 Run: `npm run build && node --test tests/jadeai-render-config.test.mjs tests/render-tree.test.mjs`
 
-Expected: FAIL，因为当前 `src/jadeai/builders.ts` 仍是 builder 平铺映射。
+Expected: FAIL，因为当前 `src/render-engine/builders.ts` 仍是 builder 平铺映射。
 
 **Step 3: Write minimal implementation**
 
 1. 新建 `src/layout-core/render-tree.ts`
-2. `src/jadeai/builders.ts` 改为 `IR + TemplateSpec -> render tree -> html`
+2. `src/render-engine/builders.ts` 改为 `IR + TemplateSpec -> render tree -> html`
 3. 保留 50 模板名，但删除内部双真相桥接逻辑
 
 **Step 4: Run test to verify it passes**

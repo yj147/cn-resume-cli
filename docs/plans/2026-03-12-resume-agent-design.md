@@ -433,10 +433,10 @@ JadeAI 不应照搬的是：
 
 1. `src/core/model.ts`
    - 已有 JSON 归一化与基础内容模型
-2. `src/jadeai/adapter.ts`
-   - 已有内容模型到 JadeAI Resume 结构的适配
-3. `src/jadeai/builders.ts`
-   - 已有 50 模板导出入口
+2. `src/render-engine/adapter.ts`
+   - 已有内容模型到 render-engine Resume 结构的适配
+3. `src/render-engine/builders.ts`
+   - 已有模板导出入口
 4. `src/flows/render.ts`
    - 已有 plain text / docx 渲染
 5. `src/template/custom-template.ts`

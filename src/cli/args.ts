@@ -44,7 +44,7 @@ Notes:
   - Default entry launches a fresh Chat TUI session.
   - Use 'cn-resume chat' to enter the Chat TUI explicitly.
   - Use 'cn-resume chat --resume last' to restore the last active session.
-  - Supports 50 template names from JadeAI taxonomy.
+  - Supports a built-in template catalog (hard-cut to 16 names). Use 'cn-resume template list'.
   - Default evaluation engine is hybrid (AI output + rule hard gates).
   - Phase B is enforced for CLI-optimized models. Use optimize --feedback and finish with --confirm.
   - Pure CLI export loop: parse -> optimize --confirm -> prepare-export -> generate.

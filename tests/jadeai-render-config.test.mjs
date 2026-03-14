@@ -24,7 +24,7 @@ function createBuilderInput(model, templateName) {
   };
 }
 
-test("empty render_config module arrays keep JadeAI body sections visible", async () => {
+test("empty render_config module arrays keep render-engine body sections visible", async () => {
   const model = loadFixture("sample-resume.json");
   model.render_config.modules = [];
   model.render_config.module_order = [];
@@ -46,7 +46,7 @@ test("empty render_config module arrays keep JadeAI body sections visible", asyn
   assert.match(html, /技能特长/);
 });
 
-test("explicit JadeAI module selection still controls visibility and order", () => {
+test("explicit render-engine module selection still controls visibility and order", () => {
   const model = loadFixture("sample-resume.json");
   model.render_config.modules = ["skills", "summary"];
   model.render_config.module_order = ["skills", "summary"];

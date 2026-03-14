@@ -1,4 +1,4 @@
-export const APP_NAME = 'JadeAI';
+export const APP_NAME = 'render-engine';
 
 export const SECTION_TYPES = [
   'personal_info',
