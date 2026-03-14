@@ -158,7 +158,7 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
     });
     await assert.rejects(
       () => commandsModule.runGenerate({ input: noTemplatePath, output: outputPath }),
-      /template_selection_required/
+      /template_selection_required.*template list/
     );
 
     const unconfirmedTemplatePath = path.join(tempDir, "template-unconfirmed.json");
@@ -188,7 +188,7 @@ test("parse-first export path blocks unconfirmed facts, review blockers, missing
     });
     await assert.rejects(
       () => commandsModule.runGenerate({ input: unconfirmedTemplatePath, output: outputPath }),
-      /template_confirmation_required/
+      /template_confirmation_required.*template list/
     );
 
     const noLayoutPath = path.join(tempDir, "no-layout.json");

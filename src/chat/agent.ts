@@ -317,7 +317,9 @@ export function selectTemplateCandidate(session, templateId: string) {
     : [];
 
   if (!selectedTemplateId || !comparedTemplateIds.includes(selectedTemplateId)) {
-    throw new Error("BLOCKED: template candidate not found in current comparison");
+    throw new Error(
+      "BLOCKED: template candidate not found in current comparison. Run 'cn-resume template list' to view the current catalog."
+    );
   }
 
   next.artifacts = {

@@ -34,10 +34,14 @@ function resolveTemplateConfirmed(options: Record<string, any> = {}) {
 function assertTemplateSelected(templateId, commandName, options: Record<string, any> = {}) {
   const resolved = String(templateId || "").trim();
   if (!resolved) {
-    throw new Error(`BLOCKED: template_selection_required. Choose a template before ${commandName}.`);
+    throw new Error(
+      `BLOCKED: template_selection_required. Choose a template before ${commandName}. Use 'cn-resume template list' to view the current catalog.`
+    );
   }
   if (resolveTemplateConfirmed(options) !== true) {
-    throw new Error(`BLOCKED: template_confirmation_required. Explicitly confirm template '${resolved}' before ${commandName}.`);
+    throw new Error(
+      `BLOCKED: template_confirmation_required. Explicitly confirm template '${resolved}' before ${commandName}. Use 'cn-resume template list' to review the current catalog.`
+    );
   }
   return resolved;
 }

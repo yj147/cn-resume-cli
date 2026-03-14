@@ -458,7 +458,7 @@ test("export gate blocks when template has not been explicitly selected", () => 
 
   assert.throws(
     () => chatCommandModule.advanceExportWorkflow(session),
-    /template_selection_required/
+    /template_selection_required.*template list/
   );
 });
 
@@ -508,6 +508,21 @@ test("template change invalidates stale layout results until the chosen template
   };
   const ready = chatCommandModule.advanceExportWorkflow(switched);
   assert.equal(ready.workflowState, controllerModule.CHAT_STATES.READY_TO_EXPORT);
+});
+
+test("selectTemplateCandidate fails fast with template list hint when candidate is outside current comparison", () => {
+  const session = sessionModule.createChatSession("2026-03-11T08:25:00.000Z");
+  session.artifacts = {
+    templateComparison: {
+      comparedTemplateIds: ["single-clean", "editorial-accent", "timeline-accent"],
+      previews: []
+    }
+  };
+
+  assert.throws(
+    () => agentModule.selectTemplateCandidate(session, "single-ats"),
+    /template candidate not found.*template list/
+  );
 });
 
 test("runChatLoop builds 3-template previews from current resume content and explicit template choice does not mutate confirmed content", async () => {
