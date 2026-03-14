@@ -53,18 +53,18 @@ test("custom content resume e2e produces txt/html/docx artifacts and shared thum
     await commandsModule.runPrepareExport({
       input: optimizedPath,
       jd: jdFixture,
-      template: "elegant",
+      template: "single-clean",
       "accept-multipage": true,
       engine: "rule",
       output: exportReadyPath
     });
 
     const exportReady = readJson(exportReadyPath);
-    assert.equal(exportReady.meta.template, "elegant");
+    assert.equal(exportReady.meta.template, "single-clean");
     assert.equal(exportReady.meta.templateConfirmed, true);
     assert.equal(exportReady.render_config.templateConfirmed, true);
     assert.equal(exportReady.meta.reviewResult.summary.blocked, false);
-    assert.equal(exportReady.meta.layoutResult.templateId, "elegant");
+    assert.equal(exportReady.meta.layoutResult.templateId, "single-clean");
     assert.equal(exportReady.meta.layoutResult.stable, true);
 
     await commandsModule.runGenerate({
@@ -87,8 +87,8 @@ test("custom content resume e2e produces txt/html/docx artifacts and shared thum
     assert.equal(fs.statSync(docxPath).size > 0, true);
 
     const normalized = modelModule.normalizeReactiveJson(readJson(exportReadyPath));
-    const thumbnail = await customTemplateModule.renderTemplateThumbnail(normalized, "elegant");
-    assert.equal(thumbnail.template, "elegant");
+    const thumbnail = await customTemplateModule.renderTemplateThumbnail(normalized, "single-clean");
+    assert.equal(thumbnail.template, "single-clean");
     assert.match(thumbnail.html, /支持面向金融风控与多租户SaaS的定制化交付。|聚焦复杂业务场景下的定制化简历交付。/);
   });
 });

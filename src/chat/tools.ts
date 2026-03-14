@@ -124,7 +124,7 @@ function resolveReviewTemplate(session, action) {
     session?.currentTemplate?.templateId ||
     session?.currentResume?.model?.render_config?.template ||
     session?.currentResume?.model?.meta?.template ||
-    "elegant"
+    "single-clean"
   );
 }
 

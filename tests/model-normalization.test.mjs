@@ -276,7 +276,7 @@ test("normalizeReactiveJson adds provenance to skills plus supporting sections f
         items: ["推进复杂项目落地"]
       }
     ],
-    templateId: "elegant",
+    templateId: "single-clean",
     menuSections: ["summary", "skills", "custom"],
     globalSettings: {
       themeColor: "#0ea5e9",
@@ -336,7 +336,7 @@ test("normalizeReactiveJson keeps user-authored supporting sections confirmed", 
       }
     ],
     render_config: {
-      template: "elegant",
+      template: "single-clean",
       modules: ["skills"],
       module_order: ["skills"],
       theme_color: "#2563eb",

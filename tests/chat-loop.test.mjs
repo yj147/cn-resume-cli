@@ -380,7 +380,7 @@ test("runChatLoop emits explicit overflow events and pending layout choices", as
           return {
             sessionPatch: {
               reviewResult,
-              layoutResult: renderModule.buildLayoutResult(createOverflowModel(), reviewResult, "elegant", true)
+              layoutResult: renderModule.buildLayoutResult(createOverflowModel(), reviewResult, "single-clean", true)
             }
           };
         }
@@ -405,14 +405,14 @@ test("export gate blocks unresolved overflow and only explicit multipage approva
   const session = sessionModule.createChatSession("2026-03-11T08:00:00.000Z");
   session.workflowState = controllerModule.CHAT_STATES.CONFIRMED_CONTENT;
   session.currentTemplate = {
-    templateId: "elegant",
+    templateId: "single-clean",
     source: "user_selected",
     confirmed: true
   };
   session.layoutResult = {
     status: "overflow",
     pageCount: 2,
-    templateId: "elegant",
+    templateId: "single-clean",
     stable: true,
     finding: {
       message: "当前内容密度较高，排版存在超页风险。"
@@ -453,7 +453,7 @@ test("export gate blocks when template has not been explicitly selected", () => 
     pageCount: 1,
     confirmed: true,
     stable: true,
-    templateId: "elegant"
+    templateId: "single-clean"
   };
 
   assert.throws(
@@ -471,7 +471,7 @@ test("template change invalidates stale layout results until the chosen template
     }
   };
   session.currentTemplate = {
-    templateId: "elegant",
+    templateId: "single-clean",
     source: "user_selected",
     confirmed: true
   };
@@ -480,17 +480,17 @@ test("template change invalidates stale layout results until the chosen template
     pageCount: 1,
     confirmed: true,
     stable: true,
-    templateId: "elegant"
+    templateId: "single-clean"
   };
   session.artifacts = {
     templateComparison: {
-      comparedTemplateIds: ["elegant", "designer"],
+      comparedTemplateIds: ["single-clean", "editorial-accent"],
       previews: []
     }
   };
 
-  const switched = agentModule.selectTemplateCandidate(session, "designer");
-  assert.equal(switched.currentTemplate.templateId, "designer");
+  const switched = agentModule.selectTemplateCandidate(session, "editorial-accent");
+  assert.equal(switched.currentTemplate.templateId, "editorial-accent");
   assert.equal(switched.currentTemplate.confirmed, true);
   assert.equal(switched.layoutResult.stable, false);
 
@@ -504,7 +504,7 @@ test("template change invalidates stale layout results until the chosen template
     pageCount: 1,
     confirmed: true,
     stable: true,
-    templateId: "designer"
+    templateId: "editorial-accent"
   };
   const ready = chatCommandModule.advanceExportWorkflow(switched);
   assert.equal(ready.workflowState, controllerModule.CHAT_STATES.READY_TO_EXPORT);
@@ -527,7 +527,7 @@ test("runChatLoop builds 3-template previews from current resume content and exp
       model
     };
 
-    const lines = ["推荐模板对比预览", "/go", "/choose-template designer", "/quit"];
+    const lines = ["推荐模板对比预览", "/go", "/choose-template editorial-accent", "/quit"];
     const events = [];
 
     const result = await chatCommandModule.runChatLoop(
@@ -540,13 +540,13 @@ test("runChatLoop builds 3-template previews from current resume content and exp
     );
 
     assert.equal(result.session.artifacts.templateComparison.source, "current_resume");
-    assert.deepEqual(result.session.artifacts.templateComparison.comparedTemplateIds, ["designer", "creative", "minimal"]);
+    assert.deepEqual(result.session.artifacts.templateComparison.comparedTemplateIds, ["editorial-accent", "timeline-accent", "single-accent"]);
     assert.equal(result.session.artifacts.templateComparison.previews.length, 3);
     assert.equal(
-      result.session.artifacts.templateComparison.previews.every((preview) => preview.html.includes("这是当前用户真实内容的专属摘要")),
+      result.session.artifacts.templateComparison.previews.every((preview) => preview.html.includes("当前用户真实内容的专属摘要")),
       true
     );
-    assert.equal(result.session.currentTemplate.templateId, "designer");
+    assert.equal(result.session.currentTemplate.templateId, "editorial-accent");
     assert.equal(result.session.currentTemplate.source, "ab_selected");
     assert.equal(result.session.currentTemplate.confirmed, true);
     assert.deepEqual(result.session.currentResume.model, originalModel);

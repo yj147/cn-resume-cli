@@ -299,7 +299,7 @@ IR 不直接存原始聊天上下文，也不直接存最终 HTML/PDF。
 当前仓库已存在：
 
 - `src/constants.ts` 中的 50 个模板名
-- `src/jadeai/builders.ts` 中的 50 个导出 builder 映射
+- `src/render-engine/builders.ts` 中的导出 builder 映射
 
 ### 11.2 工程面
 
@@ -480,7 +480,7 @@ JadeAI 不应照搬的是：
 ## 18. References
 
 - 当前模板清单：`src/constants.ts`
-- 当前导出模板入口：`src/jadeai/builders.ts`
+- 当前导出模板入口：`src/render-engine/builders.ts`
 - 当前审核入口：`src/commands.ts`
 - 当前评估逻辑：`src/eval/evaluation.ts`
 - 当前 chat 工具桥：`src/chat/tools.ts`

@@ -13,13 +13,13 @@ test("renderTemplateThumbnail shares render tree truth with preview and pdf rend
   const model = customTemplateModule.createTemplatePreviewSample();
   model.basic.summary.value = "这是 thumbnail 与 preview/pdf 共用的真实内容摘要";
 
-  const preview = await customTemplateModule.renderTemplate(model, "designer", false);
-  const pdf = await customTemplateModule.renderTemplate(model, "designer", true);
-  const thumbnail = await customTemplateModule.renderTemplateThumbnail(model, "designer");
+  const preview = await customTemplateModule.renderTemplate(model, "sidebar-clean", false);
+  const pdf = await customTemplateModule.renderTemplate(model, "sidebar-clean", true);
+  const thumbnail = await customTemplateModule.renderTemplateThumbnail(model, "sidebar-clean");
 
-  assert.equal(preview.template, "designer");
-  assert.equal(pdf.template, "designer");
-  assert.equal(thumbnail.template, "designer");
+  assert.equal(preview.template, "sidebar-clean");
+  assert.equal(pdf.template, "sidebar-clean");
+  assert.equal(thumbnail.template, "sidebar-clean");
   assert.deepEqual(preview.renderTree, pdf.renderTree);
   assert.deepEqual(preview.renderTree, thumbnail.renderTree);
   assert.deepEqual(
@@ -34,10 +34,10 @@ test("renderTemplateThumbnail shares render tree truth with preview and pdf rend
 test("renderTemplateThumbnail follows TemplateSpec layout and accent tokens for each template", async () => {
   const model = customTemplateModule.createTemplatePreviewSample();
 
-  const compact = await customTemplateModule.renderTemplateThumbnail(model, "compact");
-  const sidebar = await customTemplateModule.renderTemplateThumbnail(model, "sidebar");
-  const compactSpec = specModule.resolveTemplateSpec("compact");
-  const sidebarSpec = specModule.resolveTemplateSpec("sidebar");
+  const compact = await customTemplateModule.renderTemplateThumbnail(model, "compact-clean");
+  const sidebar = await customTemplateModule.renderTemplateThumbnail(model, "sidebar-dark");
+  const compactSpec = specModule.resolveTemplateSpec("compact-clean");
+  const sidebarSpec = specModule.resolveTemplateSpec("sidebar-dark");
 
   assert.equal(compact.layoutFamily, compactSpec.layoutFamily);
   assert.equal(sidebar.layoutFamily, sidebarSpec.layoutFamily);

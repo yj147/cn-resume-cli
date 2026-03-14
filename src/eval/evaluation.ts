@@ -4,7 +4,7 @@ import { normalizeBulletList, nowIso } from "../core/model.js";
 import { resolveTemplate } from "../template/custom-template.js";
 
 const WEAK_WORDS = ["负责", "参与", "协助", "做了", "一些", "较好", "不错", "很多"];
-const ATS_FRIENDLY_TEMPLATES = new Set(["ats", "compact", "classic", "minimal", "elegant"]);
+const ATS_FRIENDLY_TEMPLATES = new Set(["single-ats", "split-ats", "compact-ats"]);
 const VALID_EVAL_ENGINES = new Set(["hybrid", "ai", "rule"]);
 const VALID_FLOW_ENGINES = new Set(["ai", "rule"]);
 const DEFAULT_PROMPT_VERSION = "v1";
@@ -198,7 +198,7 @@ function safeScore(value) {
   return Math.max(1, Math.min(10, Number(value.toFixed(1))));
 }
 
-function evaluateScores(model, jdText = "", templateName = "elegant") {
+function evaluateScores(model, jdText = "", templateName = "single-clean") {
   const bullets = collectAllBullets(model);
   const joined = bullets.join(" ");
   const hasNumbers = bullets.filter((b) => /\d/.test(b)).length;
@@ -214,7 +214,7 @@ function evaluateScores(model, jdText = "", templateName = "elegant") {
   const atsScore = ATS_FRIENDLY_TEMPLATES.has(templateName) ? 8.5 : 6.8;
   const contentSize = joined.length + JSON.stringify(model.skills || []).length;
   const layoutFitScore = contentSize < 1800 ? 9 : contentSize < 2600 ? 7.5 : contentSize < 3200 ? 6 : 4.5;
-  const style = TEMPLATE_STYLES[templateName] || TEMPLATE_STYLES.elegant;
+  const style = TEMPLATE_STYLES[templateName] || TEMPLATE_STYLES["single-clean"];
   const visualHierarchyScore = safeScore(style.layout === "two-column" ? 8.2 : 7.8);
 
   const scores = {
@@ -256,11 +256,11 @@ function analyzeJd(model, jdText) {
   const keywordMatches = keywords.filter((kw) => payload.includes(kw)).slice(0, 30);
   const missingKeywords = keywords.filter((kw) => !payload.includes(kw)).slice(0, 30);
   const overallScore = keywords.length ? Math.round((keywordMatches.length / keywords.length) * 100) : 70;
-  let normalizedTemplate = "elegant";
+  let normalizedTemplate = "single-clean";
   try {
-    normalizedTemplate = resolveTemplate(model?.render_config?.template || model?.meta?.template || "elegant").resolved;
+    normalizedTemplate = resolveTemplate(model?.render_config?.template || model?.meta?.template || "single-clean").resolved;
   } catch {
-    normalizedTemplate = "elegant";
+    normalizedTemplate = "single-clean";
   }
   const atsScore = ATS_FRIENDLY_TEMPLATES.has(normalizedTemplate) ? 85 : 68;
   return {

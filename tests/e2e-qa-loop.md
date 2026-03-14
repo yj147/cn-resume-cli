@@ -13,7 +13,7 @@
 - `npm test`
 - 手工链路：
   - `cn-resume template list`
-  - `cn-resume template preview --name elegant`
+  - `cn-resume template preview --name single-clean`
   - `cn-resume parse`
   - `cn-resume optimize`
   - `cn-resume validate`

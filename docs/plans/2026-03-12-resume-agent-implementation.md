@@ -221,7 +221,7 @@ git commit -m "refactor: unify cli and chat review pipeline"
 
 **Files:**
 - Create: `src/layout-core/document-ir.ts`
-- Modify: `src/jadeai/adapter.ts`
+- Modify: `src/render-engine/adapter.ts`
 - Test: `tests/document-ir.test.mjs`
 
 **Step 1: Write the failing test**
@@ -237,12 +237,12 @@ git commit -m "refactor: unify cli and chat review pipeline"
 
 Run: `npm run build && node --test tests/document-ir.test.mjs`
 
-Expected: FAIL，因为当前 adapter 直接输出 Jade resume sections，没有独立 IR。
+Expected: FAIL，因为当前 adapter 直接输出 render-engine sections，没有独立 IR。
 
 **Step 3: Write minimal implementation**
 
 1. 新建 `src/layout-core/document-ir.ts`
-2. 在 `src/jadeai/adapter.ts` 前增加 canonical -> IR 转换
+2. 在 `src/render-engine/adapter.ts` 前增加 canonical -> IR 转换
 3. 把现有 section 适配逻辑收口到 IR builder
 
 **Step 4: Run test to verify it passes**
@@ -254,7 +254,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add src/layout-core/document-ir.ts src/jadeai/adapter.ts tests/document-ir.test.mjs
+git add src/layout-core/document-ir.ts src/render-engine/adapter.ts tests/document-ir.test.mjs
 git commit -m "feat: introduce resume document ir"
 ```
 
@@ -339,7 +339,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add src/jadeai/builders.ts src/layout-core/render-tree.ts tests/jadeai-render-config.test.mjs tests/render-tree.test.mjs
+git add src/render-engine/builders.ts src/layout-core/render-tree.ts tests/jadeai-render-config.test.mjs tests/render-tree.test.mjs
 git commit -m "refactor: unify jade render pipeline around render tree"
 ```
 

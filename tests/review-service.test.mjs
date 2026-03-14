@@ -54,7 +54,7 @@ function writeReviewFixture(tempDir) {
       }
     },
     render_config: {
-      template: "elegant"
+      template: "single-clean"
     }
   };
   fs.writeFileSync(inputPath, JSON.stringify(payload, null, 2), "utf8");
@@ -70,7 +70,7 @@ test("runReviewService aggregates validate analyze-jd and grammar into unified s
   const result = await reviewServiceModule.runReviewService({
     model: buildReviewModel(),
     jdText: "Kubernetes Go 微服务 架构 性能 优化 数据库",
-    template: "elegant",
+    template: "single-clean",
     options: evaluationModule.resolveEvalOptions({ engine: "rule" })
   });
 
@@ -90,7 +90,7 @@ test("runReviewService aggregates validate analyze-jd and grammar into unified s
 test("runReviewService supports single-check mode without fabricating other reports", async () => {
   const result = await reviewServiceModule.runReviewService({
     model: buildReviewModel(),
-    template: "elegant",
+    template: "single-clean",
     options: evaluationModule.resolveEvalOptions({ engine: "rule" }),
     checks: [reviewServiceModule.REVIEW_TASKS.GRAMMAR_CHECK]
   });
@@ -111,7 +111,7 @@ test("commands route review entrypoints through unified review service", async (
     await commandsModule.runValidate({
       input: inputPath,
       jd: jdPath,
-      template: "elegant",
+      template: "single-clean",
       engine: "rule",
       output: validateOutput
     });
@@ -181,7 +181,7 @@ test("validateByAI derives average and verdict from scores when provider returns
     const report = await evaluationModule.validateByAI(
       buildReviewModel(),
       "Kubernetes Go 微服务 架构 性能 优化 数据库",
-      "elegant",
+      "single-clean",
       {
         engine: "hybrid",
         model: "stub-model",

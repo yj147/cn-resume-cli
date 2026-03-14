@@ -131,7 +131,7 @@ function resolveLayoutPageBox(model, templateSpec) {
 }
 
 function resolveLayoutTemplateId(model, templateId = "") {
-  return normalizeTemplateId(templateId || model?.render_config?.template || model?.meta?.template || "elegant");
+  return normalizeTemplateId(templateId || model?.render_config?.template || model?.meta?.template || "single-clean");
 }
 
 export function buildLayoutResult(model, reviewResult, templateId = "", stable = false) {

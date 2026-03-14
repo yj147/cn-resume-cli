@@ -338,13 +338,13 @@ test("review tool reuses unified review service severity and stores adoptable pa
     text: "Kubernetes Go 微服务 架构 性能 数据库"
   };
   session.currentTemplate = {
-    templateId: "elegant"
+    templateId: "single-clean"
   };
 
   const expected = await reviewServiceModule.runReviewService({
     model: session.currentResume.model,
     jdText: session.currentJd.text,
-    template: "elegant",
+    template: "single-clean",
     checks: ["validate", "analyze-jd", "grammar-check"],
     options: evaluationModule.resolveEvalOptions({ engine: "rule" })
   });
@@ -367,7 +367,7 @@ test("review tool reuses unified review service severity and stores adoptable pa
   assert.equal(reviewed.reviewResult.adoptablePatches.length > 0, true);
   assert.equal(reviewed.tasks[0].status, reviewed.reviewResult.summary.blocked ? "blocked" : "done");
   assert.equal(typeof reviewed.layoutResult, "object");
-  assert.equal(reviewed.layoutResult.templateId, "elegant");
+  assert.equal(reviewed.layoutResult.templateId, "single-clean");
   assert.equal(reviewed.layoutResult.stable, false);
   assert.equal(reviewed.layoutResult.source, "paginateDocument");
   assert.equal(Array.isArray(reviewed.layoutResult.decisions), true);

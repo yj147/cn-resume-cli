@@ -135,7 +135,7 @@ test("saveActiveSession and saveNamedSession persist session state", () => {
       pageCount: 2
     };
     session.currentTemplate = {
-      templateId: "elegant",
+      templateId: "single-clean",
       source: "user_selected"
     };
     session.checkpoints = [
@@ -182,7 +182,7 @@ test("saveActiveSession and saveNamedSession persist session state", () => {
       pageCount: 2
     });
     assert.deepEqual(reloaded.currentTemplate, {
-      templateId: "elegant",
+      templateId: "single-clean",
       source: "user_selected"
     });
     assert.deepEqual(reloaded.checkpoints, [

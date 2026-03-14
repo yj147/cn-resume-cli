@@ -187,7 +187,7 @@ function defaultChecks(jdText) {
 export async function runReviewService(input: Record<string, any> = {}) {
   const options = input.options || resolveEvalOptions({});
   const jdText = String(input.jdText || "");
-  const template = String(input.template || "elegant");
+  const template = String(input.template || "single-clean");
   const checks = Array.isArray(input.checks) && input.checks.length ? input.checks : defaultChecks(jdText);
   const reports: Record<string, unknown> = {};
   const findings = [];

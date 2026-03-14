@@ -217,7 +217,7 @@
   - 已有 `parse -> optimize --confirm` 产物
   - 可使用 `prepare-export` 命令
 - **Test Steps**:
-  1. 运行 `cn-resume prepare-export --input <optimized.json> --jd <jd.txt> --template elegant --accept-multipage --output <export-ready.json>`
+  1. 运行 `cn-resume prepare-export --input <optimized.json> --jd <jd.txt> --template single-clean --accept-multipage --output <export-ready.json>`
   2. 检查输出模型是否自动写回 `reviewResult/layoutResult/templateConfirmed`
   3. 直接运行 `cn-resume generate --input <export-ready.json> --output <resume.html>`
 - **Expected Results**:
