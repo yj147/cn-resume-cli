@@ -10,6 +10,40 @@
 
 ---
 
+## Dirty Branch Extraction Ledger
+
+本计划不直接 merge `feature/issue-loop-20260312-152941`，只抽离其中可验证、与本轮目标一致的资产。
+
+### 本轮直接吸纳
+
+1. **去品牌文案**
+   - 吸纳点：帮助文案从 `JadeAI taxonomy` 改为中性 catalog 描述
+   - 落点任务：Task 4
+2. **渲染引擎中性命名**
+   - 吸纳点：把 `jadeai` 目录与 import 路径硬切为我们自己的引擎命名
+   - 落点任务：Task 2、Task 3
+3. **模板硬切测试资产**
+   - 吸纳点：围绕模板目录替换、默认模板替换、错误语义替换的测试思路
+   - 落点任务：Task 1、Task 5、Task 7
+
+### 记录为后续候选，不并入本轮
+
+1. **`currentGoal` session seam**
+2. **planner `nextSteps` 只读输出**
+3. **bounded autochain**
+4. **工具级 `transient / permanent / user-fixable` 错误分类与有限重试**
+
+这些点有价值，但主落点在 chat 控制面，不应和本轮 render-engine 硬切混做。若要吸纳，必须在当前 `workflowState + controller` 架构上重写，不能直接回灌旧 `workflow.stage` 代码。
+
+### 明确排除
+
+1. 旧 `workflow.stage` 控制面实现
+2. 旧 planner / autochain / retry 代码整体 cherry-pick
+3. 脏分支中未完成的 `layout-core` 替代 `src/jadeai/*` 方案
+4. 脏分支里的整套公开模板名直接复用
+
+---
+
 ### Task 1: 冻结新的公开模板目录与硬切错误语义
 
 **Files:**

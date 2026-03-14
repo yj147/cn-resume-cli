@@ -201,12 +201,35 @@
 2. 模板目录改为中性 catalog 口径
 3. 去品牌命名与内部路径重构思路
 4. 与模板硬切相关的测试资产
+5. `currentGoal + nextSteps` 的只读规划 UX 思路
+6. 工具级 `transient / permanent / user-fixable` 错误分类与回归测试思路
+7. 对低风险自动串联边界的测试设计思路
 
 不能直接吸纳的部分：
 
 1. 旧 `workflow.stage` 控制面
 2. 整套旧 planner / autochain / retry 实现
 3. 未完成的 `layout-core` 替换脏改动
+
+### 9.1 本轮纳入范围
+
+本轮设计直接纳入以下抽离点：
+
+- 去品牌文案
+- 中性模板目录口径
+- 渲染引擎中性命名与路径重构
+- 与模板硬切、目录硬切相关的测试资产
+
+### 9.2 后续候选，不并入本轮硬切
+
+以下点值得保留为后续重构议题，但不与本轮 render-engine 硬切绑在一起：
+
+- `currentGoal` 作为 session 级目标槽位
+- `nextSteps` 作为 planner 的只读输出协议
+- bounded autochain 的受限自动串联
+- 工具级最小错误分类与有限重试
+
+原因：这些点主要落在 chat 控制面，而本轮主落点是模板真相层与渲染引擎层。强行绑定会把“去品牌/去实现耦合”和“控制面增强”混成一次高耦合变更。
 
 ## 10. Verification Strategy
 
