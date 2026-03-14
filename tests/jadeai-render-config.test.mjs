@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 
-const adapterModule = await import("../dist/jadeai/adapter.js");
-const builderModule = await import("../dist/jadeai/builders.js");
+const adapterModule = await import("../dist/render-engine/adapter.js");
+const builderModule = await import("../dist/render-engine/builders.js");
 const modelModule = await import("../dist/core/model.js");
-const utilsModule = await import("../dist/jadeai/utils.js");
+const utilsModule = await import("../dist/render-engine/utils.js");
 const specModule = await import("../dist/template/spec.js");
 
 function loadFixture(name) {
@@ -29,9 +29,9 @@ test("empty render_config module arrays keep JadeAI body sections visible", asyn
   model.render_config.modules = [];
   model.render_config.module_order = [];
 
-  const resume = adapterModule.modelToJadeResume(model, "elegant");
+  const resume = adapterModule.modelToJadeResume(model, "single-clean");
   const sectionTypes = utilsModule.visibleSections(resume).map((section) => section.type);
-  const html = await builderModule.generateHtml(createBuilderInput(model, "elegant"), false);
+  const html = await builderModule.generateHtml(createBuilderInput(model, "single-clean"), false);
 
   assert.deepEqual(sectionTypes.slice(0, 6), [
     "summary",
@@ -51,7 +51,7 @@ test("explicit JadeAI module selection still controls visibility and order", () 
   model.render_config.modules = ["skills", "summary"];
   model.render_config.module_order = ["skills", "summary"];
 
-  const resume = adapterModule.modelToJadeResume(model, "elegant");
+  const resume = adapterModule.modelToJadeResume(model, "single-clean");
   const sectionTypes = utilsModule.visibleSections(resume).map((section) => section.type);
 
   assert.deepEqual(sectionTypes, ["skills", "summary"]);
@@ -62,12 +62,12 @@ test("adapter emits document IR seed before building Jade resume sections", () =
   model.render_config.modules = ["skills", "summary"];
   model.render_config.module_order = ["skills", "summary"];
 
-  const documentIr = adapterModule.modelToDocumentIR(model, "elegant");
+  const documentIr = adapterModule.modelToDocumentIR(model, "single-clean");
   const visibleSectionTypes = documentIr.sections
     .filter((section) => section.content.visible)
     .map((section) => section.content.sectionType)
     .filter((type) => type !== "personal_info");
-  const resume = adapterModule.modelToJadeResume(model, "elegant");
+  const resume = adapterModule.modelToJadeResume(model, "single-clean");
 
   assert.deepEqual(visibleSectionTypes, ["skills", "summary"]);
   assert.deepEqual(
@@ -78,9 +78,9 @@ test("adapter emits document IR seed before building Jade resume sections", () =
 
 test("adapter keeps section payload for rendering while exposing finer pagination blocks", () => {
   const model = loadFixture("sample-resume.json");
-  const documentIr = adapterModule.modelToDocumentIR(model, "elegant");
+  const documentIr = adapterModule.modelToDocumentIR(model, "single-clean");
   const workSection = documentIr.sections.find((section) => section.content.sectionType === "work_experience");
-  const resume = adapterModule.modelToJadeResume(model, "elegant");
+  const resume = adapterModule.modelToJadeResume(model, "single-clean");
   const workResumeSection = resume.sections.find((section) => section.type === "work_experience");
 
   assert.equal(workSection.children.length > 1, true);
@@ -98,9 +98,9 @@ test("custom sections dedupe overlapping items and content lines", async () => {
     }
   ];
 
-  const resume = adapterModule.modelToJadeResume(model, "elegant");
+  const resume = adapterModule.modelToJadeResume(model, "single-clean");
   const customSection = resume.sections.find((section) => section.type === "custom");
-  const html = await builderModule.generateHtml(createBuilderInput(model, "elegant"), false);
+  const html = await builderModule.generateHtml(createBuilderInput(model, "single-clean"), false);
 
   assert.deepEqual(
     customSection.content.items.map((item) => item.description),
@@ -111,7 +111,7 @@ test("custom sections dedupe overlapping items and content lines", async () => {
 
 test("builders consume document IR and template spec while preserving dark sidebar pdf styling", async () => {
   const model = loadFixture("sample-resume.json");
-  const html = await builderModule.generateHtml(createBuilderInput(model, "sidebar"), true);
+  const html = await builderModule.generateHtml(createBuilderInput(model, "sidebar-dark"), true);
 
   assert.match(html, /linear-gradient\(90deg, #1e40af 35%, white 35%\)/);
   assert.match(html, /@page \{ margin: 0; \}/);
