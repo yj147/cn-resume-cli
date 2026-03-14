@@ -1,8 +1,10 @@
 # Render Engine Hard-Cut Design
 
-**Status:** Approved  
+**Status:** Implemented
 **Date:** 2026-03-14  
 **Scope:** 以一次发布的硬切方式移除 `JadeAI` 品牌与实现命名，收缩公开模板集合，并保留当前 HTML/PDF 输出的主体视觉特征。
+
+> 说明：本设计文档中的“Current State Estimate”用于记录开工基线。当前代码已完成 hard-cut 与后续 tail cleanup 收口，最终门禁以实际命令结果为准。
 
 ## 1. Summary
 
@@ -43,7 +45,7 @@
   2. 渲染路径重命名后 HTML/PDF 细节回归
   3. 将“去品牌”误判为“去版权化完成”
 
-## 3. Current State Estimate
+## 3. Kickoff Baseline (Historical)
 
 当前主干存在三类 `JadeAI` 耦合：
 

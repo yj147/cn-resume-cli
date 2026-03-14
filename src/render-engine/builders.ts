@@ -80,6 +80,10 @@ async function preGenerateQrSvgs(resume: ResumeWithSections): Promise<void> {
 
 function renderTreeToResume(renderTree, input): ResumeWithSections {
   const now = new Date();
+  const template = String(input?.templateSpec?.name || "").trim();
+  if (!template) {
+    throw new Error("BLOCKED: template spec name is required for render-engine html generation.");
+  }
   const sections = [
     ...(renderTree?.regions?.sidebar?.sections || []),
     ...(renderTree?.regions?.main?.sections || [])
@@ -101,7 +105,7 @@ function renderTreeToResume(renderTree, input): ResumeWithSections {
     id: String(input?.document?.id || "resume"),
     userId: "cli",
     title: String(input?.title || "resume"),
-    template: String(input?.templateSpec?.name || "single-clean"),
+    template,
     themeConfig: input?.themeConfig || DEFAULT_THEME,
     isDefault: false,
     language: String(input?.language || "zh"),
@@ -119,7 +123,10 @@ export async function generateHtml(input, forPdf = false, renderTreeOverride = n
   const resume = renderTreeToResume(renderTree, input);
   // Pre-generate QR SVGs so sync template builders can use them
   await preGenerateQrSvgs(resume);
-  const builder = TEMPLATE_BUILDERS[resume.template] || TEMPLATE_BUILDERS["single-clean"];
+  const builder = TEMPLATE_BUILDERS[resume.template];
+  if (!builder) {
+    throw new Error(`Unsupported render template '${resume.template}'.`);
+  }
   const bodyHtml = builder(resume);
   const theme = { ...DEFAULT_THEME, ...((resume as any).themeConfig || {}) };
   const themeCSS = buildExportThemeCSS(theme, resume.template);

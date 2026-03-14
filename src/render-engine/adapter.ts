@@ -116,8 +116,10 @@ function isCurrent(end: string): boolean {
 }
 
 function normalizeTheme(templateName: string, model?: ResumeModel): ThemeConfig {
-  const style =
-    (TEMPLATE_STYLES as Record<string, any>)[templateName] || (TEMPLATE_STYLES as Record<string, any>)["single-clean"];
+  const style = (TEMPLATE_STYLES as Record<string, any>)[templateName];
+  if (!style) {
+    throw new Error(`Unsupported render template '${templateName}'.`);
+  }
   const renderConfig = model?.render_config || {};
   const configuredFontSize = String(renderConfig.font_size || "").trim();
   return {
@@ -609,7 +611,7 @@ export function modelToDocumentIR(model: ResumeModel, templateName: string) {
   return documentIr;
 }
 
-export function modelToJadeResume(model: ResumeModel, templateName: string): Resume {
+export function modelToRenderResume(model: ResumeModel, templateName: string): Resume {
   const resumeId = "cli-resume";
   const basic = model.basic || {};
   const basicName = getFieldValue(basic.name);

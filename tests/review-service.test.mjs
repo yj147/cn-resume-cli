@@ -144,6 +144,24 @@ test("commands route review entrypoints through unified review service", async (
   assert.doesNotMatch(commandSource, /validateByRule|validateByAI|analyzeByRule|analyzeJdByAI|grammarByRule|grammarCheckByAI/);
 });
 
+test("analyze-jd rejects legacy hard-cut template names explicitly", async () => {
+  await withTempDir(async (tempDir) => {
+    const { inputPath, jdPath } = writeReviewFixture(tempDir);
+    const payload = JSON.parse(fs.readFileSync(inputPath, "utf8"));
+    payload.render_config.template = "elegant";
+    fs.writeFileSync(inputPath, JSON.stringify(payload, null, 2), "utf8");
+
+    await assert.rejects(
+      () => commandsModule.runAnalyzeJd({
+        input: inputPath,
+        jd: jdPath,
+        engine: "rule"
+      }),
+      /Unsupported template 'elegant'.*template list/
+    );
+  });
+});
+
 test("validateByAI derives average and verdict from scores when provider returns malformed aggregate fields", async () => {
   const originalFetch = global.fetch;
   let fetchCalls = 0;

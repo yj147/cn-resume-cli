@@ -269,9 +269,12 @@ export async function runAnalyzeJd(flags) {
   const model = normalizeReactiveJson(readJson(flags.input));
   assertPhaseBConfirmedOrThrow(model, "analyze-jd");
   const jd = readText(flags.jd);
+  const templateInput = flags.template || model?.render_config?.template || model?.meta?.template || "single-clean";
+  const template = resolveTemplate(templateInput).resolved;
   const report = (await runReviewService({
     model,
     jdText: jd,
+    template,
     options: evalOptions,
     checks: [REVIEW_TASKS.ANALYZE_JD]
   })).reports[REVIEW_TASKS.ANALYZE_JD];

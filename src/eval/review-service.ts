@@ -44,9 +44,9 @@ async function runValidateReview(model, jdText, template, options) {
   return validateByAI(model, jdText, template, options);
 }
 
-async function runAnalyzeReview(model, jdText, options) {
+async function runAnalyzeReview(model, jdText, template, options) {
   if (options.engine === "rule") {
-    return analyzeByRule(model, jdText, options);
+    return analyzeByRule(model, jdText, template, options);
   }
   return analyzeJdByAI(model, jdText, options);
 }
@@ -200,7 +200,7 @@ export async function runReviewService(input: Record<string, any> = {}) {
       continue;
     }
     if (check === REVIEW_TASKS.ANALYZE_JD) {
-      const report = await runAnalyzeReview(input.model, jdText, options);
+      const report = await runAnalyzeReview(input.model, jdText, template, options);
       reports[REVIEW_TASKS.ANALYZE_JD] = report;
       findings.push(...collectAnalyzeFindings(report));
       continue;

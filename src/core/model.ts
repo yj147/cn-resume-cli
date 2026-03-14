@@ -8,7 +8,7 @@ export function nowIso() {
 export function createEmptyParseEvidence() {
   return {
     version: "",
-    paradigm: "jadeai-section-first",
+    paradigm: "render-engine-section-first",
     template: "",
     overall_confidence: 0,
     sections: []

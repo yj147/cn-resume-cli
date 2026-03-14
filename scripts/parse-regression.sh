@@ -61,7 +61,10 @@ function fieldValue(value) {
 function assertParseEvidence(model, name) {
   const evidence = model?.meta?.parse_evidence;
   assert(evidence && typeof evidence === "object", `${name} should include meta.parse_evidence`);
-  assert(evidence.paradigm === "jadeai-section-first", `${name} parse_evidence.paradigm should be jadeai-section-first`);
+  assert(
+    evidence.paradigm === "render-engine-section-first",
+    `${name} parse_evidence.paradigm should be render-engine-section-first`
+  );
   assert(Number.isFinite(Number(evidence.overall_confidence)), `${name} parse_evidence.overall_confidence should be numeric`);
   assert(Number(evidence.overall_confidence) >= 0 && Number(evidence.overall_confidence) <= 1, `${name} overall_confidence out of range`);
   assert(Array.isArray(evidence.sections) && evidence.sections.length > 0, `${name} parse_evidence.sections should be non-empty array`);

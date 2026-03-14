@@ -12,7 +12,7 @@ test("dist render-engine entrypoints are importable", async () => {
 
   assert.equal(typeof adapter.modelToDocumentIR, "function");
   assert.equal(typeof adapter.modelToThemeConfig, "function");
-  assert.equal(typeof adapter.modelToJadeResume, "function");
+  assert.equal(typeof adapter.modelToRenderResume, "function");
   assert.equal(typeof builders.generateHtml, "function");
   assert.equal(typeof pdf.generatePdf, "function");
   assert.equal(typeof pdf.renderHtmlScreenshot, "function");
@@ -22,4 +22,3 @@ test("dist render-engine entrypoints are importable", async () => {
   assert.equal(typeof types, "object");
   assert.equal(typeof utils, "object");
 });
-

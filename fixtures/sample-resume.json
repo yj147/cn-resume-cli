@@ -71,7 +71,7 @@
     }
   ],
   "render_config": {
-    "template": "elegant",
+    "template": "single-clean",
     "modules": [
       "summary",
       "experience",

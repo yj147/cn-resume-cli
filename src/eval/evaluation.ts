@@ -198,6 +198,15 @@ function safeScore(value) {
   return Math.max(1, Math.min(10, Number(value.toFixed(1))));
 }
 
+function resolveTemplateStyleOrThrow(templateName = "single-clean") {
+  const resolvedName = String(templateName || "").trim() || "single-clean";
+  const style = TEMPLATE_STYLES[resolvedName];
+  if (!style) {
+    throw new Error(`Unsupported template '${resolvedName}'. Use 'cn-resume template list'.`);
+  }
+  return style;
+}
+
 function evaluateScores(model, jdText = "", templateName = "single-clean") {
   const bullets = collectAllBullets(model);
   const joined = bullets.join(" ");
@@ -214,7 +223,7 @@ function evaluateScores(model, jdText = "", templateName = "single-clean") {
   const atsScore = ATS_FRIENDLY_TEMPLATES.has(templateName) ? 8.5 : 6.8;
   const contentSize = joined.length + JSON.stringify(model.skills || []).length;
   const layoutFitScore = contentSize < 1800 ? 9 : contentSize < 2600 ? 7.5 : contentSize < 3200 ? 6 : 4.5;
-  const style = TEMPLATE_STYLES[templateName] || TEMPLATE_STYLES["single-clean"];
+  const style = resolveTemplateStyleOrThrow(templateName);
   const visualHierarchyScore = safeScore(style.layout === "two-column" ? 8.2 : 7.8);
 
   const scores = {
@@ -250,18 +259,13 @@ function evaluateScores(model, jdText = "", templateName = "single-clean") {
   };
 }
 
-function analyzeJd(model, jdText) {
+function analyzeJd(model, jdText, templateName = "single-clean") {
   const keywords = readJdKeywords(jdText);
   const payload = JSON.stringify(model);
   const keywordMatches = keywords.filter((kw) => payload.includes(kw)).slice(0, 30);
   const missingKeywords = keywords.filter((kw) => !payload.includes(kw)).slice(0, 30);
   const overallScore = keywords.length ? Math.round((keywordMatches.length / keywords.length) * 100) : 70;
-  let normalizedTemplate = "single-clean";
-  try {
-    normalizedTemplate = resolveTemplate(model?.render_config?.template || model?.meta?.template || "single-clean").resolved;
-  } catch {
-    normalizedTemplate = "single-clean";
-  }
+  const normalizedTemplate = resolveTemplate(templateName).resolved;
   const atsScore = ATS_FRIENDLY_TEMPLATES.has(normalizedTemplate) ? 85 : 68;
   return {
     overallScore,
@@ -566,8 +570,8 @@ export function validateByRule(model, jdText, template, options) {
   };
 }
 
-export function analyzeByRule(model, jdText, options) {
-  const report = analyzeJd(model, jdText);
+export function analyzeByRule(model, jdText, template, options) {
+  const report = analyzeJd(model, jdText, template);
   return {
     ...report,
     ...buildEvalMeta(options, 0.64)

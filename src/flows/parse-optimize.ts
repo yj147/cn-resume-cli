@@ -11,7 +11,7 @@ import {
 } from "../core/model.js";
 import { FIELD_SOURCES, getFieldValue } from "../core/provenance.js";
 import { loadPdfForAiParsing, parsePdfToText } from "../pdf.js";
-import { modelToJadeResume } from "../render-engine/adapter.js";
+import { modelToRenderResume } from "../render-engine/adapter.js";
 
 export const PHASE_B_PROMPT = "哪里需要修改？请指出具体模块与条目。";
 const PARSE_EVIDENCE_VERSION = "section-first-v1";
@@ -259,7 +259,7 @@ function buildSectionParseEvidence(section) {
 export function buildSectionFirstParseEvidence(model) {
   const templateName =
     String(model?.render_config?.template || model?.meta?.template || "single-clean").trim() || "single-clean";
-  const resume = modelToJadeResume(model, templateName);
+  const resume = modelToRenderResume(model, templateName);
   const sections = (resume.sections || []).map((section) => buildSectionParseEvidence(section));
   const weightedSections = sections.filter(
     (section) => section.visible && (section.item_count > 0 || section.type === "personal_info" || section.type === "summary")
@@ -275,7 +275,7 @@ export function buildSectionFirstParseEvidence(model) {
 
   return {
     version: PARSE_EVIDENCE_VERSION,
-    paradigm: "jadeai-section-first",
+    paradigm: "render-engine-section-first",
     template: resume.template || templateName,
     overall_confidence: toFixedConfidence(weightedTotal ? weightedScore / weightedTotal : 0),
     sections
