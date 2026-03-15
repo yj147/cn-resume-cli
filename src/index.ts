@@ -42,14 +42,14 @@ export async function main(argv, deps = {}) {
   resolvedDeps.loadLocalEnvFile();
 
   if (!argv.length) {
-    await resolvedDeps.runChatTui({});
+    await resolvedDeps.runChatTui({ interactive: true });
     return;
   }
 
   const [command, ...rest] = argv;
   if (command === "chat") {
     const { flags } = resolvedDeps.parseFlags(rest);
-    await resolvedDeps.runChatTui({ flags });
+    await resolvedDeps.runChatTui({ flags, interactive: true });
     return;
   }
 

@@ -18,7 +18,7 @@ function createSession(overrides = {}) {
   };
 }
 
-test("preview drawer stays closed by default when edit loop is inactive", () => {
+test("preview drawer stays closed by default until edit-loop truth opens it", () => {
   const session = createSession();
   const viewModel = viewModelModule.buildTuiViewModel(session);
   const app = render(React.createElement(drawerModule.PreviewDrawer, {
@@ -29,6 +29,54 @@ test("preview drawer stays closed by default when edit loop is inactive", () => 
 
   assert.equal(viewModel.preview.visible, false);
   assert.equal(app.lastFrame() || "", "");
+  app.unmount();
+});
+
+test("preview drawer keeps the approved file name visible when edit-loop opens it", () => {
+  const session = createSession({
+    pendingPatches: [{ patchId: "patch-1" }],
+    currentResume: {
+      sourcePath: "/tmp/resume_v2_draft.md"
+    }
+  });
+  const viewModel = viewModelModule.buildTuiViewModel(session);
+  const app = render(React.createElement(drawerModule.PreviewDrawer, {
+    viewModel,
+    session,
+    uiState: uiStateModule.createUiState()
+  }));
+
+  assert.match(app.lastFrame() || "", /LIVE PREVIEW: RESUME_V2_DRAFT\.MD/);
+  app.unmount();
+});
+
+test("preview drawer preserves four skill groups for the stitch two-column skills rhythm", () => {
+  const session = createSession({
+    pendingPatches: [{ patchId: "patch-1" }],
+    currentResume: {
+      model: {
+        basic: { name: { value: "张三" } },
+        skills: [
+          { category: { value: "Languages" }, items: [{ value: "TypeScript" }] },
+          { category: { value: "Frontend" }, items: [{ value: "React" }] },
+          { category: { value: "Backend" }, items: [{ value: "Node.js" }] },
+          { category: { value: "Cloud" }, items: [{ value: "AWS" }] }
+        ]
+      }
+    }
+  });
+  const viewModel = viewModelModule.buildTuiViewModel(session);
+  const app = render(React.createElement(drawerModule.PreviewDrawer, {
+    viewModel,
+    session,
+    uiState: uiStateModule.createUiState()
+  }));
+  const frame = app.lastFrame() || "";
+
+  assert.match(frame, /Languages:/);
+  assert.match(frame, /Frontend:/);
+  assert.match(frame, /Backend:/);
+  assert.match(frame, /Cloud:/);
   app.unmount();
 });
 
@@ -66,16 +114,21 @@ test("preview drawer releases edit lock when pending patches are cleared and pha
   assert.equal(viewModel.preview.lockedByEditLoop, false);
 });
 
-test("preview drawer can render committed and export preview states through ui-only preference", () => {
+test("preview drawer can render committed and export preview states without ui-only forcing", () => {
   const committedSession = createSession();
   const committedViewModel = viewModelModule.buildTuiViewModel(committedSession);
-  const committedUiState = uiStateModule.createUiState();
-  committedUiState.manualPreviewPreference = "open";
   let app = render(React.createElement(drawerModule.PreviewDrawer, {
-    viewModel: committedViewModel,
+    viewModel: {
+      ...committedViewModel,
+      preview: {
+        ...committedViewModel.preview,
+        visible: true
+      }
+    },
     session: committedSession,
-    uiState: committedUiState
+    uiState: uiStateModule.createUiState()
   }));
+  assert.match(app.lastFrame() || "", /LIVE PREVIEW:/);
   assert.match(app.lastFrame() || "", /COMMITTED · Structure/);
   app.unmount();
 
@@ -88,7 +141,13 @@ test("preview drawer can render committed and export preview states through ui-o
   });
   const exportViewModel = viewModelModule.buildTuiViewModel(exportSession);
   app = render(React.createElement(drawerModule.PreviewDrawer, {
-    viewModel: exportViewModel,
+    viewModel: {
+      ...exportViewModel,
+      preview: {
+        ...exportViewModel.preview,
+        visible: true
+      }
+    },
     session: exportSession,
     uiState: uiStateModule.createUiState()
   }));

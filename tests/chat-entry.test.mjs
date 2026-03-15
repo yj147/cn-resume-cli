@@ -55,28 +55,34 @@ function createDeps(overrides = {}) {
 test("main routes empty argv to chat tui by dependency injection", async () => {
   let chatTuiCalls = 0;
   const writes = [];
+  const optionsSeen = [];
 
   await indexModule.main([], createDeps({
     writeStdout: (text) => writes.push(text),
-    runChatTui: async () => {
+    runChatTui: async (options) => {
       chatTuiCalls += 1;
+      optionsSeen.push(options);
     }
   }));
 
   assert.equal(chatTuiCalls, 1);
+  assert.deepEqual(optionsSeen, [{ interactive: true }]);
   assert.deepEqual(writes, []);
 });
 
 test("main routes explicit chat subcommand to chat tui by dependency injection", async () => {
   let chatTuiCalls = 0;
+  const optionsSeen = [];
 
   await indexModule.main(["chat"], createDeps({
-    runChatTui: async () => {
+    runChatTui: async (options) => {
       chatTuiCalls += 1;
+      optionsSeen.push(options);
     }
   }));
 
   assert.equal(chatTuiCalls, 1);
+  assert.deepEqual(optionsSeen, [{ flags: {}, interactive: true }]);
 });
 
 test("main keeps parse subcommand on CLI route", async () => {

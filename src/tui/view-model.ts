@@ -37,15 +37,33 @@ function resolvePreviewStatus(session) {
   return PREVIEW_STATUS.COMMITTED;
 }
 
+function sanitizeTranscriptText(text) {
+  return String(text || "")
+    .replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi, "")
+    .replace(/<\/?think\b[^>]*>/gi, "")
+    .replace(/<minimax:tool_call>[\s\S]*?<\/minimax:tool_call>/gi, "")
+    .replace(/<invoke[\s\S]*?<\/invoke>/gi, "")
+    .replace(/^\s*(assistant|tool)_(started|completed|finished)\s*$/gim, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function isTranscriptNoiseText(text) {
-  const normalized = String(text || "").trim();
-  if (!normalized) {
-    return true;
+  return !sanitizeTranscriptText(text);
+}
+
+function resolvePreviewTitle(session) {
+  const source = String(
+    session?.artifacts?.latestDraftSourcePath
+    || session?.artifacts?.latestModelPath
+    || session?.currentResume?.sourcePath
+    || ""
+  ).trim();
+  if (!source) {
+    return "session-preview";
   }
-  if (/^(assistant|tool)_(started|completed|finished)$/i.test(normalized)) {
-    return true;
-  }
-  return /<minimax:tool_call>/i.test(normalized);
+  const segments = source.split(/[\\/]/).filter(Boolean);
+  return segments.at(-1) || "session-preview";
 }
 
 function projectTranscriptItem(item, index) {
@@ -66,7 +84,7 @@ function projectTranscriptItem(item, index) {
   }
 
   if (item.type === "assistant_completed" || item.type === "assistant_delta" || item.role === "assistant") {
-    const content = String(item.content || "");
+    const content = sanitizeTranscriptText(item.content || item.chunk || "");
     if (isTranscriptNoiseText(content)) {
       return null;
     }
@@ -74,6 +92,7 @@ function projectTranscriptItem(item, index) {
       id: `transcript-${index}`,
       kind: "assistant",
       header: "● cn-resume",
+      meta: item.at ? "Just now" : index === 0 ? "Just now" : "",
       content
     };
   }
@@ -95,7 +114,10 @@ function projectTranscriptItem(item, index) {
     return {
       id: `transcript-${index}`,
       kind: "approval",
-      content: String(item.summary || item.content || "")
+      title: String(item.title || item.summary || ""),
+      content: String(item.summary || item.content || ""),
+      confirmLabel: String(item.confirmLabel || "Enter 确认"),
+      rejectLabel: String(item.rejectLabel || "Esc 取消")
     };
   }
 
@@ -111,27 +133,35 @@ function projectTranscriptItem(item, index) {
     };
   }
 
+  if (item.type === "log" || item.level === "warn" || item.level === "info") {
+    return null;
+  }
+
   if (item.type === "error" || item.role === "error") {
+    const content = sanitizeTranscriptText(item.message || item.content || "");
+    if (!content) {
+      return null;
+    }
     return {
       id: `transcript-${index}`,
       kind: "error",
-      content: String(item.message || item.content || "")
+      content
     };
   }
 
-  if (isTranscriptNoiseText(item.content || item.summary || item.type || "")) {
+  const content = sanitizeTranscriptText(item.content || item.summary || item.type || "");
+  if (!content) {
     return null;
   }
   return {
     id: `transcript-${index}`,
     kind: "status",
-    content: String(item.content || item.summary || item.type || "")
+    content
   };
 }
 
 export function buildTuiViewModel(session) {
   const previewStatus = resolvePreviewStatus(session);
-  const previewVisible = isEditLoopActive(session) || previewStatus === PREVIEW_STATUS.EXPORT_PREVIEW;
 
   return {
     header: {
@@ -141,12 +171,13 @@ export function buildTuiViewModel(session) {
     transcript: transcriptRef(session).map(projectTranscriptItem).filter(Boolean),
     composer: {
       multiline: true,
-      hints: ["Enter send", "Ctrl+J newline", "Tab complete", "Esc close overlay"]
+      hints: ["TAB Auto-complete", "ESC Cancel", "ENTER Run"]
     },
     preview: {
-      visible: previewVisible,
+      visible: isEditLoopActive(session),
       tab: PREVIEW_TABS.STRUCTURE,
       statusLabel: previewStatus,
+      title: resolvePreviewTitle(session),
       lockedByEditLoop: isEditLoopActive(session)
     }
   };

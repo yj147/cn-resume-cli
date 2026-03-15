@@ -13,7 +13,22 @@ test("composer renders single-line input with blinking cursor when focused", () 
   }));
   const frame = app.lastFrame() || "";
 
-  assert.match(frame, /优化技能描述│/);
+  assert.match(frame, /优化技能描述▉/);
+  app.unmount();
+});
+
+test("composer hides shortcut hints once the user starts typing", () => {
+  const app = render(React.createElement(composerModule.Composer, {
+    draftText: "优化技能描述",
+    focused: true,
+    cursorVisible: true
+  }));
+  const frame = app.lastFrame() || "";
+
+  assert.match(frame, /优化技能描述▉/);
+  assert.equal(frame.includes("TAB Auto-complete"), false);
+  assert.equal(frame.includes("ESC Cancel"), false);
+  assert.equal(frame.includes("ENTER Run"), false);
   app.unmount();
 });
 
@@ -26,7 +41,7 @@ test("composer preserves multi-line draft text", () => {
   const frame = app.lastFrame() || "";
 
   assert.match(frame, /第一行/);
-  assert.match(frame, /第二行│/);
+  assert.match(frame, /第二行▉/);
   app.unmount();
 });
 
@@ -38,7 +53,7 @@ test("composer hides cursor when not focused", () => {
   }));
   const frame = app.lastFrame() || "";
 
-  assert.equal(frame.includes("│"), false);
+  assert.equal(frame.includes("▉"), false);
   app.unmount();
 });
 
@@ -50,9 +65,8 @@ test("composer renders the approved hint copy", () => {
   }));
   const frame = app.lastFrame() || "";
 
-  assert.match(frame, /Enter send/);
-  assert.match(frame, /Ctrl\+J newline/);
-  assert.match(frame, /Tab complete/);
-  assert.match(frame, /Esc close overlay/);
+  assert.match(frame, /TAB Auto-complete/);
+  assert.match(frame, /ESC Cancel/);
+  assert.match(frame, /ENTER Run/);
   app.unmount();
 });

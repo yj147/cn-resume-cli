@@ -156,6 +156,53 @@ function saveRuntime(runtime) {
   return runtime;
 }
 
+async function approvePending(runtime, io, handlers) {
+  const next = cloneRuntime(runtime);
+  const fromIndex = Array.isArray(next.session?.transcript) ? next.session.transcript.length : 0;
+  next.session = await confirmPendingPlan(next.session, { runTool: handlers.runTool });
+  const layoutResult = normalizeLayoutResult(next.session?.layoutResult);
+  if (layoutResult?.status === "overflow" && workflowStateRef(next.session) === CHAT_STATES.CONFIRMED_CONTENT) {
+    next.session.layoutResult = layoutResult;
+    dispatchWorkflowEvent(next.session, CONTROLLER_EVENTS.LAYOUT_OVERFLOW);
+    recordCheckpoint(next.session, "layout_overflow", { stable: false });
+  }
+  emitTranscriptDelta(io, next.session, fromIndex);
+  saveRuntime(next);
+  return {
+    runtime: next,
+    exit: false
+  };
+}
+
+function cancelPending(runtime, io) {
+  const next = cloneRuntime(runtime);
+  const fromIndex = Array.isArray(next.session?.transcript) ? next.session.transcript.length : 0;
+  if (next.session.phaseB?.status === "awaiting_feedback") {
+    emitEvent(
+      next.session,
+      io,
+      createChatEvent("error", {
+        message: "Phase B 待确认，不能取消。请输入反馈文本完成确认。"
+      }),
+      {
+        message: {
+          role: "error",
+          content: "Phase B 待确认，不能取消。请输入反馈文本完成确认。"
+        },
+        stdoutText: "Phase B 待确认，不能取消。请输入反馈文本完成确认。"
+      }
+    );
+  } else if (next.session.pendingPlan?.action || next.session.pendingApproval) {
+    next.session = idleSession(next.session);
+  }
+  emitTranscriptDelta(io, next.session, fromIndex);
+  saveRuntime(next);
+  return {
+    runtime: next,
+    exit: false
+  };
+}
+
 function resolveChatHandlers(handlers = {}) {
   return {
     executeSlashCommand,
@@ -172,34 +219,9 @@ async function handleSlashInput(runtime, input, handlers, io) {
   let next = slash.runtime;
 
   if (slash.command === SLASH_COMMANDS.GO) {
-    const goFromIndex = Array.isArray(next.session?.transcript) ? next.session.transcript.length : 0;
-    next.session = await confirmPendingPlan(next.session, { runTool: handlers.runTool });
-    const layoutResult = normalizeLayoutResult(next.session?.layoutResult);
-    if (layoutResult?.status === "overflow" && workflowStateRef(next.session) === CHAT_STATES.CONFIRMED_CONTENT) {
-      next.session.layoutResult = layoutResult;
-      dispatchWorkflowEvent(next.session, CONTROLLER_EVENTS.LAYOUT_OVERFLOW);
-      recordCheckpoint(next.session, "layout_overflow", { stable: false });
-    }
-    emitTranscriptDelta(io, next.session, goFromIndex);
+    return approvePending(next, io, handlers);
   } else if (slash.command === SLASH_COMMANDS.CANCEL) {
-    if (next.session.phaseB?.status === "awaiting_feedback") {
-      emitEvent(
-        next.session,
-        io,
-        createChatEvent("error", {
-          message: "Phase B 待确认，不能取消。请输入反馈文本完成确认。"
-        }),
-        {
-          message: {
-            role: "error",
-            content: "Phase B 待确认，不能取消。请输入反馈文本完成确认。"
-          },
-          stdoutText: "Phase B 待确认，不能取消。请输入反馈文本完成确认。"
-        }
-      );
-    } else if (next.session.pendingPlan?.action || next.session.pendingApproval) {
-      next.session = idleSession(next.session);
-    }
+    return cancelPending(next, io);
   }
 
   if (slash.command !== SLASH_COMMANDS.GO) {
@@ -285,7 +307,7 @@ async function handleChatInput(runtime, input, handlers, io) {
     next.session = planToolAction(next.session, planned);
     emitTranscriptDelta(io, next.session, fromIndex);
     if (!io.emit) {
-      io.write("请输入 /go 确认，或 /cancel 取消。");
+      io.write("按 Enter 确认，按 Esc 取消。");
     }
     saveRuntime(next);
     return {
@@ -362,6 +384,23 @@ export async function submitChatInput(runtime, input, io, handlers = {}) {
   }
 
   return handleChatInput(runtime, trimmed, resolvedHandlers, io);
+}
+
+export async function approvePendingPlan(runtime, io, handlers = {}) {
+  const resolvedIo = {
+    write: io?.write || defaultWrite,
+    emit: io?.emit
+  };
+  const resolvedHandlers = resolveChatHandlers(handlers);
+  return approvePending(runtime, resolvedIo, resolvedHandlers);
+}
+
+export function cancelPendingPlan(runtime, io) {
+  const resolvedIo = {
+    write: io?.write || defaultWrite,
+    emit: io?.emit
+  };
+  return cancelPending(runtime, resolvedIo);
 }
 
 export async function runChatLoop(runtime, io, handlers = {}) {

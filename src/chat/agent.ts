@@ -375,7 +375,9 @@ export function planToolAction(session, plan) {
     next,
     createChatEvent("approval_requested", {
       title: plan.summary,
-      summary: "请输入 /go 确认，或 /cancel 取消。"
+      summary: plan.summary,
+      confirmLabel: "Enter 确认",
+      rejectLabel: "Esc 取消"
     })
   );
   appendMessage(next, "assistant", `计划：${plan.summary}`);

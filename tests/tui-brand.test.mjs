@@ -15,12 +15,14 @@ test("theme exposes the approved stitch-aligned token groups", () => {
   assert.equal(themeModule.TUI_THEME.tool.diff.remove, "#ff7b72");
   assert.equal(themeModule.TUI_THEME.tool.diff.meta, "#8b949e");
   assert.equal(themeModule.TUI_THEME.input.cursor, "#79c0ff");
+  assert.equal(themeModule.TUI_THEME.chrome.brand, "cn-resume");
 });
 
 test("renderBrandSplash reads the approved splash file and returns multi-line output", () => {
   const splash = brandModule.renderBrandSplash();
   assert.equal(typeof splash, "string");
   assert.equal(splash.length > 0, true);
-  assert.equal(splash.includes("CN-RESUME"), true);
+  assert.equal(splash.includes("██████╗"), true);
+  assert.equal(/^\s*CN-RESUME\s*$/m.test(splash), false);
   assert.equal(splash.split("\n").length > 1, true);
 });

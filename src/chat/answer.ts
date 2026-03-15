@@ -19,6 +19,8 @@ function extractAssistantText(payload) {
 
 function sanitizeAssistantText(text) {
   return String(text || "")
+    .replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi, "")
+    .replace(/<\/?think\b[^>]*>/gi, "")
     .replace(/<minimax:tool_call>[\s\S]*?<\/minimax:tool_call>/gi, "")
     .replace(/<invoke[\s\S]*?<\/invoke>/gi, "")
     .replace(/^\s*(assistant|tool)_(started|completed|finished)\s*$/gim, "")

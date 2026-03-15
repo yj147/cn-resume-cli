@@ -48,3 +48,46 @@ test("streamChatAnswer strips provider protocol markers before returning assista
     globalThis.fetch = originalFetch;
   }
 });
+
+test("streamChatAnswer strips think blocks before returning assistant text", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    async json() {
+      return {
+        choices: [
+          {
+            message: {
+              content: `<think>
+先分析用户的意图。
+</think>
+你好，我可以帮你优化简历。`
+            }
+          }
+        ]
+      };
+    }
+  });
+
+  try {
+    let chunk = "";
+    const text = await answerModule.streamChatAnswer(
+      {
+        config: {
+          apiKey: "test-key",
+          model: "test-model",
+          baseUrl: "https://example.com/v1"
+        }
+      },
+      "hi",
+      (value) => {
+        chunk += value;
+      }
+    );
+
+    assert.equal(text, "你好，我可以帮你优化简历。");
+    assert.equal(chunk, "你好，我可以帮你优化简历。");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

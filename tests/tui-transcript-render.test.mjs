@@ -46,6 +46,56 @@ test("transcript lane renders assistant, user, and tool cards without diagnostic
   app.unmount();
 });
 
+test("transcript lane drops warn and info logs from the main axis", () => {
+  const model = viewModelModule.buildTuiViewModel({
+    workflowState: "drafting",
+    pendingPatches: [],
+    phaseB: null,
+    artifacts: {},
+    transcript: [
+      { type: "log", level: "warn", content: "Resume length is currently 1.2 pages." },
+      { type: "log", level: "info", content: "Syncing local data with cloud store... Done." }
+    ]
+  });
+  const app = render(React.createElement(laneModule.TranscriptLane, { items: model.transcript }));
+  const frame = app.lastFrame() || "";
+
+  assert.equal(frame.includes("[WARN]"), false);
+  assert.equal(frame.includes("[INFO]"), false);
+  assert.equal(frame.includes("Resume length is currently 1.2 pages."), false);
+  assert.equal(frame.includes("Syncing local data with cloud store... Done."), false);
+
+  app.unmount();
+});
+
+test("transcript lane renders approval cards inline instead of plain slash instructions", () => {
+  const model = viewModelModule.buildTuiViewModel({
+    workflowState: "drafting",
+    pendingPatches: [],
+    phaseB: null,
+    artifacts: {},
+    transcript: [
+      {
+        type: "approval_requested",
+        title: "优化当前简历",
+        summary: "优化当前简历",
+        confirmLabel: "Enter 确认",
+        rejectLabel: "Esc 取消"
+      }
+    ]
+  });
+  const app = render(React.createElement(laneModule.TranscriptLane, { items: model.transcript }));
+  const frame = app.lastFrame() || "";
+
+  assert.match(frame, /优化当前简历/);
+  assert.match(frame, /Enter 确认/);
+  assert.match(frame, /Esc 取消/);
+  assert.equal(frame.includes("/go"), false);
+  assert.equal(frame.includes("/cancel"), false);
+
+  app.unmount();
+});
+
 test("transcript lane keeps the recent 100 items stable", () => {
   const items = Array.from({ length: 120 }, (_, index) => ({
     id: `item-${index}`,

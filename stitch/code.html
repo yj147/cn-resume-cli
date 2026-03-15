@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>cn-resume-cli | Advanced AI Resume Generator</title>
+<!-- Tailwind CSS v3 with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: JetBrains Mono for the developer aesthetic -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;display=swap" rel="stylesheet"/>
+<style data-purpose="custom-layout">
+    body {
+      background-color: #0d1117;
+      font-family: 'JetBrains Mono', monospace;
+      color: #e6edf3;
+      overflow: hidden; /* Prevent body scroll for app-like feel */
+    }
+    
+    .glass-border {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .terminal-shadow {
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Custom scrollbar for terminal content */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0d1117;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #30363d;
+      border-radius: 10px;
+    }
+    
+    .cursor-blink {
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      from, to { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .syntax-cyan { color: #79c0ff; }
+    .syntax-purple { color: #d2a8ff; }
+    .syntax-green { color: #7ee787; }
+    .syntax-orange { color: #ffa657; }
+    .syntax-gray { color: #8b949e; }
+  </style>
+</head>
+<body class="h-screen flex items-center justify-center p-4 md:p-8">
+<!-- BEGIN: MainTerminalWindow -->
+<main class="w-full max-w-6xl h-full max-h-[800px] bg-[#0d1117] rounded-xl overflow-hidden flex flex-col glass-border terminal-shadow" data-purpose="terminal-window" id="terminal-container">
+<!-- BEGIN: TopStatusBar -->
+<header class="h-10 bg-[#161b22] border-b border-[#30363d] flex items-center justify-between px-4 text-xs font-semibold tracking-tight" data-purpose="status-bar">
+<div class="flex items-center gap-4">
+<!-- Terminal Controls -->
+<div class="flex gap-2 mr-2">
+<div class="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+<div class="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+<div class="w-3 h-3 rounded-full bg-[#27c93f]"></div>
+</div>
+<span class="syntax-gray">cn-resume-cli</span>
+<span class="px-2 py-0.5 rounded bg-[#21262d] text-[#8b949e]">v2.4.0-stable</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="syntax-gray">MODEL:</span>
+<span class="syntax-cyan">claude-3-5-sonnet-20241022</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="syntax-gray">CONTEXT:</span>
+<span class="syntax-green">14.2k / 200k tokens</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="syntax-gray">TIME:</span>
+<span id="current-time">14:42:05</span>
+</div>
+</div>
+</header>
+<!-- END: TopStatusBar -->
+<!-- BEGIN: TerminalContent -->
+<section class="flex-grow flex overflow-hidden">
+<!-- LEFT COLUMN: Chat Interface -->
+<article class="w-1/2 border-r border-[#30363d] flex flex-col overflow-hidden" data-purpose="chat-interface">
+<div class="flex-grow p-6 overflow-y-auto custom-scrollbar space-y-6 text-sm leading-relaxed">
+<!-- AI Message 1 -->
+<div class="space-y-2">
+<div class="flex items-center gap-2">
+<span class="syntax-purple font-bold">● AI Agent</span>
+<span class="syntax-gray text-[10px]">Just now</span>
+</div>
+<p>Welcome back, developer. I've analyzed your GitHub profile and the target job description for <span class="syntax-green">"Senior Fullstack Engineer"</span> at <span class="syntax-cyan">Vercel</span>.</p>
+<p>I recommend emphasizing your <span class="syntax-orange">Next.js performance optimizations</span> and your experience with <span class="syntax-orange">distributed systems</span>.</p>
+</div>
+<!-- User Interaction -->
+<div class="space-y-2">
+<div class="flex items-center gap-2">
+<span class="syntax-cyan font-bold">❯ User</span>
+</div>
+<p class="syntax-gray">optimize-bullets --section "Experience" --focus "impact-metrics"</p>
+</div>
+<!-- AI Response 2 (Generating Effect) -->
+<div class="space-y-2">
+<div class="flex items-center gap-2">
+<span class="syntax-purple font-bold">● AI Agent</span>
+</div>
+<div class="p-3 bg-[#161b22] rounded border border-[#30363d]">
+<div class="syntax-gray mb-2 italic">// Rewriting Experience Section...</div>
+<div class="syntax-green">+ Improved LCP by 40% across 2M+ monthly users by implementing granular code splitting.</div>
+<div class="syntax-green">+ Reduced infrastructure costs by $12k/mo through optimized database indexing.</div>
+<div class="syntax-green">+ Led a team of 5 engineers to migrate legacy monolith to microservices.</div>
+</div>
+<p>The preview panel on the right has been updated with these changes. Type <code class="bg-[#21262d] px-1 rounded">export --format pdf</code> when ready.</p>
+</div>
+<!-- More logs to show depth -->
+<div class="space-y-1 pt-4">
+<div class="flex gap-2 text-[11px]">
+<span class="text-yellow-500">[WARN]</span>
+<span class="syntax-gray">Resume length is currently 1.2 pages. Suggested trim: "Education" details.</span>
+</div>
+<div class="flex gap-2 text-[11px]">
+<span class="text-blue-500">[INFO]</span>
+<span class="syntax-gray">Syncing local data with cloud store... Done.</span>
+</div>
+</div>
+</div>
+</article>
+<!-- RIGHT COLUMN: Live Preview (ASCII/ANSI) -->
+<article class="w-1/2 bg-[#0d1117] flex flex-col overflow-hidden" data-purpose="live-resume-preview">
+<div class="p-2 border-b border-[#30363d] bg-[#161b22] text-[10px] uppercase tracking-widest text-center syntax-gray font-bold">
+          Live Preview: resume_v2_draft.md
+        </div>
+<div class="flex-grow p-8 overflow-y-auto custom-scrollbar text-[11px] leading-tight">
+<!-- ASCII Resume Layout -->
+<div class="max-w-[400px] mx-auto border border-dashed border-[#30363d] p-6 bg-[#0d1117]">
+<div class="text-center mb-6">
+<h1 class="text-lg font-bold syntax-cyan tracking-widest">ALEX RIVERA</h1>
+<p class="syntax-gray mt-1">San Francisco, CA | alex@dev.io | github.com/arivera</p>
+</div>
+<div class="mb-4">
+<div class="border-b border-[#30363d] mb-2 syntax-orange font-bold">SUMMARY</div>
+<p class="syntax-gray">Full-stack engineer with 8+ years experience specializing in high-scale TypeScript applications and cloud-native architecture.</p>
+</div>
+<div class="mb-4">
+<div class="border-b border-[#30363d] mb-2 syntax-orange font-bold">EXPERIENCE</div>
+<div class="mb-3">
+<div class="flex justify-between font-bold">
+<span class="syntax-green">Senior Engineer @ TechStream</span>
+<span class="syntax-gray">2021 — Present</span>
+</div>
+<ul class="list-none mt-1 space-y-1">
+<li class="flex gap-2"><span class="syntax-cyan">▪</span> <span>Improved LCP by 40% across 2M+ monthly users via granular code splitting.</span></li>
+<li class="flex gap-2"><span class="syntax-cyan">▪</span> <span>Reduced infra costs by $12k/mo through optimized DB indexing.</span></li>
+<li class="flex gap-2"><span class="syntax-cyan">▪</span> <span class="syntax-gray">[... 2 more bullets compressed ...]</span></li>
+</ul>
+</div>
+<div>
+<div class="flex justify-between font-bold">
+<span class="syntax-green">Software Developer @ Cloudify</span>
+<span class="syntax-gray">2018 — 2021</span>
+</div>
+<p class="syntax-gray italic text-[10px]">Managed CI/CD pipelines and Kubernetes clusters...</p>
+</div>
+</div>
+<div class="mb-4">
+<div class="border-b border-[#30363d] mb-2 syntax-orange font-bold">TECHNICAL SKILLS</div>
+<div class="grid grid-cols-2 gap-x-4 gap-y-1">
+<div><span class="syntax-cyan">Languages:</span> TypeScript, Go, Rust</div>
+<div><span class="syntax-cyan">Frontend:</span> React, Next.js, Tailwind</div>
+<div><span class="syntax-cyan">Backend:</span> Node.js, PostgreSQL, Redis</div>
+<div><span class="syntax-cyan">Cloud:</span> AWS, Vercel, Docker</div>
+</div>
+</div>
+</div>
+</div>
+</article>
+</section>
+<!-- END: TerminalContent -->
+<!-- BEGIN: StickyBottomInput -->
+<footer class="h-14 bg-[#161b22] border-t border-[#30363d] flex items-center px-4 relative" data-purpose="input-prompt">
+<div class="mr-3 syntax-green font-bold">❯</div>
+<div class="flex-grow flex items-center">
+<span class="syntax-cyan">optimize --section skills --add "Next.js 15"</span>
+<span class="w-2 h-5 bg-cyan-400 ml-1 cursor-blink shadow-[0_0_8px_rgba(34,211,238,0.8)]"></span>
+</div>
+<div class="flex gap-4 text-[10px] syntax-gray font-bold">
+<span class="hover:text-white cursor-pointer transition-colors">TAB Auto-complete</span>
+<span class="hover:text-white cursor-pointer transition-colors">ESC Cancel</span>
+<span class="hover:text-white cursor-pointer transition-colors">ENTER Run</span>
+</div>
+</footer>
+<!-- END: StickyBottomInput -->
+</main>
+<!-- END: MainTerminalWindow -->
+<script data-purpose="real-time-clock">
+    // Script to keep the terminal clock updated
+    function updateClock() {
+      const now = new Date();
+      const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                         now.getMinutes().toString().padStart(2, '0') + ':' + 
+                         now.getSeconds().toString().padStart(2, '0');
+      document.getElementById('current-time').textContent = timeString;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+  </script>
+</body></html>

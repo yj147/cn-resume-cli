@@ -240,3 +240,20 @@
 [2026-03-14T09:26:27Z] [SESSION-7] Completed [task-014] (commit pending)
 [2026-03-14T09:26:27Z] [SESSION-7] STATS tasks_total=14 completed=14 failed=0 pending=0 blocked=0 attempts_total=0 checkpoints=26
 [2026-03-14T09:26:27Z] [SESSION-7] LOCK released
+[2026-03-14T15:32:44Z] [SESSION-8] INIT UI Harness Control Contract: Primary Setpoint="TUI 在不破坏 issues.csv 行为契约的前提下继续向 @stitch/ 高保真视觉收敛，且每轮修改都经 codeagent 审计批准后再进入下一轮" Acceptance="codeagent audit gate + targeted TUI tests + npm test + screenshot evidence" Guardrail="preview 默认关闭，仅编辑态打开；[WARN]/[INFO] 不进主轴；slash/think/brand 契约冻结" DelayBudget="long-running multi-session loop" RecoveryTarget="keep repo resettable and persist loop state in harness files"
+[2026-03-14T15:32:44Z] [SESSION-8] LOCK acquired (pid=80644)
+[2026-03-14T15:32:44Z] [SESSION-8] WARN [task-015] [ENV_SETUP] codeagent-wrapper --backend codex failed on local provider config parse; switched audit gate to codeagent-wrapper --backend claude
+[2026-03-14T15:32:44Z] [SESSION-8] Starting [task-015] 执行 TUI 高保真美化闭环并以 codeagent 审计门禁裁决是否继续下一轮 (base=9c93ad7)
+[2026-03-14T15:34:10Z] [SESSION-8] CHECKPOINT [task-015] step=1/3 "restored issues.csv truth in code/docs/tests, refreshed default-closed and edit-loop evidence, and obtained codeagent pre-audit YES for pure visual-only follow-up"
+[2026-03-14T15:36:21Z] [SESSION-8] CHECKPOINT [task-015] step=2/3 "tightened top bar spacing, reduced default-closed whitespace, and increased tool-card package density without touching behavior contracts"
+[2026-03-14T15:38:10Z] [SESSION-8] CHECKPOINT [task-015] step=3/3 "post-change codeagent audit returned NO for further pure-visual rounds; refreshed screenshot evidence and revalidated targeted suites plus full npm test"
+[2026-03-14T15:38:10Z] [SESSION-8] Completed [task-015] (commit pending)
+[2026-03-14T15:38:10Z] [SESSION-8] STATS tasks_total=15 completed=15 failed=0 pending=0 blocked=0 attempts_total=0 checkpoints=29
+[2026-03-14T15:38:10Z] [SESSION-8] LOCK released
+[2026-03-14T15:50:00Z] [SESSION-9] INIT UI Harness Resume: user explicitly requested another cycle after prior NO; this session performs audit-only recheck before any further visual change
+[2026-03-14T15:50:00Z] [SESSION-9] LOCK acquired (pid=81231)
+[2026-03-14T15:50:00Z] [SESSION-9] Starting [task-016] 复审用户显式覆盖后是否允许继续下一轮纯视觉优化 (base=9c93ad7)
+[2026-03-14T15:50:00Z] [SESSION-9] CHECKPOINT [task-016] step=1/1 "codeagent audit artifact refreshed at artifacts/codeagent-audit-session-9.txt and verdict remained NO; no code changes applied in this session"
+[2026-03-14T15:50:00Z] [SESSION-9] Completed [task-016] (commit pending)
+[2026-03-14T15:50:00Z] [SESSION-9] STATS tasks_total=16 completed=16 failed=0 pending=0 blocked=0 attempts_total=0 checkpoints=30
+[2026-03-14T15:50:00Z] [SESSION-9] LOCK released

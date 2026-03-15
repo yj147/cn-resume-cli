@@ -5,6 +5,13 @@ export const TUI_THEME = {
     border: "#30363d",
     muted: "#8b949e"
   },
+  chrome: {
+    brand: "cn-resume",
+    badge: "#21262d",
+    accent: "#79c0ff",
+    success: "#7ee787",
+    warning: "#ffa657"
+  },
   assistant: {
     accent: "#d2a8ff",
     header: "● cn-resume"
@@ -20,6 +27,10 @@ export const TUI_THEME = {
       remove: "#ff7b72",
       meta: "#8b949e"
     }
+  },
+  preview: {
+    accent: "#ffa657",
+    label: "#8b949e"
   },
   input: {
     text: "#79c0ff",

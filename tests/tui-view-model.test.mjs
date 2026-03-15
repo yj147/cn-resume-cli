@@ -40,7 +40,7 @@ test("view model derives LIVE DRAFT, COMMITTED, and EXPORT PREVIEW without mutat
   assert.equal(liveDraft.preview.statusLabel, "LIVE DRAFT");
   assert.equal(committed.preview.visible, false);
   assert.equal(committed.preview.statusLabel, "COMMITTED");
-  assert.equal(exportPreview.preview.visible, true);
+  assert.equal(exportPreview.preview.visible, false);
   assert.equal(exportPreview.preview.statusLabel, "EXPORT PREVIEW");
   assert.equal(liveDraft.preview.tab, "Structure");
   assert.equal(JSON.stringify(liveDraftSession), before);
@@ -88,6 +88,7 @@ test("view model drops provider noise markers from transcript projection", () =>
     transcript: [
       { type: "assistant_completed", content: "assistant_started" },
       { type: "assistant_completed", content: "<minimax:tool_call><invoke/></minimax:tool_call>" },
+      { type: "assistant_completed", content: "<think>先分析</think>" },
       { type: "assistant_completed", content: "正常回答" }
     ]
   });

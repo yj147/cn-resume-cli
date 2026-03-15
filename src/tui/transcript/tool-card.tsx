@@ -27,8 +27,18 @@ export function ToolCard({ item }) {
     : [];
 
   return (
-    <Box flexDirection="column" marginBottom={1}>
-      <Text color={TUI_THEME.frame.muted}>{`tool · ${item.taskType || "task"} · ${item.summary || item.status || ""}`}</Text>
+    <Box
+      flexDirection="column"
+      backgroundColor={TUI_THEME.tool.cardBackground}
+      marginBottom={2}
+      borderStyle="round"
+      borderColor={TUI_THEME.frame.border}
+      paddingX={1}
+      paddingY={1}
+    >
+      <Box marginBottom={1}>
+        <Text color={TUI_THEME.frame.muted} italic>{`// ${item.summary || item.taskType || item.status || "task"}`}</Text>
+      </Box>
       <Box flexDirection="column">
         {lines.map((line, index) => (
           <Text key={`${item.taskType || "task"}-${index}`} color={colorForDiffLine(line.kind)}>

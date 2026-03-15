@@ -476,8 +476,76 @@
         }
       ],
       "completed_at": "2026-03-14T09:26:22Z"
+    },
+    {
+      "id": "task-015",
+      "title": "执行 TUI 高保真美化闭环并以 codeagent 审计门禁裁决是否继续下一轮",
+      "status": "completed",
+      "priority": "P0",
+      "depends_on": [],
+      "attempts": 0,
+      "max_attempts": 3,
+      "started_at_commit": "9c93ad7",
+      "validation": {
+        "command": "npm run build && node --test tests/tui-view-model.test.mjs tests/tui-preview-drawer.test.mjs tests/tui-transcript-render.test.mjs tests/tui-run.test.mjs tests/tui-stitch-layout-contract.test.mjs && npm test",
+        "timeout_seconds": 5400
+      },
+      "on_failure": {
+        "cleanup": null
+      },
+      "error_log": [],
+      "checkpoints": [
+        {
+          "step": 1,
+          "total": 3,
+          "description": "restored issues.csv truth in code/docs/tests, refreshed default-closed and edit-loop evidence, and obtained codeagent pre-audit YES for pure visual-only follow-up",
+          "timestamp": "2026-03-14T15:34:10Z"
+        },
+        {
+          "step": 2,
+          "total": 3,
+          "description": "tightened top bar spacing, reduced default-closed whitespace, and increased tool-card package density without touching behavior contracts",
+          "timestamp": "2026-03-14T15:36:21Z"
+        },
+        {
+          "step": 3,
+          "total": 3,
+          "description": "post-change codeagent audit returned NO for further pure-visual rounds; refreshed screenshot evidence and revalidated targeted suites plus full npm test",
+          "timestamp": "2026-03-14T15:38:10Z"
+        }
+      ],
+      "completed_at": "2026-03-14T15:38:10Z"
+    },
+    {
+      "id": "task-016",
+      "title": "复审用户显式覆盖后是否允许继续下一轮纯视觉优化",
+      "status": "completed",
+      "priority": "P0",
+      "depends_on": [
+        "task-015"
+      ],
+      "attempts": 0,
+      "max_attempts": 3,
+      "started_at_commit": "9c93ad7",
+      "validation": {
+        "command": "grep -q '^NO$' artifacts/codeagent-audit-session-9.txt && test -f artifacts/tui-frame-default-closed.txt && test -f artifacts/tui-frame-edit-loop.txt",
+        "timeout_seconds": 60
+      },
+      "on_failure": {
+        "cleanup": null
+      },
+      "error_log": [],
+      "checkpoints": [
+        {
+          "step": 1,
+          "total": 1,
+          "description": "codeagent audit artifact refreshed and still returned NO, so the harness loop must stop without applying another visual patch",
+          "timestamp": "2026-03-14T15:50:00Z"
+        }
+      ],
+      "completed_at": "2026-03-14T15:50:00Z"
     }
   ],
-  "session_count": 7,
-  "last_session": "2026-03-14T09:26:22Z"
+  "session_count": 9,
+  "last_session": "2026-03-14T15:50:00Z"
 }

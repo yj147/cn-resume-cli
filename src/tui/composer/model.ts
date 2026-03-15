@@ -1,8 +1,7 @@
 export const COMPOSER_HINTS = [
-  "Enter send",
-  "Ctrl+J newline",
-  "Tab complete",
-  "Esc close overlay"
+  "TAB Auto-complete",
+  "ESC Cancel",
+  "ENTER Run"
 ];
 
 export function buildComposerModel({
